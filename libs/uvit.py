@@ -226,3 +226,190 @@ class UViT(nn.Module):
         x = x[:, self.extras:, :]  # (b, tokens, num_low_freq)
 
         return x
+
+class UViT_greyscale(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
+                 qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0):
+        super().__init__()
+        self.num_features = self.embed_dim = embed_dim
+        self.num_classes = num_classes
+        self.tokens = tokens
+        self.DCT_coes = low_freqs
+
+        # 只用Y通道，输入输出都是 low_freqs*4
+        self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+
+        self.time_embed = nn.Sequential(
+            nn.Linear(embed_dim, 4 * embed_dim),
+            nn.SiLU(),
+            nn.Linear(4 * embed_dim, embed_dim),
+        ) if mlp_time_embed else nn.Identity()
+
+        if self.num_classes > 0:
+            self.label_emb = nn.Embedding(self.num_classes, embed_dim)
+            self.extras = 2
+        else:
+            self.extras = 1
+        
+
+        self.pos_embed = nn.Parameter(torch.zeros(1, self.extras + self.tokens, embed_dim))
+
+        self.in_blocks = nn.ModuleList([
+            Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+            for _ in range(depth // 2)])
+
+        self.mid_block = Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+
+        self.out_blocks = nn.ModuleList([
+            Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint)
+            for _ in range(depth // 2)])
+
+        self.norm = norm_layer(embed_dim)
+        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+
+        trunc_normal_(self.pos_embed, std=.02)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return {'pos_embed'}
+
+    def forward(self, x, timesteps, y=None):
+        # x: (b, tokens, num_low_freq*4)
+        x = self.proj(x)  # (b, tokens, num_low_freq*4) --> (b, tokens, hidden_dim)
+        B, L, D = x.shape
+
+        time_token = self.time_embed(timestep_embedding(timesteps, self.embed_dim))
+        time_token = time_token.unsqueeze(dim=1)  # (b, 1, dim)
+        x = torch.cat((time_token, x), dim=1)
+        if y is not None:
+            label_emb = self.label_emb(y)
+            label_emb = label_emb.unsqueeze(dim=1)
+            x = torch.cat((label_emb, x), dim=1)
+        x = x + self.pos_embed
+
+        skips = []
+        for blk in self.in_blocks:
+            x = blk(x)
+            skips.append(x)
+
+        x = self.mid_block(x)
+
+        for blk in self.out_blocks:
+            x = blk(x, skips.pop())
+
+        x = self.norm(x)
+        x = self.decoder_pred(x)  # (b, tokens, dim) --> (b, tokens, num_low_freq*4)
+        assert x.size(1) == self.extras + L
+        x = x[:, self.extras:, :]  # (b, tokens, num_low_freq*4)
+
+        return x
+
+
+class UViT_greyscale_cond(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
+                 qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0):
+        super().__init__()
+        self.num_features = self.embed_dim = embed_dim
+        self.num_classes = num_classes
+        self.tokens = tokens
+        self.DCT_coes = low_freqs
+
+        # 只用Y通道，输入输出都是 low_freqs*4
+        self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+        self.label_emb = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True) # nn.Embedding or nn.Linear
+        self.extras = 1 + self.tokens  # 1 for time token, self.tokens for label embedding
+
+        self.time_embed = nn.Sequential(
+            nn.Linear(embed_dim, 4 * embed_dim),
+            nn.SiLU(),
+            nn.Linear(4 * embed_dim, embed_dim),
+        ) if mlp_time_embed else nn.Identity()
+
+        self.pos_embed = nn.Parameter(torch.zeros(1, self.extras + self.tokens, embed_dim))
+
+        self.in_blocks = nn.ModuleList([
+            Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+            for _ in range(depth // 2)])
+
+        self.mid_block = Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+
+        self.out_blocks = nn.ModuleList([
+            Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint)
+            for _ in range(depth // 2)])
+
+        self.norm = norm_layer(embed_dim)
+        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+
+        trunc_normal_(self.pos_embed, std=.02)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return {'pos_embed'}
+
+    def forward(self, x:torch.Tensor, timesteps, y:torch.Tensor):
+        # x: (b, tokens, num_low_freq*4)
+        # y: (b, tokens, num_low_freq*4)
+        
+        B, L, D = x.shape
+
+        assert x.size() == y.size(), f'Expected x and y to have the same shape, got {x.size()} and {y.size()}'
+        x = self.proj(x)  # (b, tokens, num_low_freq*4) --> (b, tokens, hidden_dim)
+        label_emb = self.label_emb(y) # (b, tokens, num_low_freq*4) --> (b, tokens, hidden_dim)
+        x = torch.cat((label_emb, x), dim=1)# (b, tokens*2, hidden_dim)
+
+        time_token = self.time_embed(timestep_embedding(timesteps, self.embed_dim))
+        time_token = time_token.unsqueeze(dim=1)  # (b, 1, dim)
+        x = torch.cat((time_token, x), dim=1)
+        
+        x = x + self.pos_embed
+
+        skips = []
+        for blk in self.in_blocks:
+            x = blk(x)
+            skips.append(x)
+
+        x = self.mid_block(x)
+
+        for blk in self.out_blocks:
+            x = blk(x, skips.pop())
+
+        x = self.norm(x)
+        x = self.decoder_pred(x)  # (b, tokens, dim) --> (b, tokens, num_low_freq*4)
+        assert x.size(1) == self.extras + L, f'Expected x to have shape (b, {self.extras + L}, num_low_freq*4), got {x.size()}'
+        x = x[:, self.extras:, :]  # (b, tokens, num_low_freq*4)
+
+        return x

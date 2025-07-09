@@ -161,8 +161,8 @@ def DCT_upsam_FID(org_dataset=None, upsam_dataset=None, dct_upsam_dataset=None):
 
 if __name__ == "__main__":
     upsampling_comparison(img_path='/home/mang/PycharmProjects/U-ViT/ajpeg-dif/jpeg-dif/black-swan.jpg')
-    # select_50k_images('/home/mang/Downloads/ffhq256_jpg/ffhq256',
-    #                   org_dataset='/home/mang/Downloads/ffhq256_50k')
-    # DCT_upsam_FID(org_dataset='/home/mang/Downloads/ffhq256_50k',
-    #               upsam_dataset='/home/mang/Downloads/ffhq256_50k_upsampled',
-    #               dct_upsam_dataset='/home/mang/Downloads/ffhq256_50k_upsampled_dct')
+    select_50k_images('/home/mang/Downloads/ffhq256_jpg/ffhq256',
+                      org_dataset='/home/mang/Downloads/ffhq256_50k')
+    DCT_upsam_FID(org_dataset='/home/mang/Downloads/ffhq256_50k',
+                  upsam_dataset='/home/mang/Downloads/ffhq256_50k_upsampled',
+                  dct_upsam_dataset='/home/mang/Downloads/ffhq256_50k_upsampled_dct')

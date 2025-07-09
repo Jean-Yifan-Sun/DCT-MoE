@@ -104,6 +104,106 @@ class DatasetFactory(object):
         raise NotImplementedError
 
 
+# ACDC Unlabeled Dataset
+
+class ACDCUncond(DatasetFactory):
+    def __init__(self, path, resolution=0, tokens=0, low_freqs=0, block_sz=0, Y_bound=None, **kwargs):
+        super().__init__()
+
+        self.resolution = resolution
+        self.tokens = tokens
+        self.low_freqs = low_freqs
+        # transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor(),
+                                        # transforms.Normalize(0.5, 0.5)])
+
+        if 'greyscale' in kwargs.keys():
+            self.greyscale = kwargs['greyscale']
+        else:
+            self.greyscale = False
+            
+        if self.greyscale:
+            self.block_component = 4  # only Y channel
+            self.train = DCT_4Y(
+                root_dir=path, img_sz=resolution, tokens=tokens,
+                low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
+            )
+        else:
+            self.block_component = 6  # Y-Cb-Cr 
+            self.train = DCT_4YCbCr(
+                root_dir=path, img_sz=resolution, tokens=tokens,
+                low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
+            )
+        # self.train = UnlabeledDataset(self.train)
+
+    @property
+    def data_shape(self):
+        return self.tokens, self.low_freqs*self.block_component  # (96, 43)
+
+    @property
+    def fid_stat(self):
+        # specify the fid_stats file that will be used for FID computation during the training
+        if self.greyscale:
+            return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_greyscale.npz'
+        else:
+            return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel.npz'
+        
+    @property
+    def has_label(self):
+        return False
+
+# ACDC labeled Dataset
+
+class ACDCCond(DatasetFactory):
+    def __init__(self, path:tuple, resolution:int=96, tokens:int=144, low_freqs:int=16, block_sz:int=4, Y_bound:int=1, **kwargs):
+        super().__init__()
+
+        self.resolution = resolution
+        self.tokens = tokens
+        self.low_freqs = low_freqs
+        
+        if 'greyscale' in kwargs.keys():
+            self.greyscale = kwargs['greyscale']
+        else:
+            self.greyscale = False
+            
+        if self.greyscale:
+            self.block_component = 4  # only Y channel
+            self.train = DCT_4Y_Cond(
+                img_dir=path[0],
+                label_dir=path[1],
+                img_sz=resolution, 
+                tokens=tokens,
+                low_freqs=low_freqs, 
+                block_sz=block_sz, 
+                Y_bound=Y_bound
+            )
+        else:
+            raise NotImplementedError("ACDCCond dataset only supports greyscale images currently.")
+
+    @property
+    def data_shape(self):
+        return self.tokens, self.low_freqs*self.block_component  # (96, 43)
+
+    @property
+    def fid_stat(self):
+        # specify the fid_stats file that will be used for FID computation during the training        
+        return 'data/scratch/U-ViT2/assets/fid_stats/acdc_labeled_greyscale.npz'
+
+        
+    @property
+    def has_label(self):
+        return True
+    
+    def sample_label(self, n_samples, device):
+        """
+        Sample labels for the dataset.
+        :param n_samples: number of samples to generate
+        :param device: device to place the labels on
+        :return: tensor of sampled labels
+        """
+        return self.train.sample_label(n_samples, device)
+
+
 # CIFAR10
 
 class CIFAR10(DatasetFactory):
@@ -128,7 +228,7 @@ class CIFAR10(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return '/data/scratch/U-ViT2/assets/fid_stats/fid_stats_cifar10_train.npz'
+        return 'data/scratch/U-ViT2/assets/fid_stats/fid_stats_cifar10_train.npz'
 
     @property
     def has_label(self):
@@ -456,85 +556,224 @@ class DCT_4YCbCr(Dataset):
 
         return DCT_blocks
 
-        # """debug DCT to RGB"""
-        # tokens = self.tokens
-        # low_freqs = self.low_freqs
-        # block_sz = self.block_sz
-        # reverse_order = self.reverse_order
-        # resolution=64
-        # cb_blocks_per_row = int((resolution / block_sz) / 2)
-        # Y_blocks_per_row = int(resolution / block_sz)
-        #
-        # cb_index = [i for i in range(4, tokens, 6)]
-        # cr_index = [i for i in range(5, tokens, 6)]
-        # y_index = [i for i in range(0, tokens) if i not in cb_index and i not in cr_index]
-        # assert len(y_index) + len(cb_index) + len(cr_index) == tokens
-        # y_tokens = int((tokens / 6) * 4)
-        # cb_tokens = int(tokens / 6)
-        #
-        # sample = DCT_blocks.numpy()
-        # assert sample.shape == (tokens, low_freqs)
-        # # sample = np.clip(sample, -2, 2)  # clamp into [-1, 1]
-        #
-        # # fill up DCT coes
-        # DCT = np.zeros((tokens, block_sz * block_sz))
-        # DCT[:, :low_freqs] = sample
-        # DCT = DCT[:, reverse_order]  # convert the low to high freq order back to sequential order
-        #
-        # # DCT_Cb = ((DCT[cb_index, :] * CELEBA64_Cb_99_centered) + CELEBA64_Cb_mean)
-        # # DCT_Cr = ((DCT[cr_index, :] * CELEBA64_Cr_99_centered) + CELEBA64_Cr_mean)
-        # DCT_Cb = DCT[cb_index, :]
-        # DCT_Cr = DCT[cr_index, :]
-        # DCT_Cb = DCT_Cb.reshape(cb_tokens, block_sz, block_sz)  # (16, 64) --> (16, 8, 8)
-        # DCT_Cr = DCT_Cr.reshape(cb_tokens, block_sz, block_sz)  # (16, 64) --> (16, 8, 8)
-        #
-        # y_blocks = []
-        # # DCT_Y = (DCT[y_index, :] * CELEBA64_Y_99_centered) + CELEBA64_Y_mean  # (64, 64)
-        # DCT_Y = DCT[y_index, :]
-        # for row in range(cb_blocks_per_row):  # 16 cb/cr blocks, so 4*4 spatial blocks
-        #     tem_ls = []
-        #     for col in range(cb_blocks_per_row):
-        #         ind = row * (Y_blocks_per_row * 2) + col * 4
-        #         y_blocks.append(DCT_Y[ind, :])
-        #         y_blocks.append(DCT_Y[ind + 1, :])
-        #         tem_ls.append(DCT_Y[ind + 2, :])
-        #         tem_ls.append(DCT_Y[ind + 3, :])
-        #     for ele in tem_ls:
-        #         y_blocks.append(ele)
-        # DCT_Y = np.array(y_blocks).reshape(y_tokens, block_sz, block_sz)
-        #
-        # # Apply Inverse DCT on each block
-        # idct_y_blocks = idct_transform(DCT_Y)
-        # idct_cb_blocks = idct_transform(DCT_Cb)
-        # idct_cr_blocks = idct_transform(DCT_Cr)
-        #
-        # # Combine blocks back into images
-        # height, width = resolution, resolution
-        # y_reconstructed = combine_blocks(idct_y_blocks, height, width, block_sz)
-        # cb_reconstructed = combine_blocks(idct_cb_blocks, int(height / 2), int(width / 2), block_sz)
-        # cr_reconstructed = combine_blocks(idct_cr_blocks, int(height / 2), int(width / 2), block_sz)
-        #
-        # # Upsample Cb and Cr to original size
-        # cb_upsampled = cv2.resize(cb_reconstructed, (width, height), interpolation=cv2.INTER_LINEAR)
-        # cr_upsampled = cv2.resize(cr_reconstructed, (width, height), interpolation=cv2.INTER_LINEAR)
-        #
-        # # Step 5: Convert YCbCr back to RGB
-        # R = y_reconstructed + 1.402 * (cr_upsampled - 128)
-        # G = y_reconstructed - 0.344136 * (cb_upsampled - 128) - 0.714136 * (cr_upsampled - 128)
-        # B = y_reconstructed + 1.772 * (cb_upsampled - 128)
-        #
-        # rgb_reconstructed = np.zeros((height, width, 3))
-        # rgb_reconstructed[:, :, 0] = np.clip(R, 0, 255)
-        # rgb_reconstructed[:, :, 1] = np.clip(G, 0, 255)
-        # rgb_reconstructed[:, :, 2] = np.clip(B, 0, 255)
-        #
-        # # Convert to uint8
-        # rgb_reconstructed = np.uint8(rgb_reconstructed)  # (h, w, 3), RGB channels
-        # final_image = Image.fromarray(rgb_reconstructed)
-        # final_image.save('recon_pure_manual.jpg')
-        # time.sleep(3)
-        # raise ValueError
+class DCT_4Y(Dataset):
+    def __init__(self, root_dir, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None):
+        self.root_dir = root_dir
+        self.classes = os.listdir(root_dir)
+        self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
+        self.img_paths = []
+        for cls in self.classes:
+            cls_dir = os.path.join(root_dir, cls)
+            for img_name in os.listdir(cls_dir):
+                self.img_paths.append((os.path.join(cls_dir, img_name), self.class_to_idx[cls]))
 
+        # parameters of DCT design
+        self.Y_bound = np.array(Y_bound)
+        print(f"using eta {self.Y_bound} for training")
+        self.tokens = tokens
+        self.low_freqs = low_freqs
+        self.block_sz = block_sz
+
+        Y = int(img_sz * img_sz / (block_sz * block_sz))  # num of Y blocks
+        self.Y_blocks_per_row = int(img_sz / block_sz)
+        self.index = []
+        for row in range(0, Y, int(2 * self.Y_blocks_per_row)):
+            for col in range(0, self.Y_blocks_per_row, 2):
+                self.index.append(row + col)
+        assert len(self.index) == int(Y / 4)
+
+        self.low2high_order = zigzag_order(block_sz)
+        self.reverse_order = reverse_zigzag_order(block_sz)
+
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, idx):
+        img_path, label = self.img_paths[idx]
+        img = Image.open(img_path).convert('L')  # 灰度图
+        img = transforms.RandomHorizontalFlip()(img)
+        img = np.array(img)
+
+        # Step 1: Y channel就是灰度图本身
+        img_y = img.astype(np.float32)
+
+        # Step 2: Split Y into BxB blocks
+        y_blocks = split_into_blocks(img_y, self.block_sz)  # (h, w) --> (h/B * w/B, B, B)
+
+        # Step 3: Apply DCT on each block
+        dct_y_blocks = dct_transform(y_blocks)  # (num_blocks, B, B)
+
+        # Step 4: 组织token顺序
+        DCT_blocks = []
+        for i in range(dct_y_blocks.shape[0]// 4):
+            DCT_blocks.append([
+                dct_y_blocks[self.index[i]],
+                dct_y_blocks[self.index[i] + 1],
+                dct_y_blocks[self.index[i] + self.Y_blocks_per_row],
+                dct_y_blocks[self.index[i] + self.Y_blocks_per_row + 1],
+            ])
+        DCT_blocks = np.array(DCT_blocks).reshape(-1, 4, self.block_sz * self.block_sz)  # (tokens, 4, B**2)
+
+        # Step 5: scale into [-1, 1]
+        assert DCT_blocks.shape == (self.tokens, 4, self.block_sz * self.block_sz)
+        DCT_blocks = DCT_blocks / self.Y_bound  # 广播
+
+        # Step 6: zigzag排序+mask高频
+        DCT_blocks = DCT_blocks[:, :, self.low2high_order]  # (tokens, 4, B**2)
+        DCT_blocks = DCT_blocks[:, :, :self.low_freqs]      # (tokens, 4, low_freqs)
+
+        # numpy to torch
+        DCT_blocks = torch.from_numpy(DCT_blocks).reshape(self.tokens, -1)  # (tokens, 4*low_freqs)
+        DCT_blocks = DCT_blocks.float()
+
+        return DCT_blocks
+
+
+class DCT_4Y_Cond(Dataset):
+    def __init__(self, img_dir:str, label_dir:str, img_sz:int=96, tokens:int=144, low_freqs:int=16, block_sz:int=4, Y_bound:int=1):
+        """
+        :param img_dir: directory of images
+        :param label_dir: directory of labels
+        :param img_sz: size of images, e.g., (96, 96)
+        :param tokens: number of tokens, e.g., (144, 144)
+        :param low_freqs: number of low frequency coefficients, e.g., (16, 16)
+        :param block_sz: size of blocks, e.g., (4, 4)
+        :param Y_bound: scaling factor for Y channel, e.g., (1, 1)
+        In tuple form, (Image, Label) order.
+        """
+        
+        self.img_dir = img_dir
+        self.label_dir = label_dir
+        self.img_sz = img_sz
+        self.tokens = tokens
+        self.low_freqs = low_freqs
+        self.block_sz = block_sz
+        self.Y_bound = Y_bound
+
+        self.imgpair_paths = []
+    
+        for img_name in os.listdir(img_dir):
+            basename = os.path.splitext(img_name)[0]
+            label_name = basename + '_label.png'  # assuming labels are in png format
+            self.imgpair_paths.append((os.path.join(img_dir, img_name), os.path.join(label_dir, label_name)))
+
+        # parameters of DCT design
+        print(f"using eta {self.Y_bound} for training Image and Label seperately.")
+        self.Y_bound = np.array(Y_bound)
+        self.tokens = tokens
+        self.low_freqs = low_freqs
+        self.block_sz = block_sz
+
+        # Image DCT parameters
+        Y_img = int(img_sz * img_sz / (block_sz * block_sz))  # num of Y blocks
+        self.Y_blocks_per_row_img = int(img_sz / block_sz)
+        self.index_img = []
+        for row in range(0, Y_img, int(2 * self.Y_blocks_per_row_img)):
+            for col in range(0, self.Y_blocks_per_row_img, 2):
+                self.index_img.append(row + col)
+        assert len(self.index_img) == int(Y_img / 4)
+
+        self.low2high_order_img = zigzag_order(block_sz)
+        self.reverse_order_img = reverse_zigzag_order(block_sz)
+
+        # Label DCT parameters
+        Y_label = int(img_sz * img_sz / (block_sz * block_sz))  # num of Y blocks
+        self.Y_blocks_per_row_label = int(img_sz / block_sz)
+        self.index_label = []
+        for row in range(0, Y_label, int(2 * self.Y_blocks_per_row_label)):
+            for col in range(0, self.Y_blocks_per_row_label, 2):
+                self.index_label.append(row + col)
+        assert len(self.index_label) == int(Y_label / 4)
+
+        self.low2high_order_label = zigzag_order(block_sz)
+        self.reverse_order_label = reverse_zigzag_order(block_sz)
+
+        self.label_class_num = np.unique(np.array(Image.open(self.imgpair_paths[0][1]).convert('L'))).shape[0]
+
+    def label_recalibrate(self, label: np.ndarray) -> np.ndarray:
+        """
+        Assume you need to change numerical labels to match pixel space values or vice versa.
+        Eg. labels in [0,1,2,3] need to be changed to [0, 85, 170, 255] for 8-bit grayscale.
+        """
+        if np.max(label) == 255:
+            label = (label / 255 * self.label_class_num).astype(np.uint8)
+        elif np.max(label) < self.label_class_num:
+            label = (label * 255 / np.max(label)).astype(np.uint8)
+        else:
+            raise ValueError(f"Label values {np.unique(label)} do not match expected range for {self.label_class_num} classes.")
+        return label
+
+    def __len__(self):
+        return len(self.imgpair_paths)
+
+    def __getitem__(self, idx):
+        img_path, label_path = self.imgpair_paths[idx]
+        img = Image.open(img_path).convert('L')  # 灰度图
+        label = Image.open(label_path).convert('L')  # 灰度图
+        img = np.array(img)
+        label = np.array(label)
+        # label = self.label_recalibrate(label)  # Recalibrate label values if necessary
+
+        img_DCT_blocks = self.get_DCT_blocks(img)
+        label_DCT_blocks = self.get_DCT_blocks(label)
+
+        return {'image':img_DCT_blocks, 'label':label_DCT_blocks}
+    
+    def sample_label(self, n_samples, device):
+        """
+        Sample labels for the dataset.
+        :param n_samples: number of samples to generate
+        :param device: device to place the labels on
+        :return: tensor of sampled labels
+        """
+        rand_inds = torch.randint(0, len(self.imgpair_paths),(n_samples,))
+        label_pths = [self.imgpair_paths[idx][1] for idx in rand_inds]
+        labels = [Image.open(label_path).convert('L') for label_path in label_pths]
+        labels_ready = []
+        for label in labels:
+            # label = self.label_recalibrate(np.array(label))
+            labels_ready.append(label)
+
+        label_dct_blocks = []
+        # Get DCT blocks for each label
+        for label in labels_ready:
+            label_dct_block = self.get_DCT_blocks(label).to(device)  # (tokens, 4*low_freqs)
+            label_dct_blocks.append((label_dct_block))
+        return torch.stack(label_dct_blocks, dim=0)  # (n_samples, tokens, 4*low_freqs)
+        
+    def get_DCT_blocks(self,img: np.ndarray) -> torch.Tensor:
+        # Step 1: Y channel就是灰度图本身
+        img_y = img.astype(np.float32)
+
+        # Step 2: Split Y into BxB blocks
+        img_y_blocks = split_into_blocks(img_y, self.block_sz)  # (h, w) --> (h/B * w/B, B, B)
+
+        # Step 3: Apply DCT on each block
+        img_dct_y_blocks = dct_transform(img_y_blocks)  # (num_blocks, B, B)
+
+        # Step 4: 组织token顺序
+        img_DCT_blocks = []
+        for i in range(img_dct_y_blocks.shape[0]// 4):
+            img_DCT_blocks.append([
+                img_dct_y_blocks[self.index_img[i]],
+                img_dct_y_blocks[self.index_img[i] + 1],
+                img_dct_y_blocks[self.index_img[i] + self.Y_blocks_per_row_img],
+                img_dct_y_blocks[self.index_img[i] + self.Y_blocks_per_row_img + 1],
+            ])
+        img_DCT_blocks = np.array(img_DCT_blocks).reshape(-1, 4, self.block_sz * self.block_sz)  # (tokens, 4, B**2)
+        
+        # Step 5: scale into [-1, 1]
+        assert img_DCT_blocks.shape == (self.tokens, 4, self.block_sz * self.block_sz)
+        img_DCT_blocks = img_DCT_blocks / self.Y_bound  # 广播
+
+        # Step 6: zigzag排序+mask高频
+        img_DCT_blocks = img_DCT_blocks[:, :, self.low2high_order_img]  # (tokens, 4, B**2)
+        img_DCT_blocks = img_DCT_blocks[:, :, :self.low_freqs]      # (tokens, 4, low_freqs)
+
+        # numpy to torch
+        img_DCT_blocks = torch.from_numpy(img_DCT_blocks).reshape(self.tokens, -1)  # (tokens, 4*low_freqs)
+        img_DCT_blocks = img_DCT_blocks.float()
+        return img_DCT_blocks
 
 class DCT_4YCbCr_cond(Dataset):
     def __init__(self, img_sz=64, tokens=0, low_freqs=0, block_sz=8, train_files=None, labels=None, Y_bound=None):
@@ -657,7 +896,7 @@ class CelebA(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return '/data/scratch/U-ViT2/assets/fid_stats/fid_stats_celeba64_all.npz'
+        return 'data/scratch/U-ViT2/assets/fid_stats/fid_stats_celeba64_all.npz'
 
     @property
     def has_label(self):
@@ -685,7 +924,7 @@ class FFHQ128(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return '/data/scratch/U-ViT2/assets/fid_stats/fid_stats_ffhq128_jpg.npz'
+        return 'data/scratch/U-ViT2/assets/fid_stats/fid_stats_ffhq128_jpg.npz'
 
     @property
     def has_label(self):
@@ -713,7 +952,7 @@ class FFHQ256(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return '/data/scratch/U-ViT2/assets/fid_stats/fid_stats_ffhq256_jpg.npz'
+        return 'data/scratch/U-ViT2/assets/fid_stats/fid_stats_ffhq256_jpg.npz'
 
     @property
     def has_label(self):
@@ -741,7 +980,7 @@ class FFHQ512(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return '/data/scratch/U-ViT2/assets/fid_stats/fid_stats_ffhq512_jpg.npz'
+        return 'data/scratch/U-ViT2/assets/fid_stats/fid_stats_ffhq512_jpg.npz'
 
     @property
     def has_label(self):
@@ -769,7 +1008,7 @@ class AFHQ512(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return '/data/scratch/U-ViT2/assets/fid_stats/fid_stats_afhq512_jpg.npz'
+        return 'data/scratch/U-ViT2/assets/fid_stats/fid_stats_afhq512_jpg.npz'
 
     @property
     def has_label(self):
@@ -814,7 +1053,7 @@ class ImageNet64(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return f'/data/scratch/U-ViT2/assets/fid_stats/fid_stats_imgnet64_jpg.npz'
+        return f'data/scratch/U-ViT2/assets/fid_stats/fid_stats_imgnet64_jpg.npz'
 
     def sample_label(self, n_samples, device):
         return torch.multinomial(self.cnt, n_samples, replacement=True).to(device)
@@ -959,5 +1198,9 @@ def get_dataset(name, **kwargs):
         return ImageNet64(**kwargs)
     elif name == 'mscoco256_features':
         return MSCOCO256Features(**kwargs)
+    elif name == 'acdc_uncond':
+        return ACDCUncond(**kwargs)
+    elif name == 'acdc_cond':
+        return ACDCCond(**kwargs)
     else:
         raise NotImplementedError(name)

@@ -14,8 +14,8 @@ def get_config():
 
     config.train = d(
         n_steps=500000,
-        batch_size=128,
-        mode='uncond',
+        batch_size=256,
+        mode='cond',
         log_interval=100,
         eval_interval=25000,
         save_interval=25000,
@@ -34,9 +34,9 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit',
-        tokens=64,  # number of tokens to the network
-        low_freqs=4,  # B**2 - m
+        name='uvit_greyscale_cond',  # use greyscale UViT
+        tokens=144,  # number of tokens to the network
+        low_freqs=16,  # B**2 - m
         embed_dim=768,
         depth=16,
         num_heads=12,
@@ -47,17 +47,18 @@ def get_config():
     )
 
     config.dataset = d(
-        name='cifar10',
-        path='data/scratch/datasets/cifar10',
-        resolution=32,
-        tokens=64,  # number of tokens to the network
-        low_freqs=4,  # B**2 - m
-        block_sz=2,  # B
-        Y_bound=[242.382],  # eta
-        Y_std=[6.471, 3.588, 3.767, 2.411],
-        Cb_std=[4.308, 1.315, 1.487, 1.0],
-        Cr_std=[4.014, 1.284, 1.435, 1.0],
+        name='acdc_cond',
+        path=('data/scratch/datasets/ACDC/Image','data/scratch/datasets/ACDC/Label_255'),  # path to the dataset
+        resolution=96,
+        tokens=144,  # number of tokens to the network
+        low_freqs=16,  # B**2 - m
+        block_sz=4,  # B
+        Y_bound=[502.0],  # eta
+        Y_std=[5.855, 3.48, 2.358, 1.471, 3.492, 2.733, 2.039, 1.269, 2.369, 2.047, 1.485, 0.998, 1.381, 1.166, 0.998, 0.999],
+        Cb_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
+        Cr_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
         SNR_scale=4.0,
+        greyscale=True,  # use greyscale images
     )
 
     config.sample = d(

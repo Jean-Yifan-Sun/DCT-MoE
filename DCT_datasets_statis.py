@@ -57,13 +57,14 @@ def sample_50k_images(src_folder=None, dest_folder=None, sample_size=50000, has_
             shutil.copy2(source_path, destination_path)
 
 
-def image_to_DCT_array(dataset=None, img_folder=None, block_sz=8, coe=None, need_batch=False):
+def image_to_DCT_array(dataset=None, img_folder=None, block_sz=8, coe=None, need_batch=False, dest_folder='/home/mang/Downloads'):
     Y_coe = []
     Cb_coe = []
     Cr_coe = []
     file_list = os.listdir(img_folder)
     print(f"found {len(file_list)} images in {img_folder}")
     cnt = 0
+    os.makedirs(dest_folder, exist_ok=True)
 
     for filename in tqdm(file_list):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff')):
@@ -108,7 +109,7 @@ def image_to_DCT_array(dataset=None, img_folder=None, block_sz=8, coe=None, need
         if cnt % 10000 == 0 and coe.lower() == 'y' and need_batch:
             Y_coe = np.array(Y_coe).reshape(-1, block_sz * block_sz)
             print(f"yield Y with shape {Y_coe.shape}")
-            np.save(f'/home/mang/Downloads/{dataset}_{block_sz}by{block_sz}_y_{cnt // 10000}', Y_coe)
+            np.save(f'{dest_folder}/{dataset}_{block_sz}by{block_sz}_y_{cnt // 10000}', Y_coe)
             print(f"y: {Y_coe.shape} saved")
             Y_coe = []
 
@@ -116,19 +117,19 @@ def image_to_DCT_array(dataset=None, img_folder=None, block_sz=8, coe=None, need
         if coe.lower() == 'y':
             Y_coe = np.array(Y_coe).reshape(-1, block_sz*block_sz)
             print(f"yield Y with shape {Y_coe.shape}")
-            np.save(f'/home/mang/Downloads/{dataset}_{block_sz}by{block_sz}_y', Y_coe)
+            np.save(f'{dest_folder}/{dataset}_{block_sz}by{block_sz}_y', Y_coe)
             print(f"y: {Y_coe.shape} saved")
 
         if coe.lower() == 'cb':
             Cb_coe = np.array(Cb_coe).reshape(-1, block_sz * block_sz)
             print(f"yield Cb with shape {Cb_coe.shape}")
-            np.save(f'/home/mang/Downloads/{dataset}_{block_sz}by{block_sz}_cb', Cb_coe)
+            np.save(f'{dest_folder}/{dataset}_{block_sz}by{block_sz}_cb', Cb_coe)
             print(f"cb: {Cb_coe.shape} saved")
 
         elif coe.lower() == 'cr':
             Cr_coe = np.array(Cr_coe).reshape(-1, block_sz * block_sz)
             print(f"yield Cr with shape {Cr_coe.shape}")
-            np.save(f'/home/mang/Downloads/{dataset}_{block_sz}by{block_sz}_cr', Cr_coe)
+            np.save(f'{dest_folder}/{dataset}_{block_sz}by{block_sz}_cr', Cr_coe)
             print(f"cr: {Cr_coe.shape} saved")
 
 
@@ -153,10 +154,10 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
 
             if np.abs(upper_bound) > np.abs(lower_bound):
                 upper_bound = np.around(np.abs(upper_bound), decimals=3)
-                DCT_coe_bounds.append(upper_bound)
+                DCT_coe_bounds.append(float(upper_bound))
             else:
                 lower_bound = np.around(np.abs(lower_bound), decimals=3)
-                DCT_coe_bounds.append(np.abs(lower_bound))
+                DCT_coe_bounds.append(float(np.abs(lower_bound)))
 
         print(f"{up_thresh - low_thresh} percentile bound is {DCT_coe_bounds}:")
         print(f"eta is {DCT_coe_bounds[0]}")
@@ -176,7 +177,7 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
             probabilities = counts / np.sum(counts)
             entropy = -np.sum(probabilities * np.log2(probabilities + 1e-9))  # Adding a small epsilon to avoid log(0)
             entropy = np.around(entropy, decimals=3)
-            entropys.append(entropy)
+            entropys.append(float(entropy))
 
         print(f"entropy: {entropys}")
 
@@ -438,17 +439,66 @@ if __name__ == "__main__":
     #                                    img_sz=512, block_sz=8, low_freqs=18)
 
     """AFHQv2 512"""
-    convert_png_to_jpg(folder_path='/home/mang/Downloads/afhq512_jpg')  # AFHQv2 contains total 15803 images
-    sample_50k_images(src_folder='/home/mang/Downloads/afhq512_jpg',
-                      dest_folder='/home/mang/Downloads/afhq512_15k',
-                      sample_size=15803, has_subfolders=True)  # use the whole dataset for DCT statis
-    image_to_DCT_array(dataset='afhq512', img_folder='/home/mang/Downloads/afhq512_15k', block_sz=8, coe='y',
-                       need_batch=False)
-    DCT_statis_from_array(array_path='/home/mang/Downloads/afhq512_8by8_y.npy',
-                          block_sz=8, tau=98.25)
-    DCT_statis_from_array(array_path='/home/mang/Downloads/afhq512_8by8_y.npy',
-                          block_sz=8, tau=98.25, eta=928.0)
+    # convert_png_to_jpg(folder_path='/home/mang/Downloads/afhq512_jpg')  # AFHQv2 contains total 15803 images
+    # sample_50k_images(src_folder='/home/mang/Downloads/afhq512_jpg',
+    #                   dest_folder='/home/mang/Downloads/afhq512_15k',
+    #                   sample_size=15803, has_subfolders=True)  # use the whole dataset for DCT statis
+    # image_to_DCT_array(dataset='afhq512', img_folder='/home/mang/Downloads/afhq512_15k', block_sz=8, coe='y',
+    #                    need_batch=False)
+    # DCT_statis_from_array(array_path='/home/mang/Downloads/afhq512_8by8_y.npy',
+    #                       block_sz=8, tau=98.25)
+    # DCT_statis_from_array(array_path='/home/mang/Downloads/afhq512_8by8_y.npy',
+    #                       block_sz=8, tau=98.25, eta=928.0)
 
-    mask_high_freq_coe_from_img_folder(img_folder='/home/mang/Downloads/afhq512_15k',
-                                       save_folder='/home/mang/Downloads/recon_afhq512_coe18',
-                                       img_sz=512, block_sz=8, low_freqs=18)
+    # mask_high_freq_coe_from_img_folder(img_folder='/home/mang/Downloads/afhq512_15k',
+    #                                    save_folder='/home/mang/Downloads/recon_afhq512_coe18',
+    #                                    img_sz=512, block_sz=8, low_freqs=18)
+    """ACDC 96"""
+    # /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/25351_JPGs
+    # convert_png_to_jpg(folder_path='/home/mang/Downloads/afhq512_jpg')  # ACDC contains total 25351 images
+    # sample_50k_images(src_folder='/home/mang/Downloads/afhq512_jpg',
+    #                   dest_folder='/home/mang/Downloads/afhq512_15k',
+    #                   sample_size=15803, has_subfolders=True)  # use the whole dataset for DCT statis
+    # image_to_DCT_array(dataset='acdc', img_folder='data/scratch/datasets/ACDC/25351_JPGs', block_sz=8, coe='y',
+    #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_8by8_y.npy',
+    #                       block_sz=8, tau=98.25)
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_8by8_y.npy',
+    #                       block_sz=8, tau=98.25, eta=1000)
+
+    # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/25351_JPGs',
+    #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe18',
+    #                                    img_sz=96, block_sz=8, low_freqs=32)
+    
+    # image_to_DCT_array(dataset='acdc', img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs', block_sz=4, coe='y',
+    #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_4by4_y.npy',
+    #                       block_sz=4, tau=98.25)
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_4by4_y.npy',
+    #                       block_sz=4, tau=98.25, eta=502.0)
+
+    # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
+    #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe18',
+    #                                    img_sz=96, block_sz=4, low_freqs=16)
+
+    # image_to_DCT_array(dataset='acdc_cond', img_folder='data/scratch/datasets/ACDC/Image', block_sz=4, coe='y',
+    #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_4by4_y.npy',
+    #                       block_sz=4, tau=98.25)
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_4by4_y.npy',
+    #                       block_sz=4, tau=98.25, eta=502.25)
+
+    # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/Image',
+    #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_cond_coe16',
+    #                                    img_sz=96, block_sz=4, low_freqs=16)
+    
+    image_to_DCT_array(dataset='acdc_cond_label', img_folder='data/scratch/datasets/ACDC/Label_255', block_sz=4, coe='y',
+                       need_batch=False,dest_folder='data/scratch/datasets/ACDC')
+    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_label_4by4_y.npy',
+                          block_sz=4, tau=98.25)
+    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_label_4by4_y.npy',
+                          block_sz=4, tau=98.25, eta=512)
+
+    mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/Label_255',
+                                       save_folder='data/scratch/datasets/ACDC/recon_acdc_cond_label_coe16',
+                                       img_sz=96, block_sz=4, low_freqs=16)

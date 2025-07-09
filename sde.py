@@ -15,14 +15,16 @@ def get_sde(name, **kwargs):
         raise NotImplementedError
 
 
-def stp(s, ts: torch.Tensor):  # scalar tensor product
+def stp(s, ts: torch.Tensor):  
+    """ scalar tensor product"""
     if isinstance(s, np.ndarray):
         s = torch.from_numpy(s).type_as(ts)
     extra_dims = (1,) * (ts.dim() - 1)
     return s.view(-1, *extra_dims) * ts
 
 
-def mos(a, start_dim=1):  # mean of square
+def mos(a, start_dim=1):
+    """mean of square"""
     return a.pow(2).flatten(start_dim=start_dim).mean(dim=-1)
 
 
@@ -61,7 +63,8 @@ class SDE(object):
         std = beta ** 0.5  # Cov[xt|x0] ** 0.5
         return mean, std
 
-    def sample(self, x0, t_init=0):  # sample from q(xn|x0), where n is uniform
+    def sample(self, x0, t_init=0):
+        """sample from q(xn|x0), where n is uniform. This is from the forward process."""
         t = torch.rand(x0.shape[0], device=x0.device) * (1. - t_init) + t_init
         mean, std = self.marginal_prob(x0, t)
         eps = torch.randn_like(x0)
@@ -70,6 +73,21 @@ class SDE(object):
 
 
 class VPSDE(SDE):
+    """VPSDE
+
+    是 Variance Preserving Stochastic Differential Equation（方差保持随机微分方程）的缩写，是扩散模型中常用的一种 SDE。它的主要作用是定义数据的前向扩散过程（即噪声注入过程），使得数据逐步变为高斯噪声，同时保证在整个过程中信号的方差保持在一定范围内。
+
+    在你的代码中，VPSDE 继承自 SDE 基类，主要实现了以下内容：
+
+    初始化参数：beta_min 和 beta_max 控制扩散过程的噪声强度区间，SNR_scale 用于信噪比调整。
+    drift：漂移项，定义了数据在扩散过程中的确定性变化。
+    diffusion：扩散项，定义了数据在扩散过程中的随机性变化（噪声）。
+    cum_alpha / cum_beta：分别表示扩散过程累计的信号和噪声比例（用于计算任意时刻的均值和方差）。
+    snr / nsr：信噪比和噪声信号比，衡量当前时刻信号与噪声的比例。
+    sample：从任意时刻的扩散分布中采样。
+    VPSDE 的核心思想是通过一个随时间变化的 β(t) 控制噪声注入速率，使得数据在 t=0 时为原始数据，t=1 时接近高斯噪声。这样可以方便地进行正向扩散和反向生成。
+
+    """
     def __init__(self, beta_min=0.1, beta_max=20, SNR_scale=1.0):
         # 0 <= t <= 1
         self.beta_0 = beta_min
@@ -301,6 +319,7 @@ def euler_maruyama(rsde, x_init, sample_steps, eps=1e-3, T=1, trace=None, verbos
 
 
 def LSimple(score_model: ScoreModel, x0, pred='noise_pred', reweight=None, **kwargs):
+    """Compute the loss for a simple score model."""
     t, noise, xt = score_model.sde.sample(x0)
     if pred == 'noise_pred':
         noise_pred = score_model.noise_pred(xt, t, **kwargs)

@@ -1,0 +1,5 @@
+data/*
+assets/*
+jobs/res/*
+output/*
+*.pyc

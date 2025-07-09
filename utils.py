@@ -37,6 +37,12 @@ def get_nnet(name, **kwargs):
     elif name == 'uvit_t2i':
         from libs.uvit_t2i import UViT
         return UViT(**kwargs)
+    elif name == 'uvit_greyscale':
+        from libs.uvit import UViT_greyscale
+        return UViT_greyscale(**kwargs)
+    elif name == 'uvit_greyscale_cond':
+        from libs.uvit import UViT_greyscale_cond
+        return UViT_greyscale_cond(**kwargs)
     else:
         raise NotImplementedError(name)
 
@@ -247,6 +253,48 @@ def DCT_to_RGB(sample, tokens=0, low_freqs=0, block_sz=0, reverse_order=None, re
 
     return rgb_reconstructed
 
+def DCT_to_greyscale(sample, tokens=0, low_freqs=0, block_sz=0, reverse_order=None, resolution=0, Y_bound=None):
+    """
+    将 DCT token 还原为灰度图像。
+    sample: (tokens, low_freqs*4)
+    """
+    num_y_blocks = tokens * 4
+    cb_blocks_per_row = int((resolution / block_sz) / 2)
+    Y_blocks_per_row = int(resolution / block_sz)
+
+    assert sample.shape == (tokens, low_freqs*4)
+    sample = np.clip(sample, -2, 2)
+    sample = sample.reshape(tokens, 4, low_freqs)  # (tokens, 4, low_freqs)
+
+    # 填充 DCT 系数
+    DCT_Y = np.zeros((tokens, 4, block_sz * block_sz))
+    DCT_Y[:, :, :low_freqs] = sample
+    DCT_Y = DCT_Y[..., reverse_order]  # 恢复原始顺序
+
+    Y_bound = np.array(Y_bound)
+    DCT_Y = DCT_Y * Y_bound  # 反归一化
+
+    # 还原 Y blocks 顺序
+    y_blocks = []
+    for row in range(cb_blocks_per_row):  # 16 cb/cr blocks, so 4*4 spatial blocks
+        tem_ls = []
+        for col in range(cb_blocks_per_row):
+            ind = row * cb_blocks_per_row + col
+            y_blocks.append(DCT_Y[ind, 0, :])
+            y_blocks.append(DCT_Y[ind, 1, :])
+            tem_ls.append(DCT_Y[ind, 2, :])
+            tem_ls.append(DCT_Y[ind, 3, :])
+        for ele in tem_ls:
+            y_blocks.append(ele)
+    DCT_Y = np.array(y_blocks).reshape(num_y_blocks, block_sz, block_sz)  # (Y_blocks, B, B)
+
+    # 逆 DCT
+    idct_y_blocks = idct_transform(DCT_Y)
+    y_reconstructed = combine_blocks(idct_y_blocks, resolution, resolution, block_sz)
+
+    # 转为 uint8 灰度图
+    grey_img = np.clip(y_reconstructed, 0, 255).astype(np.uint8)
+    return grey_img
 
 def DCTsamples_to_grid_image(samples, tokens=0, low_freqs=0, block_sz=0,
                              reverse_order=None, resolution=0, grid_sz=0, path=None, Y_bound=None):
@@ -270,6 +318,46 @@ def DCTsamples_to_grid_image(samples, tokens=0, low_freqs=0, block_sz=0,
     final_image = Image.fromarray(grid_image)
     final_image.save(path)
 
+def DCTsamples_to_grid_image_greyscale(samples, labels=None, tokens=0, low_freqs=0, block_sz=0,
+                                       reverse_order=None, resolution=0, grid_sz=0, path=None, Y_bound=None):
+    samples = samples.detach().cpu().numpy()
+    grey_imgs = []
+    for sample in samples:
+        grey_img = DCT_to_greyscale(sample, tokens, low_freqs, block_sz, reverse_order, resolution, Y_bound)
+        grey_imgs.append(grey_img)
+    grey_imgs = np.array(grey_imgs)
+    img_sz = grey_imgs.shape[1]
+
+    if labels is not None:
+        labels = labels.detach().cpu().numpy()
+        label_list = []
+        for i in range(labels.shape[0]):
+            label_list.append(labels[i,:, :])
+        grey_labs = []
+        for label in label_list:
+            grey_lab = DCT_to_greyscale(label, tokens, low_freqs, block_sz, reverse_order, resolution, Y_bound)
+            grey_labs.append(grey_lab)
+        grey_labs = np.array(grey_labs)
+        assert img_sz == grey_labs.shape[1], "Image size and label size must match."
+        grid_image = np.zeros((grid_sz * img_sz * 2, grid_sz * img_sz), dtype=np.uint8)
+        for i in range(grid_sz):
+            for j in range(grid_sz):
+                idx = i * grid_sz + j
+                if idx < grey_imgs.shape[0]:
+                    grid_image[i * img_sz:(i + 1) * img_sz, j * img_sz:(j + 1) * img_sz] = grey_imgs[idx]
+                    grid_image[(i + 1) * img_sz:(i + 2) * img_sz, (j + 0) * img_sz:(j + 1) * img_sz] = grey_labs[idx]
+    else:
+        # Fill the grid image with the grid_sz*grid_sz smaller images
+        grid_image = np.zeros((grid_sz * img_sz, grid_sz * img_sz), dtype=np.uint8)
+        for i in range(grid_sz):
+            for j in range(grid_sz):
+                idx = i * grid_sz + j
+                if idx < grey_imgs.shape[0]:
+                    grid_image[i * img_sz:(i + 1) * img_sz, j * img_sz:(j + 1) * img_sz] = grey_imgs[idx]
+
+    # Convert the NumPy array to a greyscale image and save
+    final_image = Image.fromarray(grid_image, mode='L')
+    final_image.save(path)
 
 def DCTsample2dir(accelerator, path, n_samples, mini_batch_size, sample_fn,
                   tokens=0, low_freqs=0, reverse_order=None, resolution=0, block_sz=8, Y_bound=None):
@@ -299,6 +387,32 @@ def DCTsample2dir(accelerator, path, n_samples, mini_batch_size, sample_fn,
         print(f'generated {len(os.listdir(path))} images...')
         assert len(os.listdir(path)) == n_samples
 
+def DCTsample2dir_greyscale(accelerator, path, n_samples, mini_batch_size, sample_fn,
+                  tokens=0, low_freqs=0, reverse_order=None, resolution=0, block_sz=8, Y_bound=None):
+    os.makedirs(path, exist_ok=True)
+    batch_size = mini_batch_size * accelerator.num_processes
+    num_iterations = n_samples // batch_size + 1
+    print(f'using eta {Y_bound} for sampling')
+    world_size = accelerator.state.num_processes
+    local_rank = accelerator.state.local_process_index
+
+    for i in tqdm(range(num_iterations), disable=not accelerator.is_main_process, desc='sample2dir'):
+        samples = sample_fn(mini_batch_size)
+        samples = samples.detach().cpu().numpy()
+
+        # distributed save
+        for b_id in range(mini_batch_size):
+            img_id = i * mini_batch_size * world_size + local_rank * mini_batch_size + b_id
+            grey_img = DCT_to_greyscale(samples[b_id], tokens, low_freqs, block_sz, reverse_order, resolution, Y_bound)
+
+            if img_id >= n_samples:
+                break
+            cv2.imwrite(os.path.join(path, f"{img_id}.jpg"), grey_img)  # 单通道灰度图
+
+    accelerator.wait_for_everyone()
+    if accelerator.is_main_process:
+        print(f'generated {len(os.listdir(path))} images...')
+        assert len(os.listdir(path)) == n_samples
 
 def worker_thread(sample_queue, stop_event, tokens, low_freqs, reverse_order, resolution, block_sz, Y_bound, path):
     # Background worker function: convert DCT to RGB and save images
