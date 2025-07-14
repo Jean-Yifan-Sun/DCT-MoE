@@ -87,22 +87,30 @@ def get_lr_scheduler(optimizer, name, **kwargs):
 def ema(model_dest: nn.Module, model_src: nn.Module, rate):
     param_dict_src = dict(model_src.named_parameters())
     for p_name, p_dest in model_dest.named_parameters():
+        if p_name not in param_dict_src:
+            # 跳过 model_src 没有的参数
+            logging.warning(f'Parameter {p_name} not found in source model, skipping EMA update.')
+            continue
         p_src = param_dict_src[p_name]
         assert p_src is not p_dest
         p_dest.data.mul_(rate).add_((1 - rate) * p_src.data)
 
 
 class TrainState(object):
-    def __init__(self, optimizer, lr_scheduler, step, nnet=None, nnet_ema=None):
+    def __init__(self, optimizer, lr_scheduler, step, nnet=None, nnet_ema=None, dataloader=None):
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
         self.step = step
         self.nnet = nnet
         self.nnet_ema = nnet_ema
+        self.dataloader = dataloader
 
     def ema_update(self, rate=0.9999):
         if self.nnet_ema is not None:
-            ema(self.nnet_ema, self.nnet, rate)
+            if self.dataloader is not None:
+                ema(self.nnet_ema, self.nnet._module, rate)
+            else:
+                ema(self.nnet_ema, self.nnet, rate)
 
     def save(self, path):
         os.makedirs(path, exist_ok=True)
@@ -141,7 +149,7 @@ def cnt_params(model):
     return sum(param.numel() for param in model.parameters())
 
 
-def initialize_train_state(config, device):
+def initialize_train_state(config, device, use_opacus=False, **opacus_params):
     params = []
 
     nnet = get_nnet(**config.nnet)
@@ -153,11 +161,44 @@ def initialize_train_state(config, device):
     optimizer = get_optimizer(params, **config.optimizer)
     lr_scheduler = get_lr_scheduler(optimizer, **config.lr_scheduler)
 
-    train_state = TrainState(optimizer=optimizer, lr_scheduler=lr_scheduler, step=0,
-                             nnet=nnet, nnet_ema=nnet_ema)
-    train_state.ema_update(0)
-    train_state.to(device)
-    return train_state
+    if use_opacus:
+        from opacus import PrivacyEngine
+        privacy_engine = PrivacyEngine(
+            accountant=opacus_params.get("accountant", "prv"),
+            secure_mode=opacus_params.get("secure_mode", False),
+        )
+        epsilon_first = opacus_params.get("epsilon_first", False)
+        if epsilon_first:
+            nnet, optimizer, _data_loader = privacy_engine.make_private_with_epsilon(
+                module=nnet,
+                optimizer=optimizer,
+                data_loader=opacus_params["data_loader"],
+                epochs=opacus_params.get("epochs", 1),
+                target_epsilon=opacus_params.get("target_epsilon", 8),
+                target_delta=opacus_params.get("target_delta", 1e-5),
+                max_grad_norm=opacus_params.get("max_grad_norm", 1.0),
+            )
+        else:
+            nnet, optimizer, _data_loader = privacy_engine.make_private(
+                module=nnet,
+                optimizer=optimizer,
+                data_loader=opacus_params["data_loader"],
+                epochs=opacus_params.get("epochs", 1),
+                noise_multiplier=opacus_params.get("noise_multiplier", 0.5),
+                max_grad_norm=opacus_params.get("max_grad_norm", 1.0),
+            )
+        train_state = TrainState(optimizer=optimizer, lr_scheduler=lr_scheduler, step=0,
+                             nnet=nnet, nnet_ema=nnet_ema, dataloader=_data_loader)
+        train_state.ema_update(0)
+        train_state.to(device)
+        return train_state, privacy_engine
+
+    else:
+        train_state = TrainState(optimizer=optimizer, lr_scheduler=lr_scheduler, step=0,
+                                nnet=nnet, nnet_ema=nnet_ema)
+        train_state.ema_update(0)
+        train_state.to(device)
+        return train_state
 
 
 def amortize(n_samples, batch_size):
@@ -344,8 +385,8 @@ def DCTsamples_to_grid_image_greyscale(samples, labels=None, tokens=0, low_freqs
             for j in range(grid_sz):
                 idx = i * grid_sz + j
                 if idx < grey_imgs.shape[0]:
-                    grid_image[i * img_sz:(i + 1) * img_sz, j * img_sz:(j + 1) * img_sz] = grey_imgs[idx]
-                    grid_image[(i + 1) * img_sz:(i + 2) * img_sz, (j + 0) * img_sz:(j + 1) * img_sz] = grey_labs[idx]
+                    grid_image[2 * i * img_sz:(2 * i + 1) * img_sz, j * img_sz:(j + 1) * img_sz] = grey_imgs[idx]
+                    grid_image[(2 * i + 1) * img_sz:(2 * i + 2) * img_sz, (j + 0) * img_sz:(j + 1) * img_sz] = grey_labs[idx]
     else:
         # Fill the grid image with the grid_sz*grid_sz smaller images
         grid_image = np.zeros((grid_sz * img_sz, grid_sz * img_sz), dtype=np.uint8)

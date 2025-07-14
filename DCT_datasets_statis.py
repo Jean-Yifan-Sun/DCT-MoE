@@ -470,16 +470,16 @@ if __name__ == "__main__":
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe18',
     #                                    img_sz=96, block_sz=8, low_freqs=32)
     
-    # image_to_DCT_array(dataset='acdc', img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs', block_sz=4, coe='y',
-    #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
-    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_4by4_y.npy',
-    #                       block_sz=4, tau=98.25)
-    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_4by4_y.npy',
-    #                       block_sz=4, tau=98.25, eta=502.0)
+    image_to_DCT_array(dataset='acdc', img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs', block_sz=2, coe='y',
+                       need_batch=False,dest_folder='data/scratch/datasets/ACDC')
+    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_2by2_y.npy',
+                          block_sz=2, tau=98.25)
+    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_2by2_y.npy',
+                          block_sz=2, tau=98.25, eta=252.0)
 
-    # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
-    #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe18',
-    #                                    img_sz=96, block_sz=4, low_freqs=16)
+    mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
+                                       save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
+                                       img_sz=96, block_sz=2, low_freqs=4)
 
     # image_to_DCT_array(dataset='acdc_cond', img_folder='data/scratch/datasets/ACDC/Image', block_sz=4, coe='y',
     #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
@@ -492,13 +492,13 @@ if __name__ == "__main__":
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_cond_coe16',
     #                                    img_sz=96, block_sz=4, low_freqs=16)
     
-    image_to_DCT_array(dataset='acdc_cond_label', img_folder='data/scratch/datasets/ACDC/Label_255', block_sz=4, coe='y',
-                       need_batch=False,dest_folder='data/scratch/datasets/ACDC')
-    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_label_4by4_y.npy',
-                          block_sz=4, tau=98.25)
-    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_label_4by4_y.npy',
-                          block_sz=4, tau=98.25, eta=512)
+    # image_to_DCT_array(dataset='acdc_cond_label', img_folder='data/scratch/datasets/ACDC/Label_255', block_sz=4, coe='y',
+    #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_label_4by4_y.npy',
+    #                       block_sz=4, tau=98.25)
+    # DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_cond_label_4by4_y.npy',
+    #                       block_sz=4, tau=98.25, eta=512)
 
-    mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/Label_255',
-                                       save_folder='data/scratch/datasets/ACDC/recon_acdc_cond_label_coe16',
-                                       img_sz=96, block_sz=4, low_freqs=16)
+    # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/Label_255',
+    #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_cond_label_coe16',
+    #                                    img_sz=96, block_sz=4, low_freqs=16)

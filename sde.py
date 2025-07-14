@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from absl import logging
 import numpy as np
 import math
@@ -323,13 +324,14 @@ def LSimple(score_model: ScoreModel, x0, pred='noise_pred', reweight=None, **kwa
     t, noise, xt = score_model.sde.sample(x0)
     if pred == 'noise_pred':
         noise_pred = score_model.noise_pred(xt, t, **kwargs)
-        loss = (noise - noise_pred).pow(2)  # (batch, tokens, dim)
+        # 使用 F.mse_loss，设置 reduction='none' 以便后续 reweight
+        loss = F.mse_loss(noise_pred, noise, reduction='none')
         loss = loss * reweight  # loss re-weighting
         return loss.flatten(start_dim=1).mean(dim=-1)
 
     elif pred == 'x0_pred':
         x0_pred = score_model.x0_pred(xt, t, **kwargs)
-        loss = (x0 - x0_pred).pow(2)
+        loss = F.mse_loss(x0_pred, x0, reduction='none')
         loss = loss * reweight  # loss re-weighting
         return loss.flatten(start_dim=1).mean(dim=-1)
 

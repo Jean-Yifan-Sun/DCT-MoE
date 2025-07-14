@@ -732,7 +732,7 @@ class DCT_4Y_Cond(Dataset):
         labels_ready = []
         for label in labels:
             # label = self.label_recalibrate(np.array(label))
-            labels_ready.append(label)
+            labels_ready.append(np.array(label))
 
         label_dct_blocks = []
         # Get DCT blocks for each label

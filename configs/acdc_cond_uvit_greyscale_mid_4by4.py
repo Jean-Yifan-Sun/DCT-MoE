@@ -21,6 +21,17 @@ def get_config():
         save_interval=25000,
     )
 
+    config.private = d(
+        use_dp=False,
+        dp_method='dpsgd',
+        accountant='prv',
+        secure_mode=False,  # use secure mode for DP training
+        target_epsilon=10,
+        target_delta=1e-5,
+        max_grad_norm=1.0,
+        noise_multiplier=0.5,  # Adjusted for DP training
+    )
+
     config.optimizer = d(
         name='adamw',
         lr=0.0002,

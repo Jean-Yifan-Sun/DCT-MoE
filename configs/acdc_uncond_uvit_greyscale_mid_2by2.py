@@ -46,8 +46,8 @@ def get_config():
 
     config.nnet = d(
         name='uvit_greyscale',  # use greyscale UViT
-        tokens=144,  # number of tokens to the network
-        low_freqs=16,  # B**2 - m
+        tokens=576,  # number of tokens to the network
+        low_freqs=4,  # B**2 - m
         embed_dim=768,
         depth=16,
         num_heads=12,
@@ -61,18 +61,19 @@ def get_config():
         name='acdc_uncond',
         path='data/scratch/datasets/ACDC/JPGs',
         resolution=96,
-        tokens=144,  # number of tokens to the network
-        low_freqs=16,  # B**2 - m
-        block_sz=4,  # B
-        Y_bound=[502.0],  # eta
-        Y_std=[5.854, 3.48, 2.358, 1.471, 3.493, 2.733, 2.039, 1.269, 2.369, 2.047, 1.485, 0.998, 1.381, 1.166, 0.998, 0.999],
-        Cb_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
-        Cr_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
+        tokens=576,  # number of tokens to the network
+        low_freqs=4,  # B**2 - m
+        block_sz=2,  # B
+        Y_bound=[252.0],  # eta
+        Y_std=[5.866, 2.967, 2.967, 1.825],
+        Cb_std=[1e-5, 1e-5, 1e-5, 1e-5],
+        Cr_std=[1e-5, 1e-5, 1e-5, 1e-5],
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
     )
 
     config.sample = d(
+        save_start=50000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

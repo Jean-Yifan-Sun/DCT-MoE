@@ -20,9 +20,10 @@ def get_config():
         eval_interval=25000,
         save_interval=25000,
     )
-    
+
     config.private = d(
-        use_dp=False,
+        use_dp=True,
+        epsilon_first=False,  # use epsilon first for DP training
         dp_method='dpsgd',
         accountant='prv',
         secure_mode=False,  # use secure mode for DP training

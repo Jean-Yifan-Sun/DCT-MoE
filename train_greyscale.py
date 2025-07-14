@@ -20,6 +20,7 @@ from accelerate import InitProcessGroupKwargs
 import numpy as np
 import shutil
 from DCT_utils import zigzag_order, reverse_zigzag_order
+from opacus import PrivacyEngine
 
 
 def train(config):
@@ -61,8 +62,28 @@ def train(config):
                                       num_workers=16, pin_memory=False, persistent_workers=True)
     logging.info(f'dataset samples: {len(train_dataset)}')
 
-    # keep track of training states (lr, opt, model)
-    train_state = utils.initialize_train_state(config, device)
+    # Use Opacus for DP training
+    if config.private.use_dp and config.private.dp_method == 'dpsgd':
+        logging.info('Using Opacus for DP training')
+        opacus_params = dict(
+            data_loader=train_dataset_loader,
+            accoutant=config.private.accountant,
+            secure_mode=config.private.secure_mode,
+            noise_multiplier=config.private.noise_multiplier,
+            epochs=config.train.n_steps // (len(train_dataset) // mini_batch_size),
+            target_epsilon=config.private.target_epsilon,
+            target_delta=config.private.target_delta,
+            max_grad_norm=config.private.max_grad_norm,
+            epsilon_first=True,  # use epsilon_first for Opacus
+        )
+        train_state, privacy_engine = utils.initialize_train_state(config, device, use_opacus=True, **opacus_params)
+        train_dataset_loader = train_state.dataloader
+        _noise_multiplier = train_state.optimizer.noise_multiplier  # update noise_multiplier from Opacus
+        logging.info(f"PrivacyEngine added to the model. Setting epsilon={config.private.target_epsilon}. Using noise_multiplier={_noise_multiplier} and max_grad_norm={config.private.max_grad_norm}.")
+        accelerator.even_batches = False
+    else:
+        # keep track of training states (lr, opt, model)
+        train_state = utils.initialize_train_state(config, device, use_opacus=False)
 
     # wrap data_loader and model with accelerator for distributed training
     nnet, nnet_ema, optimizer, train_dataset_loader = accelerator.prepare(
@@ -114,9 +135,15 @@ def train(config):
             loss = sde.LSimple(score_model, _batch['image'], pred=config.pred, y=_batch['label'], reweight=reweight_by_std)
         else:
             raise NotImplementedError(config.train.mode)
-
-        _metrics['loss'] = accelerator.gather(loss.detach()).mean()
+        
         accelerator.backward(loss.mean())
+        
+        if config.private.use_dp and config.private.dp_method == 'dpsgd':
+            _metrics['loss'] = accelerator.gather(loss.detach().mean()).mean()
+        else:
+            _metrics['loss'] = accelerator.gather(loss.detach()).mean()
+
+        
 
         if 'grad_clip' in config and config.grad_clip > 0:
             accelerator.clip_grad_norm_(nnet.parameters(), max_norm=config.grad_clip)
@@ -125,6 +152,13 @@ def train(config):
         lr_scheduler.step()
         train_state.ema_update(config.get('ema_rate', 0.9999))
         train_state.step += 1
+
+        if config.private.use_dp and config.private.dp_method == 'dpsgd':
+            # update privacy engine
+            _metrics['epsilon'] = privacy_engine.get_epsilon(config.private.target_delta)
+            _metrics['noise_multiplier'] = optimizer.noise_multiplier
+            _metrics['max_grad_norm'] = optimizer.max_grad_norm
+
         return dict(lr=train_state.optimizer.param_groups[0]['lr'], **_metrics)
 
 
@@ -253,7 +287,8 @@ def train(config):
         accelerator.wait_for_everyone()
 
         # save ckpt and FID evaluation
-        if train_state.step >= 100000 and train_state.step % config.train.save_interval == 0:
+        save_start = config.sample.get('save_start', 10000)
+        if train_state.step >= save_start and train_state.step % config.train.save_interval == 0:
             logging.info(f'Save and eval checkpoint {train_state.step}...')
             if accelerator.local_process_index == 0:
                 train_state.save(os.path.join(config.ckpt_root, f'{train_state.step}.ckpt'))
