@@ -223,7 +223,9 @@ class ScoreModel(object):
         t = t.to(xt.device)
         if t.dim() == 0:
             t = duplicate(t, xt.size(0))
-        return self.nnet(xt, t * 999, **kwargs)  # follow SDE
+        print(f"Model input timesteps: {t.shape}, values: {t[:5]}")  # 添加调试信息
+        scaled_t = t * 999
+        return self.nnet(x=xt, timesteps=scaled_t, **kwargs)  # follow SDE
 
     def noise_pred(self, xt, t, **kwargs):
         pred = self.predict(xt, t, **kwargs)

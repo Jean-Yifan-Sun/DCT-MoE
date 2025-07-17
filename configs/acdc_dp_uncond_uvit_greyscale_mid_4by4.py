@@ -56,6 +56,7 @@ def get_config():
         qkv_bias=False,
         mlp_time_embed=False,
         num_classes=-1,
+        use_checkpoint=False
     )
 
     config.dataset = d(

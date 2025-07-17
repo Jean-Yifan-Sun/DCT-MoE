@@ -12,6 +12,7 @@ import threading
 import queue
 from multiprocessing import Process, Queue, Event, cpu_count
 import time
+import functools
 
 
 def set_logger(log_level='info', fname=None):
@@ -163,6 +164,16 @@ def initialize_train_state(config, device, use_opacus=False, **opacus_params):
 
     if use_opacus:
         from opacus import PrivacyEngine
+        # 在创建 PrivacyEngine 之前
+        # nnet.forward = functools.partial(nnet.forward, timesteps=None)
+        # ignored_params = ['pos_embed']  # 忽略位置编码参数
+        modules_to_ignore = [nnet.time_embed, nnet.pos_embed]
+        if nnet.num_classes > 0:
+            modules_to_ignore.append(nnet.label_emb)
+        for module in modules_to_ignore:
+            setattr(module, "_opacus_ignored", True)
+            logging.info(f'Ignoring module {module} for DP training')
+        
         privacy_engine = PrivacyEngine(
             accountant=opacus_params.get("accountant", "prv"),
             secure_mode=opacus_params.get("secure_mode", False),

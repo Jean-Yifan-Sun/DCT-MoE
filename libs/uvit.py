@@ -4,6 +4,7 @@ import math
 from .timm import trunc_normal_, Mlp
 import einops
 import torch.utils.checkpoint
+import logging
 
 if hasattr(torch.nn.functional, 'scaled_dot_product_attention'):
     ATTENTION_MODE = 'flash'
@@ -14,6 +15,7 @@ else:
         ATTENTION_MODE = 'xformers'
     except:
         ATTENTION_MODE = 'math'
+ATTENTION_MODE = 'math'
 print(f'attention mode is {ATTENTION_MODE}')
 
 
@@ -315,9 +317,13 @@ class UViT_greyscale(nn.Module):
             x = blk(x, skips.pop())
 
         x = self.norm(x)
-        x = self.decoder_pred(x)  # (b, tokens, dim) --> (b, tokens, num_low_freq*4)
-        assert x.size(1) == self.extras + L
-        x = x[:, self.extras:, :]  # (b, tokens, num_low_freq*4)
+
+        image_tokens = x[:, self.extras:, :] # Select the image tokens first
+        x = self.decoder_pred(image_tokens) # Then apply the prediction head ONLY to them
+
+        # x = self.decoder_pred(x)  # (b, tokens, dim) --> (b, tokens, num_low_freq*4)
+        # assert x.size(1) == self.extras + L
+        # x = x[:, self.extras:, :]  # (b, tokens, num_low_freq*4)
 
         return x
 
