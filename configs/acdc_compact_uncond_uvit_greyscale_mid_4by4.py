@@ -11,20 +11,19 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_dp_uncond_uvit_greyscale_mid_4by4'
+    config.name = 'acdc_compact_uncond_uvit_greyscale_mid_4by4'
 
     config.train = d(
         n_steps=500000,
-        batch_size=128,
+        batch_size=256,
         mode='uncond',
         log_interval=100,
         eval_interval=25000,
         save_interval=25000,
     )
-
+    
     config.private = d(
-        use_dp=True,
-        epsilon_first=False,  # use epsilon first for DP training
+        use_dp=False,
         dp_method='dpsgd',
         accountant='prv',
         secure_mode=False,  # use secure mode for DP training
@@ -55,21 +54,20 @@ def get_config():
         num_heads=12,
         mlp_ratio=4,
         qkv_bias=False,
-        mlp_time_embed=True,
+        mlp_time_embed=False,
         num_classes=-1,
-        use_checkpoint=False
     )
 
     config.dataset = d(
         name='acdc_uncond',
         path='data/scratch/datasets/ACDC/Unlabeled/Compact',
-        use_compact=True,  # use compact dataset
+        dataset_type='compact',  # use compact dataset
         resolution=96,
         tokens=144,  # number of tokens to the network
         low_freqs=16,  # B**2 - m
         block_sz=4,  # B
         Y_bound=[502.0],  # eta
-        Y_std=[5.854, 3.48, 2.358, 1.471, 3.493, 2.733, 2.039, 1.269, 2.369, 2.047, 1.485, 0.998, 1.381, 1.166, 0.998, 0.999],
+        Y_std=[5.848, 3.442, 2.36, 1.498, 3.464, 2.739, 2.066, 1.295, 2.396, 2.088, 1.53, 0.998, 1.416, 1.206, 0.998, 0.999],
         Cb_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
         Cr_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
         SNR_scale=4.0,
@@ -77,6 +75,7 @@ def get_config():
     )
 
     config.sample = d(
+        save_start=100000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

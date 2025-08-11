@@ -19,8 +19,8 @@ source /bask/projects/q/qingjiem-heart-tte/yifansun/conda/miniconda/etc/profile.
 conda init
 conda activate dctdiff
 conda info --envs
-cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
+cd /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test
-nohup accelerate launch --multi_gpu --mixed_precision fp16 train_greyscale.py --config=configs/acdc_cond_uvit_greyscale_mid_4by4.py --workdir output/acdc_cond_greyscale_uvit_mid_4by4
+nohup accelerate launch --multi_gpu --mixed_precision fp16 train_greyscale.py --config=configs/acdc_cond_uvit_greyscale_mid_4by4.py --workdir output/acdc_cond_allframes_greyscale_uvit_mid_4by4

@@ -188,6 +188,8 @@ def initialize_train_state(config, device, use_opacus=False, **opacus_params):
                 target_epsilon=opacus_params.get("target_epsilon", 8),
                 target_delta=opacus_params.get("target_delta", 1e-5),
                 max_grad_norm=opacus_params.get("max_grad_norm", 1.0),
+                grad_sample_mode="hooks",
+                poisson_sampling=False
             )
         else:
             nnet, optimizer, _data_loader = privacy_engine.make_private(
@@ -197,6 +199,8 @@ def initialize_train_state(config, device, use_opacus=False, **opacus_params):
                 epochs=opacus_params.get("epochs", 1),
                 noise_multiplier=opacus_params.get("noise_multiplier", 0.5),
                 max_grad_norm=opacus_params.get("max_grad_norm", 1.0),
+                grad_sample_mode="hooks",
+                poisson_sampling=False
             )
         train_state = TrainState(optimizer=optimizer, lr_scheduler=lr_scheduler, step=0,
                              nnet=nnet, nnet_ema=nnet_ema, dataloader=_data_loader)

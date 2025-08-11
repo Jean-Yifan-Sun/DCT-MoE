@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math
 from .timm import trunc_normal_, Mlp
 import einops
@@ -15,7 +16,7 @@ else:
         ATTENTION_MODE = 'xformers'
     except:
         ATTENTION_MODE = 'math'
-ATTENTION_MODE = 'math'
+# ATTENTION_MODE = 'math'
 print(f'attention mode is {ATTENTION_MODE}')
 
 
@@ -136,6 +137,76 @@ class PatchEmbed(nn.Module):
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 
+class MoELayer(nn.Module):
+    def __init__(self, hidden_dim, num_experts, top_k=1):
+        super().__init__()
+        self.num_experts = num_experts
+        self.top_k = top_k
+
+        # Gating network: a simple linear layer that outputs a logit for each expert
+        self.gate = nn.Linear(hidden_dim, num_experts)
+
+        # A list of the experts
+        self.experts = nn.ModuleList([Mlp(in_features=hidden_dim) for _ in range(num_experts)])
+
+    def forward(self, x):
+        # x shape: (batch_size, num_tokens, hidden_dim)
+
+        # 1. Get routing weights from the gate
+        gate_logits = self.gate(x)
+        
+        # 2. Find the top-k experts for each token
+        # weights are the softmax scores, indices are the expert IDs
+        weights, indices = torch.topk(gate_logits, self.top_k, dim=-1)
+        weights = F.softmax(weights, dim=-1, dtype=torch.float).to(x.dtype)
+        
+        # 3. Create a final output tensor of the same shape as the input
+        output = torch.zeros_like(x)
+        
+        # This is a simplified, non-optimized loop for clarity.
+        # Production code uses more complex dispatching for efficiency.
+        for i in range(self.num_experts):
+            # Create a mask for tokens routed to this expert
+            mask = (indices == i)
+
+            # If any tokens are routed to this expert
+            if mask.any():
+                # Select the tokens and their corresponding weights
+                expert_inputs = x[mask]
+                expert_weights = weights[mask]
+
+                # Process through the expert and apply the routing weight
+                expert_outputs = self.experts[i](expert_inputs)
+                output[mask] = expert_outputs * expert_weights
+
+        return output
+
+class Block_MoE(nn.Module):
+
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, skip=False, use_checkpoint=False, num_experts=2):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention(
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale)
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.moe = MoELayer(hidden_dim=dim, num_experts=num_experts)
+        self.skip_linear = nn.Linear(2 * dim, dim) if skip else None
+        self.use_checkpoint = use_checkpoint
+
+    def forward(self, x, skip=None):
+        if self.use_checkpoint:
+            return torch.utils.checkpoint.checkpoint(self._forward, x, skip)
+        else:
+            return self._forward(x, skip)
+
+    def _forward(self, x, skip=None):
+        if self.skip_linear is not None:
+            x = self.skip_linear(torch.cat([x, skip], dim=-1))
+        x = x + self.attn(self.norm1(x))
+        x = x + self.mlp(self.norm2(x))
+        return x
 
 class UViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,

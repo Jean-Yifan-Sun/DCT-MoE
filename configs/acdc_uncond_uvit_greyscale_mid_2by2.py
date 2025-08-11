@@ -11,6 +11,7 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
+    config.name = 'acdc_uncond_uvit_greyscale_mid_2by2'
 
     config.train = d(
         n_steps=500000,

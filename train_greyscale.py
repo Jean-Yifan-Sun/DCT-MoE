@@ -21,6 +21,8 @@ import numpy as np
 import shutil
 from DCT_utils import zigzag_order, reverse_zigzag_order
 from opacus import PrivacyEngine
+from torch.utils.data import Subset
+import wandb
 
 
 def train(config):
@@ -46,6 +48,12 @@ def train(config):
     if accelerator.is_main_process:
         os.makedirs(config.ckpt_root, exist_ok=True)
         os.makedirs(config.sample_dir, exist_ok=True)
+        wandb.init(
+            project="dct-diffusion",  # 设置你的项目名
+            config=config.to_dict(),  # 记录配置
+            name=config.get('name','Undefined'),  # 使用工作目录名作为运行名称
+            dir=config.ckpt_root  # wandb文件保存位置
+        )
     accelerator.wait_for_everyone()
     if accelerator.is_main_process:
         utils.set_logger(log_level='info', fname=os.path.join(config.workdir, 'output.log'))
@@ -65,6 +73,21 @@ def train(config):
     # Use Opacus for DP training
     if config.private.use_dp and config.private.dp_method == 'dpsgd':
         logging.info('Using Opacus for DP training')
+        # Calculate global batch size and remainder
+        global_batch_size = config.train.batch_size
+        remainder = len(train_dataset) % global_batch_size
+
+        # The number of samples to keep
+        num_samples_to_keep = len(train_dataset) - remainder
+        # Create a new dataset containing only the samples we want to keep
+        indices = np.arange(num_samples_to_keep)
+        truncated_dataset = Subset(train_dataset, indices)
+
+        logging.info(f"Original dataset size: {len(train_dataset)}")
+        logging.info(f"Truncated dataset size: {len(truncated_dataset)} (divisible by {global_batch_size})")
+
+        train_dataset_loader = DataLoader(truncated_dataset, batch_size=mini_batch_size, shuffle=True, drop_last=False,
+                                      num_workers=16, pin_memory=False, persistent_workers=True)
         opacus_params = dict(
             data_loader=train_dataset_loader,
             accoutant=config.private.accountant,
@@ -130,13 +153,15 @@ def train(config):
         # raise ValueError
 
         if config.train.mode == 'uncond':
-            loss = sde.LSimple(score_model, _batch, pred=config.pred, reweight=reweight_by_std)
+            loss = sde.LSimple(score_model, _batch, pred=config.pred, reweight=reweight_by_std, private=config.private.use_dp)
+            loss = loss.mean()  # mean over batch
         elif config.train.mode == 'cond':
-            loss = sde.LSimple(score_model, _batch['image'], pred=config.pred, y=_batch['label'], reweight=reweight_by_std)
+            loss = sde.LSimple(score_model, _batch['image'], pred=config.pred, y=_batch['label'], reweight=reweight_by_std, private=config.private.use_dp)
+            loss = loss.mean()
         else:
             raise NotImplementedError(config.train.mode)
         
-        accelerator.backward(loss.mean())
+        accelerator.backward(loss)
         
         if config.private.use_dp and config.private.dp_method == 'dpsgd':
             _metrics['loss'] = accelerator.gather(loss.detach().mean()).mean()
@@ -156,8 +181,8 @@ def train(config):
         if config.private.use_dp and config.private.dp_method == 'dpsgd':
             # update privacy engine
             _metrics['epsilon'] = privacy_engine.get_epsilon(config.private.target_delta)
-            _metrics['noise_multiplier'] = optimizer.noise_multiplier
-            _metrics['max_grad_norm'] = optimizer.max_grad_norm
+            # _metrics['noise_multiplier'] = optimizer.noise_multiplier
+            # _metrics['max_grad_norm'] = optimizer.max_grad_norm
 
         return dict(lr=train_state.optimizer.param_groups[0]['lr'], **_metrics)
 
@@ -169,10 +194,10 @@ def train(config):
         def sample_fn(_n_samples):
             _x_init = torch.randn(_n_samples, *dataset.data_shape, device=device)
             if config.train.mode == 'uncond':
-                kwargs = dict()
+                kwargs = dict(private=config.private.use_dp)
             elif config.train.mode == 'cond':
                 _y_init = dataset.sample_label(_n_samples, device=device)
-                kwargs = dict(y=_y_init)
+                kwargs = dict(y=_y_init, private=config.private.use_dp)
             else:
                 raise NotImplementedError
 
@@ -238,6 +263,7 @@ def train(config):
         if accelerator.is_main_process and train_state.step % config.train.log_interval == 0:
             logging.info(utils.dct2str(dict(step=train_state.step, **metrics)))
             logging.info(config.workdir)
+            wandb.log(metrics, step=train_state.step)
         accelerator.wait_for_everyone()
 
         # visualize generated images by DPM-Solver
@@ -247,10 +273,10 @@ def train(config):
             x_init = torch.randn(16, *dataset.data_shape, device=device)
 
             if config.train.mode == 'uncond':
-                kwargs = dict()
+                kwargs = dict(private=config.private.use_dp)
             elif config.train.mode == 'cond':
                 _y_init = dataset.sample_label(16, device=device)
-                kwargs = dict(y=_y_init)
+                kwargs = dict(y=_y_init, private=config.private.use_dp)
             else:
                 raise NotImplementedError
 
@@ -283,6 +309,11 @@ def train(config):
                     block_sz=config.dataset.block_sz, reverse_order=reverse_order,
                     resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
                 )
+
+            wandb.log({
+                    "samples": wandb.Image(grid_img_path),
+                    "step": train_state.step
+                })
             torch.cuda.empty_cache()
         accelerator.wait_for_everyone()
 
@@ -295,22 +326,34 @@ def train(config):
             accelerator.wait_for_everyone()
 
             # calculate fid of the saved checkpoint using DPM-Solver (NFE=50)
-            fid = eval_step(n_samples=config.sample.n_samples, sample_steps=50,
+            fid_dpm = eval_step(n_samples=config.sample.n_samples, sample_steps=50,
                             algorithm='dpm_solver', Y_bound=config.dataset.Y_bound,
                             path=f'{config.sample.path}_dpm')
             torch.cuda.empty_cache()
             accelerator.wait_for_everyone()
 
             # calculate fid of the saved checkpoint using Euler ODE Solver (NFE=100)
-            fid = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
+            fid_euler = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
                             algorithm='euler_maruyama_ode', Y_bound=config.dataset.Y_bound,
                             path=f'{config.sample.path}_eulerODE')
             torch.cuda.empty_cache()
+            
+            if accelerator.is_main_process:
+                wandb.log({
+                    f"fid{config.sample.n_samples}_dpm_solver": fid_dpm,
+                    "step": train_state.step
+                })
+                wandb.log({
+                    f"fid{config.sample.n_samples}_euler_maruyama_ode": fid_euler,
+                    "step": train_state.step
+                })
             accelerator.wait_for_everyone()
 
     logging.info(f'Finish fitting, step={train_state.step}')
     del metrics
     accelerator.wait_for_everyone()
+    if accelerator.is_main_process:
+        wandb.finish()
     logging.info(f'all done!')
 
 

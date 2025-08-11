@@ -120,7 +120,12 @@ class ACDCUncond(DatasetFactory):
             self.greyscale = kwargs['greyscale']
         else:
             self.greyscale = False
-            
+
+        if 'dataset_type' in kwargs.keys():
+            self.dataset_type = kwargs['dataset_type']
+        else:
+            self.dataset_type = 'full'  # default to full dataset
+
         if self.greyscale:
             self.block_component = 4  # only Y channel
             self.train = DCT_4Y(
@@ -143,7 +148,12 @@ class ACDCUncond(DatasetFactory):
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
         if self.greyscale:
-            return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_greyscale.npz'
+            if self.dataset_type == 'compact':
+                return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_compact_greyscale.npz'
+            elif self.dataset_type == 'wholeheart':
+                return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_wholeheart_greyscale.npz'
+            else:
+                return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_greyscale.npz'
         else:
             return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel.npz'
         

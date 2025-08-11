@@ -60,6 +60,7 @@ def get_config():
     config.dataset = d(
         name='acdc_uncond',
         path='data/scratch/datasets/ACDC/JPGs',
+        dataset_type='compact',  # use compact dataset
         resolution=96,
         tokens=144,  # number of tokens to the network
         low_freqs=16,  # B**2 - m

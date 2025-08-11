@@ -11,6 +11,7 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
+    config.name = 'acdc_cond_allframes_uvit_greyscale_mid_4by4'
 
     config.train = d(
         n_steps=500000,
@@ -59,7 +60,7 @@ def get_config():
 
     config.dataset = d(
         name='acdc_cond',
-        path=('data/scratch/datasets/ACDC/Image','data/scratch/datasets/ACDC/Label_255'),  # path to the dataset
+        path=('data/scratch/datasets/ACDC/all_frames_labeled/Image','data/scratch/datasets/ACDC/all_frames_labeled/Label'),  # path to the dataset
         resolution=96,
         tokens=144,  # number of tokens to the network
         low_freqs=16,  # B**2 - m
@@ -73,6 +74,7 @@ def get_config():
     )
 
     config.sample = d(
+        save_start=50000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

@@ -223,9 +223,35 @@ class ScoreModel(object):
         t = t.to(xt.device)
         if t.dim() == 0:
             t = duplicate(t, xt.size(0))
-        print(f"Model input timesteps: {t.shape}, values: {t[:5]}")  # 添加调试信息
+        # print(f"Model input timesteps: {t.shape}, values: {t[:5]}")  # 添加调试信息
         scaled_t = t * 999
-        return self.nnet(x=xt, timesteps=scaled_t, **kwargs)  # follow SDE
+        private = kwargs.pop('private', False)
+        if private:
+            if hasattr(self.nnet, 'module'):
+                x_proj = self.nnet.module.proj(xt)
+                # embed_dim = self.nnet.module.embed_dim
+            else:
+                x_proj = self.nnet.proj(xt)
+                # embed_dim = self.nnet.embed_dim
+            embed_dim = 768
+            # 2. Create the time embedding
+            #    (Assuming mlp_time_embed is False and time_embed is Identity)
+            #    We call the global timestep_embedding function directly.
+            time_token = timestep_embedding(t, embed_dim)
+            time_token = time_token.unsqueeze(dim=1)
+
+            # 3. Concatenate them
+            #    Note: we're assuming unconditional, so extras=1.
+            #    If you use conditional training, you'll need to handle `y` here too.
+            x_prepared = torch.cat((time_token, x_proj), dim=1)
+
+            # 4. Add the positional embedding (which is part of the nnet)
+            # x_prepared = x_prepared + self.nnet.pos_embed
+
+            # 5. Call the simplified nnet with a SINGLE tensor input
+            return self.nnet(x_prepared, **kwargs)  # follow SDE
+        else:
+            return self.nnet(x=xt, timesteps=scaled_t, **kwargs)  # follow SDE
 
     def noise_pred(self, xt, t, **kwargs):
         pred = self.predict(xt, t, **kwargs)
@@ -339,3 +365,23 @@ def LSimple(score_model: ScoreModel, x0, pred='noise_pred', reweight=None, **kwa
 
     else:
         raise NotImplementedError(pred)
+
+def timestep_embedding(timesteps, dim, max_period=10000):
+    """
+    Create sinusoidal timestep embeddings.
+
+    :param timesteps: a 1-D Tensor of N indices, one per batch element.
+                      These may be fractional.
+    :param dim: the dimension of the output.
+    :param max_period: controls the minimum frequency of the embeddings.
+    :return: an [N x dim] Tensor of positional embeddings.
+    """
+    half = dim // 2
+    freqs = torch.exp(
+        -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half
+    ).to(device=timesteps.device)
+    args = timesteps[:, None].float() * freqs[None]
+    embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
+    if dim % 2:
+        embedding = torch.cat([embedding, torch.zeros_like(embedding[:, :1])], dim=-1)
+    return embedding
