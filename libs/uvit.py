@@ -137,76 +137,198 @@ class PatchEmbed(nn.Module):
         x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 
-class MoELayer(nn.Module):
-    def __init__(self, hidden_dim, num_experts, top_k=1):
+class Expert(nn.Module):
+    """ A single expert in a Mixture of Experts layer. Replace the FFN in the Transformer block with this."""
+    def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
         super().__init__()
-        self.num_experts = num_experts
-        self.top_k = top_k
-
-        # Gating network: a simple linear layer that outputs a logit for each expert
-        self.gate = nn.Linear(hidden_dim, num_experts)
-
-        # A list of the experts
-        self.experts = nn.ModuleList([Mlp(in_features=hidden_dim) for _ in range(num_experts)])
+        out_features = out_features or in_features
+        hidden_features = hidden_features or in_features
+        self.fc1 = nn.Linear(in_features, hidden_features)
+        self.act = act_layer()
+        self.fc2 = nn.Linear(hidden_features, out_features)
+        self.drop = nn.Dropout(drop)
 
     def forward(self, x):
-        # x shape: (batch_size, num_tokens, hidden_dim)
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
+        return x
 
-        # 1. Get routing weights from the gate
-        gate_logits = self.gate(x)
+class TopKRouter(nn.Module):
+    """
+    Implements a Top-K Gating function for a Mixture of Experts layer.
+    
+    This router determines which experts should process each token and calculates
+    the weights for combining their outputs. It also computes a load balancing
+    loss to encourage even distribution of tokens across experts during training.
+    """
+    def __init__(self, d_model: int, num_experts: int, top_k: int, noise_eps: float = 1e-2):
+        """
+        Args:
+            d_model (int): The hidden dimension of the input tokens.
+            num_experts (int): The total number of experts available.
+            top_k (int): The number of experts to route each token to.
+            noise_eps (float): The scaling factor for the noise added during training.
+        """
+        super().__init__()
+        self.d_model = d_model
+        self.num_experts = num_experts
+        self.top_k = top_k
+        self.noise_eps = noise_eps
+
+        # Learnable linear layer to compute gating logits from token embeddings.
+        # This is the W_g matrix mentioned in the survey. 
+        self.gate = nn.Linear(d_model, num_experts, bias=False)
+
+    def forward(self, x: torch.Tensor):
+        """
+        Args:
+            x (torch.Tensor): Input tensor of shape [batch_size, seq_len, d_model]
         
-        # 2. Find the top-k experts for each token
-        # weights are the softmax scores, indices are the expert IDs
-        weights, indices = torch.topk(gate_logits, self.top_k, dim=-1)
-        weights = F.softmax(weights, dim=-1, dtype=torch.float).to(x.dtype)
+        Returns:
+            tuple: A tuple containing:
+                - final_weights (torch.Tensor): The weights for the experts, of shape [batch_size, seq_len, num_experts].
+                - expert_indices (torch.Tensor): The indices of the selected experts, of shape [batch_size, seq_len, top_k].
+                - aux_loss (torch.Tensor): The auxiliary load balancing loss.
+        """
+        # Reshape the input to treat each token independently
+        batch_size, seq_len, _ = x.shape
+        x_flat = x.view(-1, self.d_model) # Shape: [batch_size * seq_len, d_model]
+        num_tokens = x_flat.shape[0]
+
+        # 1. Calculate Gating Logits
+        # Shape: [num_tokens, num_experts]
+        logits = self.gate(x_flat)
+
+        # 2. Add Noise (during training) to encourage expert exploration 
+        if self.training and self.noise_eps > 0:
+            noise = torch.randn_like(logits) * self.noise_eps
+            logits += noise
+
+        # 3. Select Top-K Experts
+        # Get the scores and indices of the top 'k' experts for each token
+        # topk_logits shape: [num_tokens, top_k], topk_indices shape: [num_tokens, top_k]
+        topk_logits, topk_indices = torch.topk(logits, self.top_k, dim=-1)
+
+        # Create a sparse mask to apply softmax only to the top-k experts
+        # We create a mask of zeros and scatter 1s at the locations of the top-k experts.
+        mask = torch.zeros_like(logits, dtype=torch.bool)
+        mask.scatter_(1, topk_indices, 1)
+
+        # Apply the mask: set non-top-k logits to negative infinity for softmax
+        masked_logits = logits.where(mask, torch.tensor(float('-inf')))
+
+        # 4. Calculate Gating Weights (Softmax)
+        # Softmax is applied to the masked logits to get the final weights.
+        final_weights = F.softmax(masked_logits, dim=-1)
+
+        # 5. Calculate Load Balancing Loss 
+        # This implementation follows the simplified loss from Switch Transformer 
+        # Calculate the fraction of tokens assigned to each expert (f_i)
+        f_i = torch.zeros(self.num_experts, device=x.device)
+        f_i.index_add_(0, topk_indices.view(-1), torch.ones(num_tokens, device=x.device))
+        f_i = f_i / num_tokens
+
+        # Calculate the average routing probability for each expert (Q_i)
+        Q_i = final_weights.sum(0) / num_tokens
         
-        # 3. Create a final output tensor of the same shape as the input
-        output = torch.zeros_like(x)
-        
-        # This is a simplified, non-optimized loop for clarity.
-        # Production code uses more complex dispatching for efficiency.
-        for i in range(self.num_experts):
-            # Create a mask for tokens routed to this expert
-            mask = (indices == i)
+        # The auxiliary loss encourages f_i and Q_i to be uniform.
+        aux_loss = self.num_experts * torch.sum(f_i * Q_i)
 
-            # If any tokens are routed to this expert
-            if mask.any():
-                # Select the tokens and their corresponding weights
-                expert_inputs = x[mask]
-                expert_weights = weights[mask]
-
-                # Process through the expert and apply the routing weight
-                expert_outputs = self.experts[i](expert_inputs)
-                output[mask] = expert_outputs * expert_weights
-
-        return output
-
+        return final_weights.view(batch_size, seq_len, -1), topk_indices.view(batch_size, seq_len, -1), aux_loss
+    
 class Block_MoE(nn.Module):
-
+    """ Transformer block with Mixture of Experts (MoE) layer. """
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
-                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, skip=False, use_checkpoint=False, num_experts=2):
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, router_layer=TopKRouter, skip=False, use_checkpoint=False, num_experts=2, top_k=2):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
             dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale)
+        
+        # --- Recommended Change: Use a single LayerNorm before the MoE layer ---
         self.norm2 = norm_layer(dim)
+        
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.moe = MoELayer(hidden_dim=dim, num_experts=num_experts)
+        
+        # --- MoE components ---
+        self.router = router_layer(d_model=dim, num_experts=num_experts, top_k=top_k)
+        self.experts = nn.ModuleList(
+            Expert(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer)
+            for _ in range(num_experts))
+            
         self.skip_linear = nn.Linear(2 * dim, dim) if skip else None
         self.use_checkpoint = use_checkpoint
 
     def forward(self, x, skip=None):
-        if self.use_checkpoint:
-            return torch.utils.checkpoint.checkpoint(self._forward, x, skip)
+        if self.use_checkpoint and self.training:
+            # Use a lambda function to wrap the call to _forward.
+            # This correctly handles the two outputs (x, aux_loss).
+            x, aux_loss = torch.utils.checkpoint.checkpoint(
+                lambda inp, skp: self._forward(inp, skp), 
+                x, 
+                skip,
+                preserve_rng_state=False # Often set to False for efficiency unless you have specific RNG needs
+            )
+            return x, aux_loss
         else:
+            # If not checkpointing, just call _forward directly.
             return self._forward(x, skip)
 
     def _forward(self, x, skip=None):
+        # Optional skip connection logic (remains the same)
         if self.skip_linear is not None:
             x = self.skip_linear(torch.cat([x, skip], dim=-1))
+        
+        # 1. Attention Block (remains the same)
+        # This is the first residual connection
         x = x + self.attn(self.norm1(x))
-        x = x + self.mlp(self.norm2(x))
-        return x
+        
+        # --- Start of MoE Logic ---
+        # Store the output of the attention block for the second residual connection
+        residual = x 
+        
+        # 2. Normalize before routing
+        x = self.norm2(x)
+        
+        # 3. Route tokens to experts
+        # The router returns the gating weights and the crucial auxiliary loss
+        gating_weights, expert_indices, aux_loss = self.router(x)
+        
+        # 4. Dispatch tokens and combine expert outputs
+        # Create a tensor to store the final output
+        final_output = torch.zeros_like(x)
+        
+        # Flatten tensors for easier indexing
+        flat_x = x.view(-1, x.shape[-1])
+        flat_weights = gating_weights.view(-1, self.experts.__len__())
+        
+        # Get the indices of the top-k experts for each token
+        topk_indices_flat = expert_indices.view(-1, expert_indices.shape[-1])
+
+        # Loop through each expert and process the tokens routed to it
+        for i, expert in enumerate(self.experts):
+            # Find which tokens are routed to this expert
+            token_indices = torch.where(topk_indices_flat == i)[0]
+            
+            if token_indices.numel() > 0:
+                # Get the tokens and their corresponding gating weights
+                expert_tokens = flat_x[token_indices]
+                expert_weights = flat_weights[token_indices, i].unsqueeze(1)
+                
+                # Process tokens with the expert and apply the gating weight
+                expert_output = expert(expert_tokens) * expert_weights
+                
+                # Add the weighted expert output to the final output tensor
+                final_output.view_as(flat_x).index_add_(0, token_indices, expert_output)
+
+        # 5. Second Residual Connection
+        x = residual + final_output
+        
+        # Return both the final output and the auxiliary loss
+        return x, aux_loss
 
 class UViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
@@ -490,3 +612,126 @@ class UViT_greyscale_cond(nn.Module):
         x = x[:, self.extras:, :]  # (b, tokens, num_low_freq*4)
 
         return x
+
+class UViT_greyscale_MoE(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
+                 qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, MoE={"depth": 1, "num_experts": 2, "router":"topk", "top_k": 2}):
+        super().__init__()
+        self.num_features = self.embed_dim = embed_dim
+        self.num_classes = num_classes
+        self.tokens = tokens
+        self.DCT_coes = low_freqs
+        
+        # --- MoE Configuration ---
+        self.num_experts = MoE.get("num_experts", 2)
+        self.router_type = MoE.get("router", "topk")
+        self.top_k = MoE.get("top_k", 2) # How many experts to use per token
+        self.moe_layer_index = MoE.get("depth", 1) # Interpreted as placing MoE at first and last blocks
+
+        # --- Input and Embedding Layers ---
+        self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+        self.time_embed = nn.Sequential(
+            nn.Linear(embed_dim, 4 * embed_dim), 
+            nn.SiLU(), 
+            nn.Linear(4 * embed_dim, embed_dim),
+        ) if mlp_time_embed else nn.Identity()
+
+        if self.num_classes > 0:
+            self.label_emb = nn.Embedding(self.num_classes, embed_dim)
+            self.extras = 2
+        else:
+            self.extras = 1
+            
+        self.pos_embed = nn.Parameter(torch.zeros(1, self.extras + self.tokens, embed_dim))
+        
+        # --- Build Transformer Blocks with MoE ---
+        in_blocks_list = []
+        for i in range(depth // 2):
+            if self.moe_layer_index == 1 and i == 0: # First block
+                block = Block_MoE(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k)
+            else:
+                 block = Block(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+            in_blocks_list.append(block)
+        self.in_blocks = nn.ModuleList(in_blocks_list)
+
+        self.mid_block = Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+
+        out_blocks_list = []
+        for i in range(depth // 2):
+            if self.moe_layer_index == 1 and i == (depth // 2) - 1: # Last block
+                 block = Block_MoE(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k)
+            else:
+                block = Block(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint)
+            out_blocks_list.append(block)
+        self.out_blocks = nn.ModuleList(out_blocks_list)
+
+        # --- Output Layers ---
+        self.norm = norm_layer(embed_dim)
+        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+
+        trunc_normal_(self.pos_embed, std=.02)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return {'pos_embed'}
+
+    def forward(self, x, timesteps, y=None):
+        # 1. Initial Projection and Embedding
+        x = self.proj(x)
+        time_token = self.time_embed(timestep_embedding(timesteps, self.embed_dim)).unsqueeze(1)
+        x = torch.cat((time_token, x), dim=1)
+        if y is not None:
+            label_emb = self.label_emb(y).unsqueeze(1)
+            x = torch.cat((label_emb, x), dim=1)
+        x = x + self.pos_embed
+
+        # 2. Forward pass through the network, tracking aux loss
+        total_aux_loss = 0.0
+        skips = []
+
+        for blk in self.in_blocks:
+            if isinstance(blk, Block_MoE):
+                x, aux_loss = blk(x)
+                total_aux_loss += aux_loss
+            else:
+                x = blk(x)
+            skips.append(x)
+
+        # Mid block does not have MoE in this design
+        x = self.mid_block(x)
+
+        for blk in self.out_blocks:
+            if isinstance(blk, Block_MoE):
+                x, aux_loss = blk(x, skips.pop())
+                total_aux_loss += aux_loss
+            else:
+                x = blk(x, skips.pop())
+
+        # 3. Final Prediction Head
+        x = self.norm(x)
+        image_tokens = x[:, self.extras:, :]
+        x = self.decoder_pred(image_tokens)
+
+        # Return both the prediction and the accumulated auxiliary loss
+        return x, total_aux_loss

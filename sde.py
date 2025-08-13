@@ -225,57 +225,54 @@ class ScoreModel(object):
             t = duplicate(t, xt.size(0))
         # print(f"Model input timesteps: {t.shape}, values: {t[:5]}")  # 添加调试信息
         scaled_t = t * 999
-        private = kwargs.pop('private', False)
-        if private:
-            if hasattr(self.nnet, 'module'):
-                x_proj = self.nnet.module.proj(xt)
-                # embed_dim = self.nnet.module.embed_dim
-            else:
-                x_proj = self.nnet.proj(xt)
-                # embed_dim = self.nnet.embed_dim
-            embed_dim = 768
-            # 2. Create the time embedding
-            #    (Assuming mlp_time_embed is False and time_embed is Identity)
-            #    We call the global timestep_embedding function directly.
-            time_token = timestep_embedding(t, embed_dim)
-            time_token = time_token.unsqueeze(dim=1)
-
-            # 3. Concatenate them
-            #    Note: we're assuming unconditional, so extras=1.
-            #    If you use conditional training, you'll need to handle `y` here too.
-            x_prepared = torch.cat((time_token, x_proj), dim=1)
-
-            # 4. Add the positional embedding (which is part of the nnet)
-            # x_prepared = x_prepared + self.nnet.pos_embed
-
-            # 5. Call the simplified nnet with a SINGLE tensor input
-            return self.nnet(x_prepared, **kwargs)  # follow SDE
+        use_moe = kwargs.pop('use_moe', False)
+        if use_moe:
+            _predict,aux_loss = self.nnet(x=xt, timesteps=scaled_t, **kwargs)  # follow SDE
+            return _predict, aux_loss
         else:
             return self.nnet(x=xt, timesteps=scaled_t, **kwargs)  # follow SDE
 
     def noise_pred(self, xt, t, **kwargs):
+        use_moe = kwargs.get('use_moe', False)
         pred = self.predict(xt, t, **kwargs)
+        if isinstance(pred, tuple):
+            pred, aux_loss = pred
+
         if self.pred == 'noise_pred':
             noise_pred = pred
         elif self.pred == 'x0_pred':
             noise_pred = - stp(self.sde.snr(t).sqrt(), pred) + stp(self.sde.cum_beta(t).rsqrt(), xt)
         else:
             raise NotImplementedError
-        return noise_pred
+        
+        if use_moe:
+            return noise_pred, aux_loss
+        else:
+            return noise_pred
 
     def x0_pred(self, xt, t, **kwargs):
+        use_moe = kwargs.get('use_moe', False)
         pred = self.predict(xt, t, **kwargs)
+        if isinstance(pred, tuple):
+            pred, aux_loss = pred
+
         if self.pred == 'noise_pred':
             x0_pred = stp(self.sde.cum_alpha(t).rsqrt(), xt) - stp(self.sde.nsr(t).sqrt(), pred)
         elif self.pred == 'x0_pred':
             x0_pred = pred
         else:
             raise NotImplementedError
-        return x0_pred
+        
+        if use_moe:
+            return x0_pred, aux_loss
+        else:
+            return x0_pred
 
     def score(self, xt, t, **kwargs):
         cum_beta = self.sde.cum_beta(t)
         noise_pred = self.noise_pred(xt, t, **kwargs)
+        if isinstance(noise_pred, tuple):
+            noise_pred, aux_loss = noise_pred
         return stp(-cum_beta.rsqrt(), noise_pred)
 
 
@@ -283,7 +280,7 @@ class ReverseSDE(object):
     r"""
         dx = [f(x, t) - g(t)^2 s(x, t)] dt + g(t) dw
     """
-    def __init__(self, score_model):
+    def __init__(self, score_model: ScoreModel):
         self.sde = score_model.sde  # the forward sde
         self.score_model = score_model
 
@@ -302,7 +299,7 @@ class ODE(object):
         dx = [f(x, t) - g(t)^2 s(x, t)] dt
     """
 
-    def __init__(self, score_model):
+    def __init__(self, score_model: ScoreModel):
         self.sde = score_model.sde  # the forward sde
         self.score_model = score_model
 
@@ -350,21 +347,36 @@ def euler_maruyama(rsde, x_init, sample_steps, eps=1e-3, T=1, trace=None, verbos
 def LSimple(score_model: ScoreModel, x0, pred='noise_pred', reweight=None, **kwargs):
     """Compute the loss for a simple score model."""
     t, noise, xt = score_model.sde.sample(x0)
-    if pred == 'noise_pred':
-        noise_pred = score_model.noise_pred(xt, t, **kwargs)
-        # 使用 F.mse_loss，设置 reduction='none' 以便后续 reweight
-        loss = F.mse_loss(noise_pred, noise, reduction='none')
-        loss = loss * reweight  # loss re-weighting
-        return loss.flatten(start_dim=1).mean(dim=-1)
+    use_moe = kwargs.get('use_moe', False)
+    if use_moe:
+        if pred == 'noise_pred':
+            noise_pred, aux_loss = score_model.noise_pred(xt, t, **kwargs)
+            # 使用 F.mse_loss，设置 reduction='none' 以便后续 reweight
+            loss = F.mse_loss(noise_pred, noise, reduction='none')
+            loss.flatten(start_dim=1).mean(dim=-1)
+            return loss.mean(), aux_loss
 
-    elif pred == 'x0_pred':
-        x0_pred = score_model.x0_pred(xt, t, **kwargs)
-        loss = F.mse_loss(x0_pred, x0, reduction='none')
-        loss = loss * reweight  # loss re-weighting
-        return loss.flatten(start_dim=1).mean(dim=-1)
-
+        elif pred == 'x0_pred':
+            x0_pred = score_model.x0_pred(xt, t, **kwargs)
+            loss = F.mse_loss(x0_pred, x0, reduction='none')
+            loss.flatten(start_dim=1).mean(dim=-1)
+            return loss.mean(), aux_loss
     else:
-        raise NotImplementedError(pred)
+        if pred == 'noise_pred':
+            noise_pred = score_model.noise_pred(xt, t, **kwargs)
+            # 使用 F.mse_loss，设置 reduction='none' 以便后续 reweight
+            loss = F.mse_loss(noise_pred, noise, reduction='none')
+            loss = loss * reweight  # loss re-weighting
+            return loss.flatten(start_dim=1).mean(dim=-1)
+
+        elif pred == 'x0_pred':
+            x0_pred = score_model.x0_pred(xt, t, **kwargs)
+            loss = F.mse_loss(x0_pred, x0, reduction='none')
+            loss = loss * reweight  # loss re-weighting
+            return loss.flatten(start_dim=1).mean(dim=-1)
+
+        else:
+            raise NotImplementedError(pred)
 
 def timestep_embedding(timesteps, dim, max_period=10000):
     """

@@ -229,7 +229,10 @@ def model_wrapper(model, noise_schedule=None, is_cond_classifier=False, classifi
             return noise_uncond - sigma_t[(...,) + (None,) * dims] * cond_grad
         else:
             t_discrete = get_model_input_time(t_continuous)
-            return model(x, t_discrete, **model_kwargs)
+            output = model(x, t_discrete, **model_kwargs)
+            if isinstance(output, tuple):
+                output, aux_loss = output
+            return output
 
     return model_fn
 
