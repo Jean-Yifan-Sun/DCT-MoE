@@ -47,6 +47,9 @@ def get_nnet(name, **kwargs):
     elif name == 'uvit_greyscale_moe':
         from libs.uvit import UViT_greyscale_MoE
         return UViT_greyscale_MoE(**kwargs)
+    elif name == 'uvit_greyscale_moh':
+        from libs.uvit import UViT_greyscale_MoH
+        return UViT_greyscale_MoH(**kwargs)
     else:
         raise NotImplementedError(name)
 

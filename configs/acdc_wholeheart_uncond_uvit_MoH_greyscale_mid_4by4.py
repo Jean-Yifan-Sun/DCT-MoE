@@ -46,7 +46,7 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale_moe',  # use greyscale UViT
+        name='uvit_greyscale_moh',  # use greyscale UViT
         tokens=144,  # number of tokens to the network
         low_freqs=16,  # B**2 - m
         embed_dim=768,
@@ -57,11 +57,10 @@ def get_config():
         mlp_time_embed=False,
         num_classes=-1,
         use_moe=True,
-        MoE={
+        MoH={
             "depth": 1,
-            "num_experts": 2,
-            "router": "topk",
-            "top_k": 2,
+            "num_shared_heads": 4,
+            "top_k": 8,
             "aux_loss_alpha": 0.01
         },
 

@@ -94,6 +94,102 @@ class Attention(nn.Module):
         x = self.proj_drop(x)
         return x
 
+class MoH_Attention(nn.Module):
+    """
+    Implements the Mixture-of-Head (MoH) Attention Layer.
+    Based on the paper "MoH: Multi-Head Attention as Mixture-of-Head Attention" [cite: 2]
+    and the official GitHub implementation.
+    """
+    def __init__(self, dim, num_heads=12, qkv_bias=False, qk_scale=None,
+                 num_shared_heads=4, top_k=8):
+        super().__init__()
+        # Standard Attention Parameters
+        self.num_heads = num_heads
+        self.head_dim = dim // num_heads
+        self.scale = qk_scale or self.head_dim ** -0.5
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.proj = nn.Linear(dim, dim) # Final output projection
+
+        # MoH Specific Parameters
+        assert top_k <= (num_heads - num_shared_heads), "top_k must be smaller than the number of routed heads"
+        self.num_shared_heads = num_shared_heads
+        self.num_routed_heads = num_heads - num_shared_heads
+        self.top_k = top_k
+
+        # --- Router Linear Layers ---
+        # Corresponds to W_h in the paper (Eq. 6) [cite: 173]
+        self.router_head_type = nn.Linear(dim, 2) # 2 for [shared_group, routed_group]
+
+        # Corresponds to W_s in the paper (Eq. 5) [cite: 158]
+        self.router_shared = nn.Linear(dim, self.num_shared_heads)
+        
+        # Corresponds to W_r in the paper (Eq. 5) [cite: 158]
+        self.router_routed = nn.Linear(dim, self.num_routed_heads)
+
+    def forward(self, x):
+        B, N, C = x.shape # Batch, Sequence Length, Channels
+
+        # 1. Standard QKV projection, shared across all heads
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+
+        # --- Router Logic ---
+        # For ViT, routing decisions are based on the CLS token's query [q[:,:,0,:]]
+        # to get a global routing policy for all tokens in the sequence.
+        q_for_route = q[:, 0, 0, :] # Shape: [B, C]
+
+        # Stage 1: Route between shared and routed groups
+        alpha = F.softmax(self.router_head_type(q_for_route), dim=-1) # Shape: [B, 2]
+        alpha_shared = alpha[:, 0].unsqueeze(-1) # Shape: [B, 1]
+        alpha_routed = alpha[:, 1].unsqueeze(-1) # Shape: [B, 1]
+
+        # Stage 2: Calculate scores for individual heads within each group
+        score_shared = F.softmax(self.router_shared(q_for_route), dim=-1) # Shape: [B, num_shared_heads]
+        score_routed = F.softmax(self.router_routed(q_for_route), dim=-1) # Shape: [B, num_routed_heads]
+
+        # Apply Top-K selection for routed heads
+        topk_scores, topk_indices = torch.topk(score_routed, self.top_k, dim=-1)
+
+        # Create a sparse mask to zero out non-selected routed heads
+        mask_routed = torch.zeros_like(score_routed)
+        mask_routed.scatter_(1, topk_indices, 1)
+        
+        # Combine scores to get final gating weights for all heads
+        gating_score_shared = alpha_shared * score_shared
+        gating_score_routed = alpha_routed * score_routed * mask_routed
+        
+        gating_score = torch.cat([gating_score_shared, gating_score_routed], dim=-1) # Shape: [B, num_heads]
+        
+        # --- Attention & Combination Logic ---
+        # Standard scaled dot-product attention is computed for all heads in parallel
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+
+        # Apply gating scores as a weighted sum over the head dimension
+        # Reshape for broadcasting: [B, 1, num_heads, 1] for x_heads [B, N, num_heads, head_dim] is not needed in the GitHub code
+        # The GitHub code reshapes x to [B, N, C] then projects. Let's follow that.
+        # But the paper implies weighting before projection. Let's implement the paper's formula.
+        x_heads = x.reshape(B, N, self.num_heads, self.head_dim)
+        gating_reshaped = gating_score.reshape(B, 1, self.num_heads, 1)
+        
+        # Weighted sum of head outputs 
+        x = (x_heads * gating_reshaped).sum(dim=2) # Summing across the heads dimension
+
+        # Final output projection
+        x = self.proj(x)
+
+        # --- Load Balance Loss Calculation ---
+        # Calculated only for the routed heads [cite: 175]
+        # f_i is the fraction of tokens that select a head
+        f_i = mask_routed.mean(0)
+        # P_i is the average routing probability for a head
+        P_i = score_routed.mean(0)
+        
+        load_balance_loss = torch.sum(f_i * P_i)
+        
+        return x, load_balance_loss
 
 class Block(nn.Module):
 
@@ -121,7 +217,6 @@ class Block(nn.Module):
         x = x + self.attn(self.norm1(x))
         x = x + self.mlp(self.norm2(x))
         return x
-
 
 class PatchEmbed(nn.Module):
     """ Image to Patch Embedding
@@ -228,7 +323,15 @@ class TopKRouter(nn.Module):
         # This implementation follows the simplified loss from Switch Transformer 
         # Calculate the fraction of tokens assigned to each expert (f_i)
         f_i = torch.zeros(self.num_experts, device=x.device)
-        f_i.index_add_(0, topk_indices.view(-1), torch.ones(num_tokens, device=x.device))
+        # Flatten the indices to get a 1D tensor of size [num_tokens * top_k]
+        indices_flat = topk_indices.view(-1)
+        
+        # Create a source tensor of ones that has the SAME size as the flattened indices
+        ones_source = torch.ones_like(indices_flat, dtype=torch.float)
+        
+        # Use the corrected source tensor in the index_add_ operation
+        f_i.index_add_(0, indices_flat, ones_source)
+
         f_i = f_i / num_tokens
 
         # Calculate the average routing probability for each expert (Q_i)
@@ -328,6 +431,58 @@ class Block_MoE(nn.Module):
         x = residual + final_output
         
         # Return both the final output and the auxiliary loss
+        return x, aux_loss
+
+class Block_MoH(nn.Module):
+    """ Transformer block with Mixture of Heads (MoH) Attention. """
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, skip=False, use_checkpoint=False,
+                 # MoH specific arguments
+                 num_shared_heads=4, top_k=8):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        
+        # --- MoH Attention Layer ---
+        self.attn = MoH_Attention(
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
+            num_shared_heads=num_shared_heads, top_k=top_k)
+            
+        # --- Standard MLP Layer ---
+        self.norm2 = norm_layer(dim)
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        self.mlp = Expert(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer)
+            
+        self.skip_linear = nn.Linear(2 * dim, dim) if skip else None
+        self.use_checkpoint = use_checkpoint
+
+    def forward(self, x, skip=None):
+        if self.use_checkpoint and self.training:
+            # Checkpointing wrapper for the _forward method
+            x, aux_loss = torch.utils.checkpoint.checkpoint(
+                lambda inp, skp: self._forward(inp, skp),
+                x,
+                skip,
+                preserve_rng_state=False
+            )
+            return x, aux_loss
+        else:
+            return self._forward(x, skip)
+
+    def _forward(self, x, skip=None):
+        if self.skip_linear is not None:
+            x = self.skip_linear(torch.cat([x, skip], dim=-1))
+        
+        # --- Start of MoH Logic ---
+        # The MoH_Attention layer returns both the output and the aux_loss
+        attn_output, aux_loss = self.attn(self.norm1(x))
+        
+        # 1. First Residual Connection (after attention)
+        x = x + attn_output
+        
+        # 2. Second Residual Connection (after MLP)
+        x = x + self.mlp(self.norm2(x))
+        
+        # Return the final output and the auxiliary loss from the attention layer
         return x, aux_loss
 
 class UViT(nn.Module):
@@ -520,7 +675,6 @@ class UViT_greyscale(nn.Module):
 
         return x
 
-
 class UViT_greyscale_cond(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
                  qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
@@ -616,12 +770,13 @@ class UViT_greyscale_cond(nn.Module):
 class UViT_greyscale_MoE(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
                  qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
-                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, MoE={"depth": 1, "num_experts": 2, "router":"topk", "top_k": 2}):
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=True, MoE={"depth": 1, "num_experts": 2, "router":"topk", "top_k": 2}):
         super().__init__()
         self.num_features = self.embed_dim = embed_dim
         self.num_classes = num_classes
         self.tokens = tokens
         self.DCT_coes = low_freqs
+        assert use_moe==True, "UViT_greyscale_MoE is designed to use MoE. Set use_moe=True."
         
         # --- MoE Configuration ---
         self.num_experts = MoE.get("num_experts", 2)
@@ -723,6 +878,129 @@ class UViT_greyscale_MoE(nn.Module):
 
         for blk in self.out_blocks:
             if isinstance(blk, Block_MoE):
+                x, aux_loss = blk(x, skips.pop())
+                total_aux_loss += aux_loss
+            else:
+                x = blk(x, skips.pop())
+
+        # 3. Final Prediction Head
+        x = self.norm(x)
+        image_tokens = x[:, self.extras:, :]
+        x = self.decoder_pred(image_tokens)
+
+        # Return both the prediction and the accumulated auxiliary loss
+        return x, total_aux_loss
+
+class UViT_greyscale_MoH(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
+                 qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=True, MoH={"depth": 1, "num_shared_heads": 4, "top_k": 8}):
+        super().__init__()
+        self.num_features = self.embed_dim = embed_dim
+        self.num_classes = num_classes
+        self.tokens = tokens
+        self.DCT_coes = low_freqs
+        assert use_moe==True, "UViT_greyscale_MoH is designed to use MoH. Set use_moe=True."
+
+        # --- MoH Configuration ---
+        self.num_shared_heads = MoH.get("num_shared_heads", 4)
+        self.top_k = MoH.get("top_k", 8) # How many experts heads to use per token
+        self.moh_layer_index = MoH.get("depth", 1) # Interpreted as placing MoH at first and last blocks
+
+        # --- Input and Embedding Layers ---
+        self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+        self.time_embed = nn.Sequential(
+            nn.Linear(embed_dim, 4 * embed_dim), 
+            nn.SiLU(), 
+            nn.Linear(4 * embed_dim, embed_dim),
+        ) if mlp_time_embed else nn.Identity()
+
+        if self.num_classes > 0:
+            self.label_emb = nn.Embedding(self.num_classes, embed_dim)
+            self.extras = 2
+        else:
+            self.extras = 1
+            
+        self.pos_embed = nn.Parameter(torch.zeros(1, self.extras + self.tokens, embed_dim))
+        
+        # --- Build Transformer Blocks with MoE ---
+        in_blocks_list = []
+        for i in range(depth // 2):
+            if self.moh_layer_index == 1 and i == 0: # First block
+                block = Block_MoH(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_shared_heads=self.num_shared_heads, top_k=self.top_k)
+            else:
+                 block = Block(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+            in_blocks_list.append(block)
+        self.in_blocks = nn.ModuleList(in_blocks_list)
+
+        self.mid_block = Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+
+        out_blocks_list = []
+        for i in range(depth // 2):
+            if self.moh_layer_index == 1 and i == (depth // 2) - 1: # Last block
+                 block = Block_MoH(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_shared_heads=self.num_shared_heads, top_k=self.top_k)
+            else:
+                block = Block(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint)
+            out_blocks_list.append(block)
+        self.out_blocks = nn.ModuleList(out_blocks_list)
+
+        # --- Output Layers ---
+        self.norm = norm_layer(embed_dim)
+        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+
+        trunc_normal_(self.pos_embed, std=.02)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return {'pos_embed'}
+
+    def forward(self, x, timesteps, y=None):
+        # 1. Initial Projection and Embedding
+        x = self.proj(x)
+        time_token = self.time_embed(timestep_embedding(timesteps, self.embed_dim)).unsqueeze(1)
+        x = torch.cat((time_token, x), dim=1)
+        if y is not None:
+            label_emb = self.label_emb(y).unsqueeze(1)
+            x = torch.cat((label_emb, x), dim=1)
+        x = x + self.pos_embed
+
+        # 2. Forward pass through the network, tracking aux loss
+        total_aux_loss = 0.0
+        skips = []
+
+        for blk in self.in_blocks:
+            if isinstance(blk, Block_MoH):
+                x, aux_loss = blk(x)
+                total_aux_loss += aux_loss
+            else:
+                x = blk(x)
+            skips.append(x)
+
+        # Mid block does not have MoE in this design
+        x = self.mid_block(x)
+
+        for blk in self.out_blocks:
+            if isinstance(blk, Block_MoH):
                 x, aux_loss = blk(x, skips.pop())
                 total_aux_loss += aux_loss
             else:

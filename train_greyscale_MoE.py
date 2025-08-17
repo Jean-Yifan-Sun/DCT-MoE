@@ -58,6 +58,8 @@ def train(config):
     if accelerator.is_main_process:
         utils.set_logger(log_level='info', fname=os.path.join(config.workdir, 'output.log'))
         logging.info(config)
+        # logging.info("Using MoE with following params:")
+        # logging.info(config.nnet.MoE.values)
     else:
         utils.set_logger(log_level='error')
         builtins.print = lambda *args: None
@@ -158,11 +160,13 @@ def train(config):
             main_loss, aux_loss = sde.LSimple(score_model, _batch['image'], pred=config.pred, y=_batch['label'], use_moe=config.nnet.use_moe)
         else:
             raise NotImplementedError(config.train.mode)
-        alpha = 0.2
+        alpha = config.nnet.MoE.get("aux_loss_alpha", 0.2)
         total_loss = main_loss + alpha * aux_loss
         accelerator.backward(total_loss)
 
-        _metrics['loss'] = accelerator.gather(total_loss.detach()).mean().item()
+        _metrics['total_loss'] = accelerator.gather(total_loss.detach()).mean().item()
+        _metrics['main_loss'] = accelerator.gather(main_loss.detach()).mean().item()
+        _metrics['aux_loss'] = accelerator.gather(aux_loss.detach()).mean().item()
 
         if 'grad_clip' in config and config.grad_clip > 0:
             accelerator.clip_grad_norm_(nnet.parameters(), max_norm=config.grad_clip)
@@ -188,10 +192,10 @@ def train(config):
         def sample_fn(_n_samples):
             _x_init = torch.randn(_n_samples, *dataset.data_shape, device=device)
             if config.train.mode == 'uncond':
-                kwargs = dict(private=config.private.use_dp)
+                kwargs = dict(use_moe=config.nnet.use_moe)
             elif config.train.mode == 'cond':
                 _y_init = dataset.sample_label(_n_samples, device=device)
-                kwargs = dict(y=_y_init, private=config.private.use_dp)
+                kwargs = dict(y=_y_init, use_moe=config.nnet.use_moe)
             else:
                 raise NotImplementedError
 
@@ -267,10 +271,10 @@ def train(config):
             x_init = torch.randn(16, *dataset.data_shape, device=device)
 
             if config.train.mode == 'uncond':
-                kwargs = dict(private=config.private.use_dp)
+                kwargs = dict(use_moe=config.nnet.use_moe)
             elif config.train.mode == 'cond':
                 _y_init = dataset.sample_label(16, device=device)
-                kwargs = dict(y=_y_init, private=config.private.use_dp)
+                kwargs = dict(y=_y_init, use_moe=config.nnet.use_moe)
             else:
                 raise NotImplementedError
 
