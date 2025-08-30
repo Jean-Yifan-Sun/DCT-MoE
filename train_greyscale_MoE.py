@@ -29,6 +29,8 @@ def train(config):
     if config.get('benchmark', False):
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
+   
+    # torch.autograd.set_detect_anomaly(True) # debug
 
     mp.set_start_method('spawn')
     process_group_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))  # 1 hour
@@ -69,7 +71,7 @@ def train(config):
     assert os.path.exists(dataset.fid_stat)
     train_dataset = dataset.get_split(split='train', labeled=(config.train.mode == 'cond'))
     train_dataset_loader = DataLoader(train_dataset, batch_size=mini_batch_size, shuffle=True, drop_last=True,
-                                      num_workers=16, pin_memory=False, persistent_workers=True)
+                                      num_workers=2, pin_memory=False, persistent_workers=True)
     logging.info(f'dataset samples: {len(train_dataset)}')
 
     # Use Opacus for DP training

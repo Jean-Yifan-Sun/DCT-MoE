@@ -59,10 +59,11 @@ def get_config():
         use_moe=True,
         MoE={
             "depth": 1,
-            "num_experts": 2,
+            "num_experts": 4,
             "router": "topk",
             "top_k": 2,
-            "aux_loss_alpha": 0.01
+            "noise_eps": 1e-2,
+            "aux_loss_alpha": 0.005
         },
 
     )

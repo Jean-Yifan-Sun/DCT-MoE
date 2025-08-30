@@ -5,7 +5,7 @@ import math
 from .timm import trunc_normal_, Mlp
 import einops
 import torch.utils.checkpoint
-import logging
+from absl import logging
 
 if hasattr(torch.nn.functional, 'scaled_dot_product_attention'):
     ATTENTION_MODE = 'flash'
@@ -277,7 +277,7 @@ class TopKRouter(nn.Module):
         # This is the W_g matrix mentioned in the survey. 
         self.gate = nn.Linear(d_model, num_experts, bias=False)
 
-    def forward(self, x: torch.Tensor):
+    def forward_old(self, x: torch.Tensor):
         """
         Args:
             x (torch.Tensor): Input tensor of shape [batch_size, seq_len, d_model]
@@ -313,7 +313,8 @@ class TopKRouter(nn.Module):
         mask.scatter_(1, topk_indices, 1)
 
         # Apply the mask: set non-top-k logits to negative infinity for softmax
-        masked_logits = logits.where(mask, torch.tensor(float('-inf')))
+        large_negative = -1e4 if logits.dtype == torch.float16 else -1e9
+        masked_logits = logits.where(mask, torch.tensor(large_negative, device=logits.device, dtype=logits.dtype))
 
         # 4. Calculate Gating Weights (Softmax)
         # Softmax is applied to the masked logits to get the final weights.
@@ -332,20 +333,96 @@ class TopKRouter(nn.Module):
         # Use the corrected source tensor in the index_add_ operation
         f_i.index_add_(0, indices_flat, ones_source)
 
-        f_i = f_i / num_tokens
+        f_i = f_i / (num_tokens * self.top_k)
+        # f_i_detached = f_i.detach() #f_i 不可微因此不能让其影响梯度传播
 
         # Calculate the average routing probability for each expert (Q_i)
         Q_i = final_weights.sum(0) / num_tokens
         
         # The auxiliary loss encourages f_i and Q_i to be uniform.
+        # 确保 f_i 和 Q_i 没有 NaN 或 Inf
+        assert not torch.isnan(f_i).any() and not torch.isinf(f_i).any()
+        assert not torch.isnan(Q_i).any() and not torch.isinf(Q_i).any()
         aux_loss = self.num_experts * torch.sum(f_i * Q_i)
+        
+        aux_loss_threshold = 3.0  # 设置一个合理的阈值
+        aux_loss = torch.clamp(aux_loss, max=aux_loss_threshold)
 
         return final_weights.view(batch_size, seq_len, -1), topk_indices.view(batch_size, seq_len, -1), aux_loss
     
+    def forward(self, x: torch.Tensor):
+        """
+        Args:
+            x (torch.Tensor): Input tensor of shape [batch_size, seq_len, d_model]
+        
+        Returns:
+            tuple: A tuple containing:
+                - final_weights (torch.Tensor): The weights for the experts, of shape [batch_size, seq_len, num_experts].
+                - expert_indices (torch.Tensor): The indices of the selected experts, of shape [batch_size, seq_len, top_k].
+                - aux_loss (torch.Tensor): The auxiliary load balancing loss.
+        """
+        # Reshape the input to treat each token independently
+        batch_size, seq_len, _ = x.shape
+        x_flat = x.view(-1, self.d_model) # Shape: [batch_size * seq_len, d_model]
+        num_tokens = x_flat.shape[0]
+
+        # 1. Calculate Gating Logits
+        # Shape: [num_tokens, num_experts]
+        logits = self.gate(x_flat)
+
+        # 2. Add Noise (during training) to encourage expert exploration 
+        if self.training and self.noise_eps > 0:
+            noise = torch.randn_like(logits) * self.noise_eps
+            logits += noise
+
+        # 3. 计算路由概率（可微部分）
+        router_probs = F.softmax(logits, dim=-1)
+        
+        # 4. 使用STE处理topk操作
+        # Get the scores and indices of the top 'k' experts for each token
+        # topk_logits shape: [num_tokens, top_k], topk_indices shape: [num_tokens, top_k]
+        # 前向传播：使用硬选择（不可微）
+        topk_probs, topk_indices = torch.topk(router_probs, self.top_k, dim=-1)
+        
+        # 创建硬掩码
+        hard_mask = torch.zeros_like(router_probs)
+        hard_mask.scatter_(1, topk_indices, 1.0)
+        
+        # 反向传播：使用软概率（可微）
+        # 这是STE的关键部分 - 在前向中使用硬掩码，但在反向中使用软概率
+        soft_mask = hard_mask - router_probs.detach() + router_probs
+        
+        # 5. 计算最终权重
+        # 使用硬掩码进行前向计算，但梯度通过软掩码回传
+        final_weights = soft_mask
+        
+        # 6. 计算辅助损失（使用STE处理不可微部分）
+        # 计算硬分配的f_i（用于前向）
+        f_i_hard = torch.zeros(self.num_experts, device=x.device)
+        indices_flat = topk_indices.view(-1)
+        ones_source = torch.ones_like(indices_flat, dtype=torch.float)
+        f_i_hard.index_add_(0, indices_flat, ones_source)
+        f_i_hard = f_i_hard / (num_tokens * self.top_k)
+        
+        # 计算软分配的f_i（用于反向）
+        # 使用路由概率的均值作为软分配的f_i
+        f_i_soft = router_probs.mean(0)
+        
+        # 使用STE处理f_i计算
+        f_i = f_i_hard - f_i_soft.detach() + f_i_soft
+        
+        # 计算Q_i
+        Q_i = final_weights.sum(0) / num_tokens
+        
+        # 计算辅助损失
+        aux_loss = self.num_experts * torch.sum(f_i * Q_i)
+        
+        return final_weights.view(batch_size, seq_len, -1), topk_indices.view(batch_size, seq_len, -1), aux_loss
+
 class Block_MoE(nn.Module):
     """ Transformer block with Mixture of Experts (MoE) layer. """
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
-                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, router_layer=TopKRouter, skip=False, use_checkpoint=False, num_experts=2, top_k=2):
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, router_layer=TopKRouter, skip=False, use_checkpoint=False, num_experts=2, top_k=2, noise_eps=1e-2):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
@@ -357,7 +434,7 @@ class Block_MoE(nn.Module):
         mlp_hidden_dim = int(dim * mlp_ratio)
         
         # --- MoE components ---
-        self.router = router_layer(d_model=dim, num_experts=num_experts, top_k=top_k)
+        self.router = router_layer(d_model=dim, num_experts=num_experts, top_k=top_k, noise_eps=noise_eps)
         self.experts = nn.ModuleList(
             Expert(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer)
             for _ in range(num_experts))
@@ -782,6 +859,7 @@ class UViT_greyscale_MoE(nn.Module):
         self.num_experts = MoE.get("num_experts", 2)
         self.router_type = MoE.get("router", "topk")
         self.top_k = MoE.get("top_k", 2) # How many experts to use per token
+        self.moe_noise_eps = MoE.get("noise_eps", 1e-2)
         self.moe_layer_index = MoE.get("depth", 1) # Interpreted as placing MoE at first and last blocks
 
         # --- Input and Embedding Layers ---
@@ -806,7 +884,7 @@ class UViT_greyscale_MoE(nn.Module):
             if self.moe_layer_index == 1 and i == 0: # First block
                 block = Block_MoE(
                     dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k)
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k, noise_eps=self.moe_noise_eps)
             else:
                  block = Block(
                     dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
