@@ -113,6 +113,7 @@ class ACDCUncond(DatasetFactory):
         self.resolution = resolution
         self.tokens = tokens
         self.low_freqs = low_freqs
+        self.block_sz = block_sz
         # transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor(),
                                         # transforms.Normalize(0.5, 0.5)])
 
@@ -126,7 +127,26 @@ class ACDCUncond(DatasetFactory):
         else:
             self.dataset_type = 'full'  # default to full dataset
 
-        if self.greyscale:
+        if "positional_tokens" in kwargs.keys():
+            self.positional_tokens = kwargs['positional_tokens']
+        else:
+            self.positional_tokens = False
+
+        if self.positional_tokens and self.greyscale:
+            assert kwargs['positional_tokens'] is True, "If using positional_tokens, it must be set to True."
+            assert 'Y_mean' in kwargs.keys() and 'Y_std' in kwargs.keys(), "Mean and std must be provided for positional token normalization."
+            mean = kwargs['Y_mean']
+            std = kwargs['Y_std']
+            self.positional_tokens = kwargs['positional_tokens']
+            print("Using DCT_PositionalToken dataset with token-wise normalization.")
+            self.train = DCT_PositionalToken(
+                root_dir=path, img_sz=resolution, low_freqs=low_freqs,
+                block_sz=block_sz, mean=mean, std=std
+            )
+            self.tokens = low_freqs  # In positional token setting, number of tokens equals low_freqs
+            self.block_component = 1  # only Y channel
+
+        elif self.greyscale:
             self.block_component = 4  # only Y channel
             self.train = DCT_4Y(
                 root_dir=path, img_sz=resolution, tokens=tokens,
@@ -142,7 +162,10 @@ class ACDCUncond(DatasetFactory):
 
     @property
     def data_shape(self):
-        return self.tokens, self.low_freqs*self.block_component  # (96, 43)
+        if not self.positional_tokens:
+            return self.tokens, self.low_freqs*self.block_component  # (96, 43)
+        else:
+            return self.tokens, self.resolution*self.resolution // (self.block_sz * self.block_sz)  # (low_freqs, num_blocks)
 
     @property
     def fid_stat(self):
@@ -638,6 +661,97 @@ class DCT_4Y(Dataset):
 
         return DCT_blocks
 
+class DCT_PositionalToken(Dataset):
+    """
+    Dataset class that processes greyscale images into DCT tokens.
+    Each token consists of DCT coefficients from the same frequency position
+    across all blocks in an image. The tokens are ordered in zigzag scan order,
+    and high-frequency tokens are truncated based on `low_freqs`.
+    The tokens are then normalized using a provided mean and std.
+    """
+    def __init__(self, root_dir, img_sz=96, low_freqs=16, block_sz=4, mean=None, std=None):
+        self.root_dir = root_dir
+        # Assuming a flat directory of images for simplicity
+        # self.img_paths = [os.path.join(root_dir, f) for f in os.listdir(root_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        self.img_paths = _list_image_files_recursively(root_dir)
+        # Parameters for DCT processing
+        assert mean is not None and std is not None, "Mean and std must be provided for normalization."
+        self.mean = np.array(mean, dtype=np.float32)
+        self.std = np.array(std, dtype=np.float32)
+        print(f"using mean and std for token-wise normalization")
+
+        self.low_freqs = low_freqs
+        self.block_sz = block_sz
+        self.img_sz = img_sz
+
+        # The number of blocks determines the length of each token
+        self.num_blocks = (img_sz // block_sz) ** 2
+        
+        # The number of positions in a block determines the total number of tokens before truncation
+        self.num_positions = block_sz ** 2
+        assert self.low_freqs <= self.num_positions, "low_freqs cannot be greater than the number of DCT coefficients in a block."
+        assert len(self.mean) >= self.low_freqs and len(self.std) >= self.low_freqs, "Mean and std arrays must have at least low_freqs elements."
+
+        # Zigzag order to arrange tokens by frequency
+        self.low2high_order = zigzag_order(block_sz)
+
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.img_paths[idx]
+        img = Image.open(img_path).convert('L')  # Convert to greyscale
+        img = transforms.RandomHorizontalFlip()(img)
+        img = np.array(img, dtype=np.float32)
+
+        # Step 1: Split the Y channel (the greyscale image itself) into blocks
+        y_blocks = split_into_blocks(img, self.block_sz)  # Shape: (num_blocks, block_sz, block_sz)
+
+        # Step 2: Apply DCT to each block
+        dct_y_blocks = dct_transform(y_blocks)  # Shape: (num_blocks, block_sz, block_sz)
+
+        # Step 3: Reshape and transpose to group coefficients by position
+        flattened_dct = dct_y_blocks.reshape(self.num_blocks, self.num_positions)
+        positional_tokens = flattened_dct.T # Shape: (num_positions, num_blocks)
+
+        # Step 4: Order tokens by frequency using zigzag order
+        ordered_tokens = positional_tokens[self.low2high_order, :] # Shape: (num_positions, num_blocks)
+
+        # Step 5: Truncate high-frequency tokens using `low_freqs`
+        final_tokens = ordered_tokens[:self.low_freqs, :] # Shape: (low_freqs, num_blocks)
+
+        # Step 6: Normalize each token (frequency) using the provided mean and std.
+        mean = self.mean[:self.low_freqs].reshape(-1, 1)
+        std = self.std[:self.low_freqs].reshape(-1, 1)
+        # Add a small epsilon to std to avoid division by zero
+        normalized_tokens = (final_tokens - mean) / (std + 1e-8)
+
+        # Step 7: Convert to a FloatTensor
+        return torch.from_numpy(normalized_tokens).float()
+
+    def denormalize(self, normalized_tokens):
+        """
+        Denormalizes a tensor of tokens back to the original DCT coefficient scale.
+        :param normalized_tokens: A tensor of shape (B, low_freqs, num_blocks) or (low_freqs, num_blocks).
+        :return: A tensor with the same shape, in the original DCT scale.
+        """
+        # Ensure mean and std are on the correct device and have the correct shape for broadcasting
+        mean = torch.from_numpy(self.mean[:self.low_freqs]).to(normalized_tokens.device)
+        std = torch.from_numpy(self.std[:self.low_freqs]).to(normalized_tokens.device)
+        
+        # Reshape for broadcasting over batches and tokens
+        # Adds a batch dimension if the input is a single sample
+        if normalized_tokens.dim() == 2:
+            normalized_tokens = normalized_tokens.unsqueeze(0) # (low_freqs, num_blocks) -> (1, low_freqs, num_blocks)
+        
+        # Reshape mean and std to (1, low_freqs, 1) to broadcast across batch and block dimensions
+        mean = mean.view(1, -1, 1)
+        std = std.view(1, -1, 1)
+
+        # Apply denormalization: value = (normalized_value * std) + mean
+        denormalized_tokens = normalized_tokens * (std + 1e-8) + mean
+        
+        return denormalized_tokens.squeeze(0) # Remove batch dim if it was added
 
 class DCT_4Y_Cond(Dataset):
     def __init__(self, img_dir:str, label_dir:str, img_sz:int=96, tokens:int=144, low_freqs:int=16, block_sz:int=4, Y_bound:int=1):

@@ -22,7 +22,7 @@ import shutil
 from DCT_utils import zigzag_order, reverse_zigzag_order
 from opacus import PrivacyEngine
 from torch.utils.data import Subset
-import wandb
+import wandb,time
 
 
 def train(config):
@@ -145,6 +145,7 @@ def train(config):
 
     def train_step(_batch):
         _metrics = dict()
+        start_time = time.time()
         optimizer.zero_grad()
 
         """GFLOPs calculation (set batch_size = 1)"""
@@ -162,8 +163,15 @@ def train(config):
             main_loss, aux_loss = sde.LSimple(score_model, _batch['image'], pred=config.pred, y=_batch['label'], use_moe=config.nnet.use_moe)
         else:
             raise NotImplementedError(config.train.mode)
-        alpha = config.nnet.MoE.get("aux_loss_alpha", 0.2)
-        total_loss = main_loss + alpha * aux_loss
+        
+        try:
+            alpha = config.nnet.MoE.get("aux_loss_alpha", 0.2)
+        except:
+            alpha = config.nnet.MoH.get("aux_loss_alpha", 0.2)
+        if alpha != 0.0:
+            total_loss = main_loss + alpha * aux_loss
+        else:
+            total_loss = main_loss
         accelerator.backward(total_loss)
 
         _metrics['total_loss'] = accelerator.gather(total_loss.detach()).mean().item()
@@ -177,6 +185,8 @@ def train(config):
         lr_scheduler.step()
         train_state.ema_update(config.get('ema_rate', 0.9999))
         train_state.step += 1
+        time_elapsed = time.time() - start_time
+        _metrics['time_per_step'] = time_elapsed
 
         if config.private.use_dp and config.private.dp_method == 'dpsgd':
             # update privacy engine
@@ -254,69 +264,72 @@ def train(config):
     """Training and Evaluation"""
     logging.info(f'Start fitting, step={train_state.step}, mixed_precision={config.mixed_precision}')
     while train_state.step < config.train.n_steps:
+        # logging.info(f'finish eval checkpoint {train_state.step}...')
         nnet.train()
         batch = tree_map(lambda x: x.to(device), next(data_generator))
         metrics = train_step(batch)
 
         # logging
         nnet.eval()
-        if accelerator.is_main_process and train_state.step % config.train.log_interval == 0:
-            logging.info(utils.dct2str(dict(step=train_state.step, **metrics)))
-            logging.info(config.workdir)
-            wandb.log(metrics, step=train_state.step)
-        accelerator.wait_for_everyone()
+        with torch.no_grad():
+            if accelerator.is_main_process and train_state.step % config.train.log_interval == 0:
+                logging.info(utils.dct2str(dict(step=train_state.step, **metrics)))
+                logging.info(config.workdir)
+                wandb.log(metrics, step=train_state.step)
+            accelerator.wait_for_everyone()
 
-        # visualize generated images by DPM-Solver
-        if accelerator.is_main_process and train_state.step % config.train.eval_interval == 0:
-            grid_img_path = os.path.join(config.sample_dir, f'{train_state.step}.png')
-            logging.info(f'Save a grid of 16 samples into {grid_img_path} by DPM-Solver')
-            x_init = torch.randn(16, *dataset.data_shape, device=device)
+            # visualize generated images by DPM-Solver
+            if accelerator.is_main_process and train_state.step % config.train.eval_interval == 0:
+                grid_img_path = os.path.join(config.sample_dir, f'{train_state.step}.png')
+                logging.info(f'Save a grid of 16 samples into {grid_img_path} by DPM-Solver')
+                x_init = torch.randn(16, *dataset.data_shape, device=device)
 
-            if config.train.mode == 'uncond':
-                kwargs = dict(use_moe=config.nnet.use_moe)
-            elif config.train.mode == 'cond':
-                _y_init = dataset.sample_label(16, device=device)
-                kwargs = dict(y=_y_init, use_moe=config.nnet.use_moe)
-            else:
-                raise NotImplementedError
+                if config.train.mode == 'uncond':
+                    kwargs = dict(use_moe=config.nnet.use_moe)
+                elif config.train.mode == 'cond':
+                    _y_init = dataset.sample_label(16, device=device)
+                    kwargs = dict(y=_y_init, use_moe=config.nnet.use_moe)
+                else:
+                    raise NotImplementedError
 
-            noise_schedule = NoiseScheduleVP(schedule='linear', SNR_scale=config.dataset.SNR_scale)
-            model_fn = model_wrapper(
-                score_model_ema.noise_pred,
-                noise_schedule,
-                time_input_type='0',
-                model_kwargs=kwargs
-            )
-            dpm_solver = DPM_Solver(model_fn, noise_schedule)
-            samples = dpm_solver.sample(
-                x_init,
-                steps=config.sample.sample_steps,
-                eps=1e-4,
-                adaptive_step_size=False,
-                fast_version=True,
-            )
-            if config.train.mode == 'uncond':
-                utils.DCTsamples_to_grid_image_greyscale(
-                    samples, tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
-                    block_sz=config.dataset.block_sz, reverse_order=reverse_order,
-                    resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                noise_schedule = NoiseScheduleVP(schedule='linear', SNR_scale=config.dataset.SNR_scale)
+                model_fn = model_wrapper(
+                    score_model_ema.noise_pred,
+                    noise_schedule,
+                    time_input_type='0',
+                    model_kwargs=kwargs
                 )
-            elif config.train.mode == 'cond':
-                utils.DCTsamples_to_grid_image_greyscale(
-                    samples, 
-                    labels=_y_init,  # use the same labels as the sampled images
-                    tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
-                    block_sz=config.dataset.block_sz, reverse_order=reverse_order,
-                    resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                dpm_solver = DPM_Solver(model_fn, noise_schedule)
+                samples = dpm_solver.sample(
+                    x_init,
+                    steps=config.sample.sample_steps,
+                    eps=1e-4,
+                    adaptive_step_size=False,
+                    fast_version=True,
                 )
+                if config.train.mode == 'uncond':
+                    utils.DCTsamples_to_grid_image_greyscale(
+                        samples, tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
+                        block_sz=config.dataset.block_sz, reverse_order=reverse_order,
+                        resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                    )
+                elif config.train.mode == 'cond':
+                    utils.DCTsamples_to_grid_image_greyscale(
+                        samples, 
+                        labels=_y_init,  # use the same labels as the sampled images
+                        tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
+                        block_sz=config.dataset.block_sz, reverse_order=reverse_order,
+                        resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                    )
 
-            wandb.log({
-                    "samples": wandb.Image(grid_img_path),
-                    "step": train_state.step
-                })
+                wandb.log({
+                        "samples": wandb.Image(grid_img_path),
+                        "step": train_state.step
+                    })
             torch.cuda.empty_cache()
+            # logging.info(f'over eval checkpoint {train_state.step}...')
         accelerator.wait_for_everyone()
-
+        
         # save ckpt and FID evaluation
         save_start = config.sample.get('save_start', 10000)
         if train_state.step >= save_start and train_state.step % config.train.save_interval == 0:

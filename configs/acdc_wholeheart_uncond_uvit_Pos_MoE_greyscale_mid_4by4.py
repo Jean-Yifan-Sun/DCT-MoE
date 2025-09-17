@@ -11,14 +11,14 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_wholeheart_uncond_uvit_MoE_greyscale_mid_4by4'
+    config.name = 'acdc_wholeheart_uncond_uvit_Pos_MoE_greyscale_mid_4by4'
 
     config.train = d(
         n_steps=500000,
-        batch_size=256,
+        batch_size=512,
         mode='uncond',
         log_interval=100,
-        eval_interval=2000,
+        eval_interval=25000,
         save_interval=25000,
     )
     
@@ -46,8 +46,9 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale_moh',  # use greyscale UViT
-        tokens=144,  # number of tokens to the network
+        name='uvit_greyscale_moe',  # use greyscale UViT
+        tokens=16,  # number of tokens to the network
+        in_chans=576, # number of all blocks
         low_freqs=16,  # B**2 - m
         embed_dim=768,
         depth=16,
@@ -57,10 +58,12 @@ def get_config():
         mlp_time_embed=False,
         num_classes=-1,
         use_moe=True,
-        MoH={
+        MoE={
             "depth": 1,
-            "num_shared_heads": 4,
-            "top_k": 8,
+            "num_experts": 4,
+            "router": "topk",
+            "top_k": 2,
+            "noise_eps": 1e-2,
             "aux_loss_alpha": 0.001
         },
 
@@ -71,19 +74,21 @@ def get_config():
         path='data/scratch/datasets/ACDC/Unlabeled/Wholeheart',
         dataset_type='wholeheart',  # use wholeheart dataset
         resolution=96,
-        tokens=144,  # number of tokens to the network
+        tokens=16,  # number of tokens to the network
         low_freqs=16,  # B**2 - m
         block_sz=4,  # B
-        Y_bound=[502.5],  # eta
-        Y_std=[5.883, 3.502, 2.341, 1.48, 3.576, 2.75, 2.018, 1.365, 2.418, 2.045, 1.586, 1.175, 1.453, 1.317, 1.108, 1.0],
-        Cb_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
-        Cr_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
+        Y_mean=[58.977, 59.178, 58.911, 59.631, 59.904, 60.173, 60.341, 60.066, 59.78, 59.524, 59.671, 59.927, 60.246, 60.126, 59.833, 60.009],  # eta
+        Y_std=[49.253, 49.161, 49.181, 48.957, 48.933, 48.889, 48.773, 48.808, 48.86, 48.915, 48.794, 48.732, 48.699, 48.624, 48.67, 48.563],
+        Y_entropy=[5.883, 3.502, 2.341, 1.48, 3.576, 2.75, 2.018, 1.365, 2.418, 2.045, 1.586, 1.175, 1.453, 1.317, 1.108, 1.0],  # for loss reweighting
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
+        positional_tokens=True,  # use positional tokens
+        tokenwise_normalization="z-score",  # use token-wise normalization
+        reweight=False,  # use loss reweighting
     )
 
     config.sample = d(
-        save_start=50000,
+        save_start=100000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

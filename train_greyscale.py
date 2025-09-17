@@ -22,7 +22,7 @@ import shutil
 from DCT_utils import zigzag_order, reverse_zigzag_order
 from opacus import PrivacyEngine
 from torch.utils.data import Subset
-import wandb
+import wandb,time
 
 
 def train(config):
@@ -141,6 +141,7 @@ def train(config):
 
     def train_step(_batch):
         _metrics = dict()
+        start_time = time.time()
         optimizer.zero_grad()
 
         """GFLOPs calculation (set batch_size = 1)"""
@@ -177,7 +178,8 @@ def train(config):
         lr_scheduler.step()
         train_state.ema_update(config.get('ema_rate', 0.9999))
         train_state.step += 1
-
+        time_elapsed = time.time() - start_time
+        _metrics['time_per_step'] = time_elapsed
         if config.private.use_dp and config.private.dp_method == 'dpsgd':
             # update privacy engine
             _metrics['epsilon'] = privacy_engine.get_epsilon(config.private.target_delta)

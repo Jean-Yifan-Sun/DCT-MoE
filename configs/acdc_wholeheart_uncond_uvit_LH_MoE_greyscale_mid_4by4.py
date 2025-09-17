@@ -18,7 +18,7 @@ def get_config():
         batch_size=256,
         mode='uncond',
         log_interval=100,
-        eval_interval=2000,
+        eval_interval=25000,
         save_interval=25000,
     )
     
@@ -46,7 +46,7 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale_moh',  # use greyscale UViT
+        name='uvit_greyscale_lh_moe',  # use greyscale UViT
         tokens=144,  # number of tokens to the network
         low_freqs=16,  # B**2 - m
         embed_dim=768,
@@ -57,11 +57,13 @@ def get_config():
         mlp_time_embed=False,
         num_classes=-1,
         use_moe=True,
-        MoH={
+        MoE={
             "depth": 1,
-            "num_shared_heads": 4,
-            "top_k": 8,
-            "aux_loss_alpha": 0.001
+            "num_experts": 2,
+            "router": "topk",
+            "top_k": 2,
+            "noise_eps": 1e-2,
+            "aux_loss_alpha": 0.0
         },
 
     )
@@ -83,7 +85,7 @@ def get_config():
     )
 
     config.sample = d(
-        save_start=50000,
+        save_start=100000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

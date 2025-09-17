@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=chenhp-data-gen
 #SBATCH --qos=bham
-#SBATCH --time=96:00:00
+#SBATCH --time=48:00:00
 #SBATCH --nodes 1
 #SBATCH --gres gpu:2
 #SBATCH --gpus-per-task 2

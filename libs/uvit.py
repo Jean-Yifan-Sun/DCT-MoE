@@ -6,6 +6,7 @@ from .timm import trunc_normal_, Mlp
 import einops
 import torch.utils.checkpoint
 from absl import logging
+import numpy as np
 
 if hasattr(torch.nn.functional, 'scaled_dot_product_attention'):
     ATTENTION_MODE = 'flash'
@@ -97,99 +98,153 @@ class Attention(nn.Module):
 class MoH_Attention(nn.Module):
     """
     Implements the Mixture-of-Head (MoH) Attention Layer.
-    Based on the paper "MoH: Multi-Head Attention as Mixture-of-Head Attention" [cite: 2]
-    and the official GitHub implementation.
+    Based on the paper "MoH: Multi-Head Attention as Mixture-of-Head Attention"
     """
-    def __init__(self, dim, num_heads=12, qkv_bias=False, qk_scale=None,
-                 num_shared_heads=4, top_k=8):
+    def __init__(self, dim, num_heads=8, qkv_bias=True, 
+                 attn_drop=0., proj_drop=0., shared_head=0, routed_head=0,
+                 load_balance_lambda=1, usage_decay=0.9):
         super().__init__()
-        # Standard Attention Parameters
+        assert dim % num_heads == 0, f"dim {dim} should be divided by num_heads {num_heads}."
+        assert routed_head <= num_heads - shared_head, "routed_head must be <= num_heads - shared_head"
+
+        self.dim = dim
         self.num_heads = num_heads
         self.head_dim = dim // num_heads
-        self.scale = qk_scale or self.head_dim ** -0.5
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
-        self.proj = nn.Linear(dim, dim) # Final output projection
-
-        # MoH Specific Parameters
-        assert top_k <= (num_heads - num_shared_heads), "top_k must be smaller than the number of routed heads"
-        self.num_shared_heads = num_shared_heads
-        self.num_routed_heads = num_heads - num_shared_heads
-        self.top_k = top_k
-
-        # --- Router Linear Layers ---
-        # Corresponds to W_h in the paper (Eq. 6) [cite: 173]
-        self.router_head_type = nn.Linear(dim, 2) # 2 for [shared_group, routed_group]
-
-        # Corresponds to W_s in the paper (Eq. 5) [cite: 158]
-        self.router_shared = nn.Linear(dim, self.num_shared_heads)
+        self.load_balance_lambda = load_balance_lambda
+        self.usage_decay = usage_decay
         
-        # Corresponds to W_r in the paper (Eq. 5) [cite: 158]
-        self.router_routed = nn.Linear(dim, self.num_routed_heads)
+        # Temperature parameter for attention scaling with better initialization
+        self.temperature = nn.Parameter(
+            torch.ones(num_heads, 1, 1) * 0.5)  # More stable initialization
+
+        # Query, key, value projections
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.query_embedding = nn.Parameter(
+            nn.init.trunc_normal_(torch.empty(self.num_heads, 1, self.head_dim), mean=0, std=0.02))
+
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+
+        # MoH routing parameters
+        self.shared_head = shared_head
+        self.routed_head = routed_head
+        
+        if self.routed_head > 0:
+            self.wg = nn.Linear(dim, num_heads - shared_head, bias=False)
+            if self.shared_head > 0:
+                self.wg_0 = nn.Linear(dim, 2, bias=False)
+
+        if self.shared_head > 1:
+            self.wg_1 = nn.Linear(dim, shared_head, bias=False)
+
+        # For tracking head usage - fixed size to match actual number of routable heads
+        self.register_buffer('head_usage', torch.zeros(num_heads - shared_head))
+        self.register_buffer('num_updates', torch.zeros(1))
 
     def forward(self, x):
-        B, N, C = x.shape # Batch, Sequence Length, Channels
+        B, N, C = x.shape
+        _x = x.reshape(B * N, C)
+        
+        # Initialize load balancing loss
+        l_aux = torch.tensor(0.0, device=x.device)
 
-        # 1. Standard QKV projection, shared across all heads
+        # MoH routing mechanism
+        if self.routed_head > 0:
+            logits = self.wg(_x)
+            gates = F.softmax(logits, dim=1)
+
+            # Straight-Through Estimator for topk
+            num_tokens, num_experts = gates.shape
+            
+            # Get top-k indices and create hard mask
+            topk_values, indices = torch.topk(gates, k=self.routed_head, dim=1)
+            mask_hard = F.one_hot(indices, num_classes=num_experts).sum(dim=1).float()
+            
+            # Create soft mask for backward pass using STE
+            mask_soft = mask_hard.detach() - gates.detach() + gates
+            
+            if self.training:
+                # Calculate load balancing loss
+                me = gates.mean(dim=0)
+                ce = mask_hard.mean(dim=0)  # Use hard mask for accurate statistics
+                l_aux = self.load_balance_lambda * torch.sum(me * ce) * num_experts
+                
+                # Update head usage statistics
+                current_usage = mask_hard.mean(dim=0)
+                self.num_updates += 1
+                self.head_usage = (self.usage_decay * self.head_usage + 
+                                  (1 - self.usage_decay) * current_usage.detach())
+
+            # Use soft mask for routing (STE ensures gradients flow to gates)
+            routed_head_gates = gates * mask_soft
+            denom_s = torch.sum(routed_head_gates, dim=1, keepdim=True)
+            denom_s = torch.clamp(denom_s, min=torch.finfo(denom_s.dtype).eps)
+            routed_head_gates /= denom_s
+            routed_head_gates = routed_head_gates.reshape(B, N, -1) * self.routed_head
+
+        # Compute queries, keys, values
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
-        # --- Router Logic ---
-        # For ViT, routing decisions are based on the CLS token's query [q[:,:,0,:]]
-        # to get a global routing policy for all tokens in the sequence.
-        q_for_route = q[:, 0, 0, :] # Shape: [B, C]
-
-        # Stage 1: Route between shared and routed groups
-        alpha = F.softmax(self.router_head_type(q_for_route), dim=-1) # Shape: [B, 2]
-        alpha_shared = alpha[:, 0].unsqueeze(-1) # Shape: [B, 1]
-        alpha_routed = alpha[:, 1].unsqueeze(-1) # Shape: [B, 1]
-
-        # Stage 2: Calculate scores for individual heads within each group
-        score_shared = F.softmax(self.router_shared(q_for_route), dim=-1) # Shape: [B, num_shared_heads]
-        score_routed = F.softmax(self.router_routed(q_for_route), dim=-1) # Shape: [B, num_routed_heads]
-
-        # Apply Top-K selection for routed heads
-        topk_scores, topk_indices = torch.topk(score_routed, self.top_k, dim=-1)
-
-        # Create a sparse mask to zero out non-selected routed heads
-        mask_routed = torch.zeros_like(score_routed)
-        mask_routed.scatter_(1, topk_indices, 1)
+        # Calculate attention with scaled cosine attention and query embedding
+        # Add stability epsilon to normalization
+        q_normalized = F.normalize(q, dim=-1, eps=1e-6) + self.query_embedding
+        k_normalized = F.normalize(k, dim=-1, eps=1e-6)
         
-        # Combine scores to get final gating weights for all heads
-        gating_score_shared = alpha_shared * score_shared
-        gating_score_routed = alpha_routed * score_routed * mask_routed
+        # Clamp temperature to prevent extreme values
+        temperature = torch.clamp(F.softplus(self.temperature), min=1e-3, max=1e3)
+        attn = (q_normalized * temperature) @ k_normalized.transpose(-2, -1)
         
-        gating_score = torch.cat([gating_score_shared, gating_score_routed], dim=-1) # Shape: [B, num_heads]
-        
-        # --- Attention & Combination Logic ---
-        # Standard scaled dot-product attention is computed for all heads in parallel
-        attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
-        
-        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        attn = self.attn_drop(attn)
 
-        # Apply gating scores as a weighted sum over the head dimension
-        # Reshape for broadcasting: [B, 1, num_heads, 1] for x_heads [B, N, num_heads, head_dim] is not needed in the GitHub code
-        # The GitHub code reshapes x to [B, N, C] then projects. Let's follow that.
-        # But the paper implies weighting before projection. Let's implement the paper's formula.
-        x_heads = x.reshape(B, N, self.num_heads, self.head_dim)
-        gating_reshaped = gating_score.reshape(B, 1, self.num_heads, 1)
-        
-        # Weighted sum of head outputs 
-        x = (x_heads * gating_reshaped).sum(dim=2) # Summing across the heads dimension
+        # Apply attention to values and combine heads with routing gates
+        if self.routed_head > 0:
+            x = (attn @ v).transpose(1, 2)  # B, N, head, dim
 
-        # Final output projection
+            if self.shared_head > 1:
+                shared_head_weight = self.wg_1(_x)
+                shared_head_gates = F.softmax(shared_head_weight, dim=1).reshape(B, N, -1) * self.shared_head
+            else:
+                shared_head_gates = torch.ones((B, N, self.shared_head), device=x.device, dtype=x.dtype) * self.shared_head
+            
+            if self.shared_head == 0:
+                masked_gates = routed_head_gates
+            else:
+                weight_0 = self.wg_0(_x)
+                weight_0 = F.softmax(weight_0, dim=1).reshape(B, N, 2) * 2
+                
+                shared_head_gates = torch.einsum("bn,bne->bne", weight_0[:,:,0], shared_head_gates)
+                routed_head_gates = torch.einsum("bn,bne->bne", weight_0[:,:,1], routed_head_gates)
+
+                masked_gates = torch.cat([shared_head_gates, routed_head_gates], dim=2)
+
+            x = torch.einsum("bne,bned->bned", masked_gates, x)
+            x = x.reshape(B, N, C)
+        else:
+            # Only shared heads case
+            shared_head_weight = self.wg_1(_x)
+            masked_gates = F.softmax(shared_head_weight, dim=1).reshape(B, N, -1) * self.shared_head
+                    
+            x = (attn @ v).transpose(1, 2)  # B, N, head, dim
+            x = torch.einsum("bne,bned->bned", masked_gates, x)
+            x = x.reshape(B, N, C)
+
+        # Final projection
         x = self.proj(x)
+        x = self.proj_drop(x)
 
-        # --- Load Balance Loss Calculation ---
-        # Calculated only for the routed heads [cite: 175]
-        # f_i is the fraction of tokens that select a head
-        f_i = mask_routed.mean(0)
-        # P_i is the average routing probability for a head
-        P_i = score_routed.mean(0)
-        
-        load_balance_loss = torch.sum(f_i * P_i)
-        
-        return x, load_balance_loss
+        return x, l_aux
+
+    def get_load_balance_loss(self):
+        """Get the load balancing loss for all MoH layers"""
+        # This can be used to aggregate losses from multiple MoH layers
+        if self.num_updates > 0:
+            head_prob = self.head_usage / (self.head_usage.sum() + 1e-8)
+            balance_loss = -self.load_balance_lambda * (head_prob * torch.log(head_prob + 1e-8)).sum()
+            return balance_loss
+        return torch.tensor(0.0, device=self.head_usage.device)
 
 class Block(nn.Module):
 
@@ -277,8 +332,9 @@ class TopKRouter(nn.Module):
         # This is the W_g matrix mentioned in the survey. 
         self.gate = nn.Linear(d_model, num_experts, bias=False)
 
-    def forward_old(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor):
         """
+        A more robust implementation of the Top-K Gating function with STE.
         Args:
             x (torch.Tensor): Input tensor of shape [batch_size, seq_len, d_model]
         
@@ -288,69 +344,52 @@ class TopKRouter(nn.Module):
                 - expert_indices (torch.Tensor): The indices of the selected experts, of shape [batch_size, seq_len, top_k].
                 - aux_loss (torch.Tensor): The auxiliary load balancing loss.
         """
-        # Reshape the input to treat each token independently
         batch_size, seq_len, _ = x.shape
         x_flat = x.view(-1, self.d_model) # Shape: [batch_size * seq_len, d_model]
         num_tokens = x_flat.shape[0]
 
-        # 1. Calculate Gating Logits
-        # Shape: [num_tokens, num_experts]
+        # 1. Calculate Gating Logits and Probabilities
         logits = self.gate(x_flat)
-
-        # 2. Add Noise (during training) to encourage expert exploration 
         if self.training and self.noise_eps > 0:
             noise = torch.randn_like(logits) * self.noise_eps
             logits += noise
-
-        # 3. Select Top-K Experts
-        # Get the scores and indices of the top 'k' experts for each token
-        # topk_logits shape: [num_tokens, top_k], topk_indices shape: [num_tokens, top_k]
-        topk_logits, topk_indices = torch.topk(logits, self.top_k, dim=-1)
-
-        # Create a sparse mask to apply softmax only to the top-k experts
-        # We create a mask of zeros and scatter 1s at the locations of the top-k experts.
-        mask = torch.zeros_like(logits, dtype=torch.bool)
-        mask.scatter_(1, topk_indices, 1)
-
-        # Apply the mask: set non-top-k logits to negative infinity for softmax
-        large_negative = -1e4 if logits.dtype == torch.float16 else -1e9
-        masked_logits = logits.where(mask, torch.tensor(large_negative, device=logits.device, dtype=logits.dtype))
-
-        # 4. Calculate Gating Weights (Softmax)
-        # Softmax is applied to the masked logits to get the final weights.
-        final_weights = F.softmax(masked_logits, dim=-1)
-
-        # 5. Calculate Load Balancing Loss 
-        # This implementation follows the simplified loss from Switch Transformer 
-        # Calculate the fraction of tokens assigned to each expert (f_i)
-        f_i = torch.zeros(self.num_experts, device=x.device)
-        # Flatten the indices to get a 1D tensor of size [num_tokens * top_k]
-        indices_flat = topk_indices.view(-1)
         
-        # Create a source tensor of ones that has the SAME size as the flattened indices
-        ones_source = torch.ones_like(indices_flat, dtype=torch.float)
-        
-        # Use the corrected source tensor in the index_add_ operation
-        f_i.index_add_(0, indices_flat, ones_source)
+        # 1. 移除极端值
+        logits = torch.clamp(logits, min=-100.0, max=100.0)
+        # 2. 减去最大值进行数值稳定化
+        logits_max = torch.max(logits, dim=-1, keepdim=True)[0].detach()
+        logits = logits - logits_max
+        # router_probs are the soft probabilities used for the backward pass (gradient calculation)
+        router_probs = F.softmax(logits.float(), dim=-1)
 
-        f_i = f_i / (num_tokens * self.top_k)
-        # f_i_detached = f_i.detach() #f_i 不可微因此不能让其影响梯度传播
+        # 2. Select Top-K Experts and create a hard mask for the forward pass
+        # This avoids division by small numbers and is more stable.
+        topk_probs, topk_indices = torch.topk(router_probs, self.top_k, dim=-1)
+        hard_mask = F.one_hot(topk_indices, num_classes=self.num_experts).sum(dim=1)
+        hard_mask = hard_mask.float()
 
-        # Calculate the average routing probability for each expert (Q_i)
-        Q_i = final_weights.sum(0) / num_tokens
-        
-        # The auxiliary loss encourages f_i and Q_i to be uniform.
-        # 确保 f_i 和 Q_i 没有 NaN 或 Inf
-        assert not torch.isnan(f_i).any() and not torch.isinf(f_i).any()
-        assert not torch.isnan(Q_i).any() and not torch.isinf(Q_i).any()
-        aux_loss = self.num_experts * torch.sum(f_i * Q_i)
-        
-        aux_loss_threshold = 3.0  # 设置一个合理的阈值
-        aux_loss = torch.clamp(aux_loss, max=aux_loss_threshold)
+        # 3. Apply Straight-Through Estimator (STE)
+        # For the backward pass, we want gradients to flow through the original router_probs,
+        # but for the forward pass, we use the hard 0/1 mask.
+        ste_weights = (hard_mask - router_probs).detach() + router_probs
 
-        return final_weights.view(batch_size, seq_len, -1), topk_indices.view(batch_size, seq_len, -1), aux_loss
+        # 4. Calculate Load Balancing Loss
+        # This loss encourages tokens to be distributed evenly across experts.
+        # f_i: Fraction of tokens dispatched to expert i (using the hard mask for accuracy).
+        # P_i: Average router probability for expert i.
+        f_i = ste_weights.sum(0) / num_tokens
+        P_i = router_probs.sum(0) / num_tokens
+        # 避免数值不稳定
+        f_i = torch.clamp(f_i, min=1e-6)
+        P_i = torch.clamp(P_i, min=1e-6)
+        
+        # The loss is the dot product of these two vectors, scaled by the number of experts.
+        aux_loss = self.num_experts * torch.sum(f_i * P_i)
+        aux_loss = torch.clamp(aux_loss, max=100.0)  # 防止损失爆炸
+
+        return ste_weights.view(batch_size, seq_len, -1), topk_indices.view(batch_size, seq_len, -1), aux_loss
     
-    def forward(self, x: torch.Tensor):
+    def forward_old(self, x: torch.Tensor):
         """
         Args:
             x (torch.Tensor): Input tensor of shape [batch_size, seq_len, d_model]
@@ -462,57 +501,116 @@ class Block_MoE(nn.Module):
         if self.skip_linear is not None:
             x = self.skip_linear(torch.cat([x, skip], dim=-1))
         
-        # 1. Attention Block (remains the same)
-        # This is the first residual connection
+        # 1. Attention Block
         x = x + self.attn(self.norm1(x))
+        residual = x
         
-        # --- Start of MoE Logic ---
-        # Store the output of the attention block for the second residual connection
-        residual = x 
-        
-        # 2. Normalize before routing
+        # 2. MoE Block
         x = self.norm2(x)
-        
-        # 3. Route tokens to experts
-        # The router returns the gating weights and the crucial auxiliary loss
-        gating_weights, expert_indices, aux_loss = self.router(x)
-        
-        # 4. Dispatch tokens and combine expert outputs
-        # Create a tensor to store the final output
         final_output = torch.zeros_like(x)
-        
-        # Flatten tensors for easier indexing
         flat_x = x.view(-1, x.shape[-1])
-        flat_weights = gating_weights.view(-1, self.experts.__len__())
         
-        # Get the indices of the top-k experts for each token
-        topk_indices_flat = expert_indices.view(-1, expert_indices.shape[-1])
-
-        # Loop through each expert and process the tokens routed to it
-        for i, expert in enumerate(self.experts):
-            # Find which tokens are routed to this expert
-            token_indices = torch.where(topk_indices_flat == i)[0]
+        # 3. 获取路由权重和专家分配
+        try:
+            gating_weights, expert_indices, aux_loss = self.router(x)
             
-            if token_indices.numel() > 0:
-                # Get the tokens and their corresponding gating weights
-                expert_tokens = flat_x[token_indices]
-                expert_weights = flat_weights[token_indices, i].unsqueeze(1)
+            # 检查路由权重的有效性
+            if not torch.all(torch.isfinite(gating_weights)):
+                logging.error(f"非有效的路由权重: {gating_weights.min()}, {gating_weights.max()}")
+                gating_weights = torch.nan_to_num(gating_weights, nan=0.0, posinf=1.0, neginf=0.0)
+                gating_weights = F.normalize(gating_weights, p=1, dim=-1)
+            
+            flat_weights = gating_weights.view(-1, self.experts.__len__())
+            topk_indices_flat = expert_indices.view(-1, expert_indices.shape[-1])
+            
+            # 4. 专家处理
+            expert_outputs = []
+            expert_masks = []
+            
+            for i, expert in enumerate(self.experts):
+                # 找出被路由到当前专家的token
+                token_indices = torch.where(topk_indices_flat == i)[0]
                 
-                # Process tokens with the expert and apply the gating weight
-                expert_output = expert(expert_tokens) * expert_weights
-                
-                # Add the weighted expert output to the final output tensor
-                final_output.view_as(flat_x).index_add_(0, token_indices, expert_output)
+                if token_indices.numel() > 0:
+                    # 获取相关的token和权重
+                    expert_tokens = flat_x[token_indices]
+                    expert_weights = flat_weights[token_indices, i].unsqueeze(1)
+                    
+                    # 对专家输出进行安全处理
+                    with torch.set_grad_enabled(True):  # 确保梯度流动
+                        expert_output = expert(expert_tokens)
+                        # 检查专家输出
+                        expert_output = torch.clamp(expert_output, min=-1e6, max=1e6)
 
-        # 5. Second Residual Connection
-        x = residual + final_output
-        
-        # Return both the final output and the auxiliary loss
-        return x, aux_loss
+                        # 创建sparse更新掩码
+                        expert_mask = torch.zeros_like(flat_x)
+                        expert_mask[token_indices] = expert_weights
+                        expert_masks.append(expert_mask)
+                        
+                        # 应用权重并累积输出
+                        weighted_output = expert_output * expert_weights
+                        expert_outputs.append((token_indices, weighted_output))
+            
+            # 5. 安全地组合专家输出
+            for token_indices, weighted_output in expert_outputs:
+                final_output.view_as(flat_x).index_add_(0, token_indices, weighted_output)
+            
+            # 确保输出不包含极端值
+            if not torch.all(torch.isfinite(final_output)):
+                logging.error("MoE输出包含非有效值")
+                final_output = torch.nan_to_num(final_output, nan=0.0, posinf=1e6, neginf=-1e6)
+            
+            # 6. 残差连接
+            x = residual + final_output
+            
+            # 返回结果和辅助损失
+            return x, aux_loss
+            
+        except Exception as e:
+            logging.error(f"MoE前向传播错误: {str(e)}")
+            # logging.error(f"堆栈跟踪: {traceback.format_exc()}")
+            raise e
+
+class Block_LH_MoE(nn.Module):
+    """ Transformer block with Mixture of Experts (MoE) layer. """
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, router_layer=TopKRouter, skip=False, use_checkpoint=False, num_experts=2, per_expert_emblength=1):
+        super().__init__()
+        self.num_experts = num_experts
+        self.per_expert_emblength = per_expert_emblength
+        block_list = []
+        for i in range(self.num_experts):
+            block = Block(
+                    dim=per_expert_emblength, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+            block_list.append(block)
+        self.blocks = nn.ModuleList(block_list)
+            
+    def forward(self, x, skip=None):
+        x_list = []
+        if skip is None:
+            for i in range(self.num_experts):
+                x_i =  x[:, :, i * self.per_expert_emblength : (i + 1) * self.per_expert_emblength]
+                x_i = self.blocks[i](x_i)
+                if i == 0:
+                    x_ = x_i
+                else:
+                    x_ = torch.cat((x_, x_i), dim=-1) # Concatenate along the embedding dimension
+        else:
+            for i in range(self.num_experts):
+                skip_i = skip[:, :, i * self.per_expert_emblength : (i + 1) * self.per_expert_emblength]
+                x_i =  x[:, :, i * self.per_expert_emblength : (i + 1) * self.per_expert_emblength]
+                x_i = self.blocks[i](x_i, skip_i)
+                if i == 0:
+                    x_ = x_i
+                else:
+                    x_ = torch.cat((x_, x_i), dim=-1) # Concatenate along the embedding dimension
+        return x_
+
 
 class Block_MoH(nn.Module):
     """ Transformer block with Mixture of Heads (MoH) Attention. """
-    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, attn_drop=0, proj_drop=0,
                  act_layer=nn.GELU, norm_layer=nn.LayerNorm, skip=False, use_checkpoint=False,
                  # MoH specific arguments
                  num_shared_heads=4, top_k=8):
@@ -521,13 +619,13 @@ class Block_MoH(nn.Module):
         
         # --- MoH Attention Layer ---
         self.attn = MoH_Attention(
-            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale,
-            num_shared_heads=num_shared_heads, top_k=top_k)
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, attn_drop=attn_drop, proj_drop=proj_drop,
+            shared_head=num_shared_heads, routed_head=top_k)
             
         # --- Standard MLP Layer ---
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Expert(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer)
+        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer)
             
         self.skip_linear = nn.Linear(2 * dim, dim) if skip else None
         self.use_checkpoint = use_checkpoint
@@ -863,7 +961,10 @@ class UViT_greyscale_MoE(nn.Module):
         self.moe_layer_index = MoE.get("depth", 1) # Interpreted as placing MoE at first and last blocks
 
         # --- Input and Embedding Layers ---
-        self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+        if in_chans != 1:
+            self.proj = nn.Linear(in_chans, embed_dim, bias=True)
+        else:
+            self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True) # For greyscale images, only use Y channel
         self.time_embed = nn.Sequential(
             nn.Linear(embed_dim, 4 * embed_dim), 
             nn.SiLU(), 
@@ -911,7 +1012,10 @@ class UViT_greyscale_MoE(nn.Module):
 
         # --- Output Layers ---
         self.norm = norm_layer(embed_dim)
-        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+        if in_chans != 1:
+            self.decoder_pred = nn.Linear(embed_dim, in_chans, bias=True)
+        else:
+            self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
 
         trunc_normal_(self.pos_embed, std=.02)
         self.apply(self._init_weights)
@@ -986,7 +1090,10 @@ class UViT_greyscale_MoH(nn.Module):
         self.moh_layer_index = MoH.get("depth", 1) # Interpreted as placing MoH at first and last blocks
 
         # --- Input and Embedding Layers ---
-        self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+        if in_chans != 1:
+            self.proj = nn.Linear(in_chans, embed_dim, bias=True)
+        else:
+            self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
         self.time_embed = nn.Sequential(
             nn.Linear(embed_dim, 4 * embed_dim), 
             nn.SiLU(), 
@@ -1006,7 +1113,7 @@ class UViT_greyscale_MoH(nn.Module):
         for i in range(depth // 2):
             if self.moh_layer_index == 1 and i == 0: # First block
                 block = Block_MoH(
-                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias,
                     norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_shared_heads=self.num_shared_heads, top_k=self.top_k)
             else:
                  block = Block(
@@ -1023,7 +1130,7 @@ class UViT_greyscale_MoH(nn.Module):
         for i in range(depth // 2):
             if self.moh_layer_index == 1 and i == (depth // 2) - 1: # Last block
                  block = Block_MoH(
-                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias,
                     norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_shared_heads=self.num_shared_heads, top_k=self.top_k)
             else:
                 block = Block(
@@ -1034,7 +1141,10 @@ class UViT_greyscale_MoH(nn.Module):
 
         # --- Output Layers ---
         self.norm = norm_layer(embed_dim)
-        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+        if in_chans != 1:
+            self.decoder_pred = nn.Linear(embed_dim, in_chans,bias=True)
+        else:
+            self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
 
         trunc_normal_(self.pos_embed, std=.02)
         self.apply(self._init_weights)
@@ -1091,3 +1201,135 @@ class UViT_greyscale_MoH(nn.Module):
 
         # Return both the prediction and the accumulated auxiliary loss
         return x, total_aux_loss
+
+
+class UViT_greyscale_LH_MoE(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
+                 qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=True, MoE={"depth": 1, "num_experts": 2, "router":"topk", "top_k": 2}):
+        super().__init__()
+        self.num_features = self.embed_dim = embed_dim
+        self.num_classes = num_classes
+        self.tokens = tokens
+        self.DCT_coes = low_freqs
+        assert use_moe==True, "UViT_greyscale_MoE is designed to use MoE. Set use_moe=True."
+        
+        # --- LH_MoE Configuration ---
+        self.num_experts = MoE.get("num_experts", 2)
+        assert self.DCT_coes * 4 % self.num_experts == 0, f"num_experts ({self.num_experts}) must divide DCT_coes*4 ({self.DCT_coes * 4}) evenly for LH_MoE."
+        assert self.embed_dim % self.num_experts == 0, f"num_experts ({self.num_experts}) must divide embed_dim ({self.embed_dim}) evenly for LH_MoE."
+        self.per_expert_dctlength = self.DCT_coes * 4 // self.num_experts
+        self.per_expert_emblength = self.embed_dim // self.num_experts
+        self.router_type = MoE.get("router", "frequency_avg")
+        # self.top_k = MoE.get("top_k", 2) # How many experts to use per token
+        # self.moe_noise_eps = MoE.get("noise_eps", 1e-2)
+        self.moe_layer_index = MoE.get("depth", 1) # Interpreted as placing MoE at first and last blocks
+
+        # --- Input and Embedding Layers ---
+        self.proj = nn.ModuleList()
+        for i in range(self.num_experts):
+            self.proj.append(nn.Linear(self.per_expert_dctlength, self.per_expert_emblength, bias=True))
+        self.time_embed = nn.Sequential(
+            nn.Linear(embed_dim, 4 * embed_dim), 
+            nn.SiLU(), 
+            nn.Linear(4 * embed_dim, embed_dim),
+        ) if mlp_time_embed else nn.Identity()
+
+        if self.num_classes > 0:
+            self.label_emb = nn.Embedding(self.num_classes, embed_dim)
+            self.extras = 2
+        else:
+            self.extras = 1
+            
+        self.pos_embed = nn.Parameter(torch.zeros(1, self.extras + self.tokens, embed_dim))
+        
+        # --- Build Transformer Blocks with MoE ---
+        in_blocks_list = []
+        for i in range(depth // 2):
+            if self.moe_layer_index == 1 and i == 0: # First block
+                block = Block_LH_MoE(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, per_expert_emblength=self.per_expert_emblength)
+            else:
+                 block = Block(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+            in_blocks_list.append(block)
+        self.in_blocks = nn.ModuleList(in_blocks_list)
+
+        self.mid_block = Block(
+                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+
+        out_blocks_list = []
+        for i in range(depth // 2):
+            if self.moe_layer_index == 1 and i == (depth // 2) - 1: # Last block
+                 block = Block_LH_MoE(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_experts=self.num_experts, per_expert_emblength=self.per_expert_emblength)
+            else:
+                block = Block(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint)
+            out_blocks_list.append(block)
+        self.out_blocks = nn.ModuleList(out_blocks_list)
+
+        # --- Output Layers ---
+        self.norm = norm_layer(embed_dim)
+        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+
+        trunc_normal_(self.pos_embed, std=.02)
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+
+    @torch.jit.ignore
+    def no_weight_decay(self):
+        return {'pos_embed'}
+
+    def forward(self, x, timesteps, y=None):
+        # 1. Initial Projection and Embedding
+        for i in range(self.num_experts):
+            x_part = x[:, :, i * self.per_expert_dctlength : (i + 1) * self.per_expert_dctlength]
+            x_emb_part = self.proj[i](x_part) # (b, tokens, per_expert_emblength)
+            if i == 0:
+                x_ = x_emb_part
+            else:
+                x_ = torch.cat((x_, x_emb_part), dim=-1) # Concatenate along the embedding dimension
+
+        time_token = self.time_embed(timestep_embedding(timesteps, self.embed_dim)).unsqueeze(1)
+        x = torch.cat((time_token, x_), dim=1)
+        if y is not None:
+            label_emb = self.label_emb(y).unsqueeze(1)
+            x = torch.cat((label_emb, x), dim=1)
+        x = x + self.pos_embed
+
+        # 2. Forward pass through the network, tracking aux loss
+        total_aux_loss = torch.tensor(0.0, device=x.device)
+        skips = []
+
+        for blk in self.in_blocks:
+            x = blk(x)
+            skips.append(x)
+
+        # Mid block does not have MoE in this design
+        x = self.mid_block(x)
+
+        for blk in self.out_blocks:
+            x = blk(x, skips.pop())
+
+        # 3. Final Prediction Head
+        x = self.norm(x)
+        image_tokens = x[:, self.extras:, :]
+        x = self.decoder_pred(image_tokens)
+
+        # Return both the prediction and the accumulated auxiliary loss
+        return x, total_aux_loss
+

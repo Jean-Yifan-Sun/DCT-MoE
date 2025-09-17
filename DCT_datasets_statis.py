@@ -366,6 +366,148 @@ def mask_high_freq_coe_from_img_folder(img_folder=None, save_folder=None, img_sz
         else:
             break
 
+def calculate_block_stats(img_folder=None, block_sz=8):
+    """
+    Calculates the mean and standard deviation for each position within the blocks
+    of the Y channel for all images in a dataset.
+
+    :param img_folder: Path to the folder containing images.
+    :param block_sz: The size of the blocks to divide the images into.
+    :return: A tuple containing two numpy arrays: (mean, std_dev),
+             both of shape (block_sz, block_sz).
+    """
+    sum_of_values = np.zeros((block_sz, block_sz), dtype=np.float64)
+    sum_of_squares = np.zeros((block_sz, block_sz), dtype=np.float64)
+    total_blocks = 0
+
+    file_list = os.listdir(img_folder)
+    print(f"Found {len(file_list)} images in {img_folder}. Starting statistics calculation...")
+
+    for filename in tqdm(file_list):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff')):
+            img_path = os.path.join(img_folder, filename)
+            img = Image.open(img_path).convert('RGB')
+            img = np.array(img)
+
+            # Convert RGB to Y channel
+            R = img[:, :, 0]
+            G = img[:, :, 1]
+            B = img[:, :, 2]
+            img_y = 0.299 * R + 0.587 * G + 0.114 * B
+
+            # Split Y channel into blocks
+            y_blocks = split_into_blocks(img_y, block_sz)  # Shape: (num_blocks, block_sz, block_sz)
+
+            if y_blocks.shape[0] > 0:
+                # Accumulate sums for mean and variance calculation
+                sum_of_values += np.sum(y_blocks, axis=0)
+                sum_of_squares += np.sum(np.square(y_blocks), axis=0)
+                total_blocks += y_blocks.shape[0]
+
+    if total_blocks == 0:
+        print("No blocks were processed. Please check the image folder and block size.")
+        return None, None
+
+    # Calculate mean
+    mean = sum_of_values / total_blocks
+
+    # Calculate variance and standard deviation
+    # Var(X) = E[X^2] - (E[X])^2
+    variance = (sum_of_squares / total_blocks) - np.square(mean)
+    std_dev = np.sqrt(variance)
+
+    print(f"\nCalculation finished. Processed a total of {total_blocks} blocks.")
+    print("\nMean for each position in the block:")
+    print(np.around(mean, decimals=2))
+    print("\nStandard Deviation for each position in the block:")
+    print(np.around(std_dev, decimals=2))
+
+    return mean, std_dev
+
+def calculate_block_stats_y_channel(img_folder=None, block_sz=8, tau=98.0):
+    """
+    Calculates the mean and standard deviation for each position within the Y-channel blocks
+    across an entire dataset, with outlier filtering and results in zigzag order.
+
+    :param img_folder: Path to the folder containing images.
+    :param block_sz: The size of the blocks to divide the images into (e.g., 4 for 4x4).
+    :param tau: The percentile to use for filtering extreme values (e.g., 98.0).
+                This keeps data between the (100-tau)/2 and (100+tau)/2 percentiles.
+    :return: A tuple of (mean_zigzag, std_zigzag).
+    """
+    # Store all values for each position in the block, e.g., 16 lists for a 4x4 block.
+    num_positions = block_sz * block_sz
+    all_values = [[] for _ in range(num_positions)]
+    total_blocks = 0
+
+    file_list = os.listdir(img_folder)
+    print(f"Found {len(file_list)} images. Starting to collect block data...")
+
+    for filename in tqdm(file_list, desc="Processing images"):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff')):
+            img_path = os.path.join(img_folder, filename)
+            try:
+                img = Image.open(img_path).convert('RGB')
+                img = np.array(img)
+
+                # Convert RGB to Y channel (Luma component)
+                img_y = 0.299 * img[:, :, 0] + 0.587 * img[:, :, 1] + 0.114 * img[:, :, 2]
+
+                # Split Y channel into blocks
+                y_blocks = split_into_blocks(img_y, block_sz)  # Shape: (num_blocks, block_sz, block_sz)
+
+                if y_blocks.shape[0] > 0:
+                    total_blocks += y_blocks.shape[0]
+                    # Reshape to (num_blocks, num_positions) and append to lists
+                    reshaped_blocks = y_blocks.reshape(-1, num_positions)
+                    for i in range(num_positions):
+                        all_values[i].extend(reshaped_blocks[:, i])
+            except Exception as e:
+                print(f"Warning: Could not process file {filename}. Error: {e}")
+
+    if total_blocks == 0:
+        print("No blocks were processed. Please check the image folder and block size.")
+        return None, None
+
+    print(f"\nData collection complete. Processed {total_blocks} blocks.")
+    print("Calculating statistics with outlier filtering...")
+
+    means = np.zeros(num_positions)
+    stds = np.zeros(num_positions)
+    low_thresh = (100.0 - tau) / 2.0
+    up_thresh = (100.0 + tau) / 2.0
+
+    for i in tqdm(range(num_positions), desc="Calculating stats"):
+        position_data = np.array(all_values[i])
+        
+        # Calculate percentile bounds to filter outliers
+        lower_bound = np.percentile(position_data, low_thresh)
+        upper_bound = np.percentile(position_data, up_thresh)
+        
+        # Filter the data
+        filtered_data = position_data[(position_data >= lower_bound) & (position_data <= upper_bound)]
+        
+        if filtered_data.size > 0:
+            means[i] = np.mean(filtered_data)
+            stds[i] = np.std(filtered_data)
+        else:
+            # Handle case where filtering removes all data
+            means[i] = np.mean(position_data) # Fallback to unfiltered mean
+            stds[i] = np.std(position_data)   # Fallback to unfiltered std
+
+    # Get zigzag order and reorder the results
+    order = zigzag_order(block_sz)
+    mean_zigzag = np.around(means[order], decimals=3)
+    std_zigzag = np.around(stds[order], decimals=3)
+
+    print(f"\nStatistics calculated using the central {tau}% of data.")
+    print("\nMean for each position (in Zigzag Order):")
+    print(mean_zigzag)
+    print("\nStandard Deviation for each position (in Zigzag Order):")
+    print(std_zigzag)
+
+    return mean_zigzag, std_zigzag
+
 
 if __name__ == "__main__":
 
@@ -487,7 +629,8 @@ if __name__ == "__main__":
                           block_sz=4, tau=98.25)
     DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_4by4_y.npy',
                           block_sz=4, tau=98.25, eta=502.0)
-
+    calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=4)
+    calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=4, tau=96.0)
     # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=4, low_freqs=4)

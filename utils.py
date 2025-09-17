@@ -7,7 +7,7 @@ from torchvision.utils import save_image
 from absl import logging
 import cv2
 from PIL import Image
-from DCT_utils import idct_transform, combine_blocks
+from DCT_utils import idct_transform, combine_blocks, zigzag_order
 import threading
 import queue
 from multiprocessing import Process, Queue, Event, cpu_count
@@ -50,6 +50,9 @@ def get_nnet(name, **kwargs):
     elif name == 'uvit_greyscale_moh':
         from libs.uvit import UViT_greyscale_MoH
         return UViT_greyscale_MoH(**kwargs)
+    elif name == 'uvit_greyscale_lh_moe':
+        from libs.uvit import UViT_greyscale_LH_MoE
+        return UViT_greyscale_LH_MoE(**kwargs)
     else:
         raise NotImplementedError(name)
 
@@ -358,6 +361,59 @@ def DCT_to_greyscale(sample, tokens=0, low_freqs=0, block_sz=0, reverse_order=No
     grey_img = np.clip(y_reconstructed, 0, 255).astype(np.uint8)
     return grey_img
 
+def PositionalToken_to_greyscale(sample, img_sz=96, low_freqs=16, block_sz=4, mean=None, std=None):
+    """
+    Converts positional DCT tokens back to a greyscale image.
+    This is the inverse operation of the DCT_PositionalToken dataset.
+
+    :param sample: A numpy array of normalized positional tokens, shape (low_freqs, num_blocks).
+    :param img_sz: The resolution of the output image.
+    :param low_freqs: The number of low-frequency DCT coefficients (tokens) used.
+    :param block_sz: The size of the DCT blocks (e.g., 4 for 4x4).
+    :param mean: The mean values used for normalization, shape (at least low_freqs,).
+    :param std: The standard deviation values used for normalization, shape (at least low_freqs,).
+    :return: A reconstructed greyscale image as a numpy array of shape (img_sz, img_sz).
+    """
+    assert mean is not None and std is not None, "Mean and std must be provided for denormalization."
+    
+    num_blocks = (img_sz // block_sz) ** 2
+    num_positions = block_sz * block_sz
+    
+    assert sample.shape == (low_freqs, num_blocks), f"Input sample shape must be ({low_freqs}, {num_blocks})"
+
+    # Step 1: Denormalize the tokens
+    mean_vals = np.array(mean[:low_freqs]).reshape(-1, 1)
+    std_vals = np.array(std[:low_freqs]).reshape(-1, 1)
+    denormalized_tokens = sample * (std_vals + 1e-8) + mean_vals
+
+    # Step 2: Pad with zeros for the high-frequency coefficients that were removed
+    padded_tokens = np.zeros((num_positions, num_blocks))
+    padded_tokens[:low_freqs, :] = denormalized_tokens
+
+    # Step 3: Reverse the zigzag ordering to get tokens back in standard block order
+    zigzag_indices = zigzag_order(block_sz)
+    # Create an empty array to hold the coefficients in their original flattened block order
+    positional_tokens = np.zeros_like(padded_tokens)
+    positional_tokens[zigzag_indices] = padded_tokens
+
+    # Step 4: Transpose and reshape to get DCT blocks
+    # (num_positions, num_blocks) -> (num_blocks, num_positions)
+    flattened_dct = positional_tokens.T
+    # (num_blocks, num_positions) -> (num_blocks, block_sz, block_sz)
+    dct_blocks = flattened_dct.reshape(num_blocks, block_sz, block_sz)
+
+    # Step 5: Apply Inverse DCT to each block
+    idct_blocks = idct_transform(dct_blocks)
+
+    # Step 6: Combine the blocks back into a single image
+    reconstructed_image = combine_blocks(idct_blocks, img_sz, img_sz, block_sz)
+
+    # Step 7: Clip and convert to uint8 format
+    grey_img = np.clip(reconstructed_image, 0, 255).astype(np.uint8)
+    
+    return grey_img
+
+
 def DCTsamples_to_grid_image(samples, tokens=0, low_freqs=0, block_sz=0,
                              reverse_order=None, resolution=0, grid_sz=0, path=None, Y_bound=None):
     samples = samples.detach().cpu().numpy()
@@ -421,6 +477,52 @@ def DCTsamples_to_grid_image_greyscale(samples, labels=None, tokens=0, low_freqs
     final_image = Image.fromarray(grid_image, mode='L')
     final_image.save(path)
 
+def PositionalTokenSamples_to_grid_image(samples, labels=None, img_sz=96, low_freqs=16, block_sz=4,
+                                         mean=None, std=None, grid_sz=6, path=None):
+    """
+    Converts a batch of positional token samples to a grid of greyscale images and saves it.
+    Mimics DCTsamples_to_grid_image_greyscale.
+    """
+    samples = samples.detach().cpu().numpy()
+    grey_imgs = []
+    for sample in samples:
+        grey_img = PositionalToken_to_greyscale(sample, img_sz, low_freqs, block_sz, mean, std)
+        grey_imgs.append(grey_img)
+    grey_imgs = np.array(grey_imgs)
+    
+    if labels is not None:
+        # This part assumes labels are also in the positional token format.
+        labels = labels.detach().cpu().numpy()
+        grey_labs = []
+        for label in labels:
+            grey_lab = PositionalToken_to_greyscale(label, img_sz, low_freqs, block_sz, mean, std)
+            grey_labs.append(grey_lab)
+        grey_labs = np.array(grey_labs)
+        assert img_sz == grey_labs.shape[1], "Image size and label size must match."
+        # Create a grid that is twice as tall to accommodate labels below samples
+        grid_image = np.zeros((grid_sz * img_sz * 2, grid_sz * img_sz), dtype=np.uint8)
+        for i in range(grid_sz):
+            for j in range(grid_sz):
+                idx = i * grid_sz + j
+                if idx < grey_imgs.shape[0]:
+                    # Place generated image
+                    grid_image[2 * i * img_sz:(2 * i + 1) * img_sz, j * img_sz:(j + 1) * img_sz] = grey_imgs[idx]
+                    # Place label image below
+                    grid_image[(2 * i + 1) * img_sz:(2 * i + 2) * img_sz, j * img_sz:(j + 1) * img_sz] = grey_labs[idx]
+    else:
+        # Fill the grid image with the grid_sz*grid_sz smaller images
+        grid_image = np.zeros((grid_sz * img_sz, grid_sz * img_sz), dtype=np.uint8)
+        for i in range(grid_sz):
+            for j in range(grid_sz):
+                idx = i * grid_sz + j
+                if idx < grey_imgs.shape[0]:
+                    grid_image[i * img_sz:(i + 1) * img_sz, j * img_sz:(j + 1) * img_sz] = grey_imgs[idx]
+
+    # Convert the NumPy array to a greyscale image and save
+    final_image = Image.fromarray(grid_image, mode='L')
+    final_image.save(path)
+
+
 def DCTsample2dir(accelerator, path, n_samples, mini_batch_size, sample_fn,
                   tokens=0, low_freqs=0, reverse_order=None, resolution=0, block_sz=8, Y_bound=None):
     os.makedirs(path, exist_ok=True)
@@ -475,6 +577,42 @@ def DCTsample2dir_greyscale(accelerator, path, n_samples, mini_batch_size, sampl
     if accelerator.is_main_process:
         print(f'generated {len(os.listdir(path))} images...')
         assert len(os.listdir(path)) == n_samples
+
+def PositionalTokenSample2dir(accelerator, path, n_samples, mini_batch_size, sample_fn,
+                              img_sz=96, low_freqs=16, block_sz=4, mean=None, std=None):
+    """
+    Generates samples using a distributed setup and saves them as individual greyscale images.
+    This is the positional token version of DCTsample2dir_greyscale.
+    """
+    os.makedirs(path, exist_ok=True)
+    batch_size = mini_batch_size * accelerator.num_processes
+    num_iterations = (n_samples + batch_size - 1) // batch_size # Ceiling division
+    print(f'Using mean/std for sampling normalization.')
+    world_size = accelerator.state.num_processes
+    local_rank = accelerator.state.local_process_index
+
+    for i in tqdm(range(num_iterations), disable=not accelerator.is_main_process, desc='sample2dir (positional)'):
+        samples = sample_fn(mini_batch_size)
+        samples = samples.detach().cpu().numpy()
+
+        # Distributed save
+        for b_id in range(mini_batch_size):
+            img_id = i * batch_size + local_rank * mini_batch_size + b_id
+            if img_id >= n_samples:
+                break
+            
+            grey_img = PositionalToken_to_greyscale(samples[b_id], img_sz, low_freqs, block_sz, mean, std)
+            cv2.imwrite(os.path.join(path, f"{img_id}.jpg"), grey_img)
+
+    accelerator.wait_for_everyone()
+    if accelerator.is_main_process:
+        # A small delay to ensure filesystem is synced before checking file count
+        time.sleep(2)
+        num_generated = len(os.listdir(path))
+        print(f'Generated {num_generated} images...')
+        # This assertion can sometimes fail on networked filesystems due to syncing delays
+        # assert num_generated == n_samples, f"Expected {n_samples}, but found {num_generated}"
+
 
 def worker_thread(sample_queue, stop_event, tokens, low_freqs, reverse_order, resolution, block_sz, Y_bound, path):
     # Background worker function: convert DCT to RGB and save images
