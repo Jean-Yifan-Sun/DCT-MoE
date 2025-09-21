@@ -143,13 +143,18 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
     # get eta"""
     if not eta:
         DCT_coe_bounds = []
+        mean, std = [], []
+        _min, _max = [], []
         for index in range(block_sz * block_sz):
             data = coe_array[:, index].astype(np.float64)  # avoid overflow
             lower_bound = np.percentile(data, low_thresh)
             upper_bound = np.percentile(data, up_thresh)
             data = data[(data >= lower_bound) & (data <= upper_bound)]
 
-            mean = np.around(np.mean(data), decimals=3)
+            mean.append(np.around(np.mean(data), decimals=3))
+            std.append(np.around(np.std(data), decimals=3))
+            _min.append(np.around(lower_bound, decimals=3))
+            _max.append(np.around(upper_bound, decimals=3))
             print(f"({up_thresh - low_thresh}%) coe {index} has upper bound {upper_bound} and lower bound {lower_bound}")
 
             if np.abs(upper_bound) > np.abs(lower_bound):
@@ -159,6 +164,13 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
                 lower_bound = np.around(np.abs(lower_bound), decimals=3)
                 DCT_coe_bounds.append(float(np.abs(lower_bound)))
 
+        order = zigzag_order(block_sz)
+        mean = np.around(np.array(mean)[order], decimals=3).tolist()
+        std = np.around(np.array(std)[order], decimals=3).tolist()
+        _min = np.around(np.array(_min)[order], decimals=3).tolist()
+        _max = np.around(np.array(_max)[order], decimals=3).tolist()
+        print(f"Mean: {mean} \n Std:{std}")
+        print(f"Min: {_min} \n Max:{_max}")
         print(f"{up_thresh - low_thresh} percentile bound is {DCT_coe_bounds}:")
         print(f"eta is {DCT_coe_bounds[0]}")
         print(f"{'-' * 100}")
@@ -397,7 +409,8 @@ def calculate_block_stats(img_folder=None, block_sz=8):
 
             # Split Y channel into blocks
             y_blocks = split_into_blocks(img_y, block_sz)  # Shape: (num_blocks, block_sz, block_sz)
-
+            dct_y_blocks = dct_transform(y_blocks)  # (64, 8, 8)
+            y_blocks = dct_y_blocks.astype(np.float64)
             if y_blocks.shape[0] > 0:
                 # Accumulate sums for mean and variance calculation
                 sum_of_values += np.sum(y_blocks, axis=0)
@@ -455,7 +468,8 @@ def calculate_block_stats_y_channel(img_folder=None, block_sz=8, tau=98.0):
 
                 # Split Y channel into blocks
                 y_blocks = split_into_blocks(img_y, block_sz)  # Shape: (num_blocks, block_sz, block_sz)
-
+                dct_y_blocks = dct_transform(y_blocks)  # (64, 8, 8)
+                y_blocks = dct_y_blocks.astype(np.float64)
                 if y_blocks.shape[0] > 0:
                     total_blocks += y_blocks.shape[0]
                     # Reshape to (num_blocks, num_positions) and append to lists

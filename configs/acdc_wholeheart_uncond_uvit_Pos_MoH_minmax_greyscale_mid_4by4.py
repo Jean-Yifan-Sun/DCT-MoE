@@ -11,7 +11,7 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_wholeheart_uncond_uvit_Pos_MoH_greyscale_mid_4by4'
+    config.name = 'acdc_wholeheart_uncond_uvit_Pos_MoH_minmax_greyscale_mid_4by4'
 
     config.train = d(
         n_steps=500000,
@@ -83,7 +83,7 @@ def get_config():
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
         positional_tokens=True,  # use positional tokens
-        tokenwise_normalization="z-score",  # use token-wise normalization minmax or z-score
+        tokenwise_normalization="minmax",  # use token-wise normalization minmax or z-score
         reweight=False,  # use loss reweighting
     )
 

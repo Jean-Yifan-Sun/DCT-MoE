@@ -24,3 +24,4 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test
 nohup python train_greyscale_Pos_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_Pos_MoE_greyscale_mid_4by4.py --workdir output/acdc_wholeheart_uncond_pos_moe_greyscale_uvit_mid_4by4
+# nohup python train_greyscale_Pos_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_Pos_MoE_minmax_greyscale_mid_4by4.py --workdir output/acdc_wholeheart_uncond_pos_moe_minmax_greyscale_uvit_mid_4by4

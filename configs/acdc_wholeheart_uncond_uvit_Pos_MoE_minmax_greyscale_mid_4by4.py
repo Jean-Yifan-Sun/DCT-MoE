@@ -11,7 +11,7 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_wholeheart_uncond_uvit_Pos_MoH_greyscale_mid_4by4'
+    config.name = 'acdc_wholeheart_uncond_uvit_Pos_MoE_minmax_greyscale_mid_4by4'
 
     config.train = d(
         n_steps=500000,
@@ -46,7 +46,7 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale_moh',  # use greyscale UViT
+        name='uvit_greyscale_moe',  # use greyscale UViT
         tokens=16,  # number of tokens to the network
         in_chans=576, # number of all blocks
         low_freqs=16,  # B**2 - m
@@ -58,10 +58,12 @@ def get_config():
         mlp_time_embed=False,
         num_classes=-1,
         use_moe=True,
-        MoH={
+        MoE={
             "depth": 1,
-            "num_shared_heads": 4,
-            "top_k": 8,
+            "num_experts": 4,
+            "router": "topk",
+            "top_k": 2,
+            "noise_eps": 1e-2,
             "aux_loss_alpha": 0.001
         },
 
@@ -83,7 +85,7 @@ def get_config():
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
         positional_tokens=True,  # use positional tokens
-        tokenwise_normalization="z-score",  # use token-wise normalization minmax or z-score
+        tokenwise_normalization="minmax",  # use token-wise normalization
         reweight=False,  # use loss reweighting
     )
 

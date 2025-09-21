@@ -133,15 +133,26 @@ class ACDCUncond(DatasetFactory):
             self.positional_tokens = False
 
         if self.positional_tokens and self.greyscale:
-            assert kwargs['positional_tokens'] is True, "If using positional_tokens, it must be set to True."
-            assert 'Y_mean' in kwargs.keys() and 'Y_std' in kwargs.keys(), "Mean and std must be provided for positional token normalization."
-            mean = kwargs['Y_mean']
-            std = kwargs['Y_std']
-            self.positional_tokens = kwargs['positional_tokens']
+            assert kwargs['tokenwise_normalization'] in ['z-score', 'minmax'], "If using positional_tokens, token-wise normalization must be provided."
+            self.tokenwise_normalization = kwargs['tokenwise_normalization']
+            if self.tokenwise_normalization == 'z-score':
+                assert 'Y_mean' in kwargs.keys() and 'Y_std' in kwargs.keys(), "Mean and std must be provided for positional token normalization."
+                mean = kwargs['Y_mean']
+                std = kwargs['Y_std']
+                data_property = {'mean': mean, 'std': std}
+            elif self.tokenwise_normalization == 'minmax':
+                assert 'Y_min' in kwargs.keys() and 'Y_max' in kwargs.keys(), "Min and max must be provided for positional token normalization."
+                _min = kwargs['Y_min']
+                _max = kwargs['Y_max']
+                data_property = {'min': _min, 'max': _max}
+            else:
+                raise NotImplementedError("Only 'z-score' and 'minmax' normalization are supported for positional tokens.")
+            
             print("Using DCT_PositionalToken dataset with token-wise normalization.")
             self.train = DCT_PositionalToken(
+                data_property=data_property,
                 root_dir=path, img_sz=resolution, low_freqs=low_freqs,
-                block_sz=block_sz, mean=mean, std=std
+                block_sz=block_sz, normalization=self.tokenwise_normalization
             )
             self.tokens = low_freqs  # In positional token setting, number of tokens equals low_freqs
             self.block_component = 1  # only Y channel
@@ -669,16 +680,33 @@ class DCT_PositionalToken(Dataset):
     and high-frequency tokens are truncated based on `low_freqs`.
     The tokens are then normalized using a provided mean and std.
     """
-    def __init__(self, root_dir, img_sz=96, low_freqs=16, block_sz=4, mean=None, std=None):
+    def __init__(self, data_property:dict, root_dir, img_sz=96, low_freqs=16, block_sz=4, normalization='z-score', **kwargs):
         self.root_dir = root_dir
         # Assuming a flat directory of images for simplicity
-        # self.img_paths = [os.path.join(root_dir, f) for f in os.listdir(root_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
         self.img_paths = _list_image_files_recursively(root_dir)
-        # Parameters for DCT processing
-        assert mean is not None and std is not None, "Mean and std must be provided for normalization."
-        self.mean = np.array(mean, dtype=np.float32)
-        self.std = np.array(std, dtype=np.float32)
-        print(f"using mean and std for token-wise normalization")
+        print(f"Found {len(self.img_paths)} images in {root_dir}")
+        assert normalization in ['z-score','minmax'], "Normalization must be either 'z-score' or 'minmax'."
+        self.normalization = normalization
+        print(f"Using {self.normalization} normalization for tokens.")
+
+        if self.normalization == 'z-score':
+            assert 'mean' in data_property.keys() and 'std' in data_property.keys(), "Mean and std must be provided for z-score normalization."
+            mean = data_property['mean']
+            std = data_property['std']
+            # Parameters for DCT processing
+            assert mean is not None and std is not None, "Mean and std must be provided for normalization."
+            self.mean = np.array(mean, dtype=np.float32)
+            self.std = np.array(std, dtype=np.float32)
+            print(f"Using mean and std for token-wise normalization")
+
+        elif self.normalization == 'minmax':
+            assert 'min' in data_property.keys() and 'max' in data_property.keys(), "Min and max must be provided for min-max normalization."
+            _min = data_property['min']
+            _max = data_property['max']
+            assert _min is not None and _max is not None, "Min and max must be provided for normalization."
+            self.min = np.array(_min, dtype=np.float32)
+            self.max = np.array(_max, dtype=np.float32)
+            print(f"Using min and max for token-wise normalization")
 
         self.low_freqs = low_freqs
         self.block_sz = block_sz
@@ -721,10 +749,15 @@ class DCT_PositionalToken(Dataset):
         final_tokens = ordered_tokens[:self.low_freqs, :] # Shape: (low_freqs, num_blocks)
 
         # Step 6: Normalize each token (frequency) using the provided mean and std.
-        mean = self.mean[:self.low_freqs].reshape(-1, 1)
-        std = self.std[:self.low_freqs].reshape(-1, 1)
-        # Add a small epsilon to std to avoid division by zero
-        normalized_tokens = (final_tokens - mean) / (std + 1e-8)
+        if self.normalization == 'z-score':
+            mean = self.mean[:self.low_freqs].reshape(-1, 1)
+            std = self.std[:self.low_freqs].reshape(-1, 1)
+            # Add a small epsilon to std to avoid division by zero
+            normalized_tokens = (final_tokens - mean) / (std + 1e-8)
+        elif self.normalization == 'minmax':
+            _min = self.min[:self.low_freqs].reshape(-1, 1)
+            _max = self.max[:self.low_freqs].reshape(-1, 1)
+            normalized_tokens = 2 * (final_tokens - _min) / (_max - _min + 1e-8) - 1  # Scale to [-1, 1]
 
         # Step 7: Convert to a FloatTensor
         return torch.from_numpy(normalized_tokens).float()
@@ -735,21 +768,34 @@ class DCT_PositionalToken(Dataset):
         :param normalized_tokens: A tensor of shape (B, low_freqs, num_blocks) or (low_freqs, num_blocks).
         :return: A tensor with the same shape, in the original DCT scale.
         """
-        # Ensure mean and std are on the correct device and have the correct shape for broadcasting
-        mean = torch.from_numpy(self.mean[:self.low_freqs]).to(normalized_tokens.device)
-        std = torch.from_numpy(self.std[:self.low_freqs]).to(normalized_tokens.device)
-        
-        # Reshape for broadcasting over batches and tokens
-        # Adds a batch dimension if the input is a single sample
-        if normalized_tokens.dim() == 2:
-            normalized_tokens = normalized_tokens.unsqueeze(0) # (low_freqs, num_blocks) -> (1, low_freqs, num_blocks)
-        
-        # Reshape mean and std to (1, low_freqs, 1) to broadcast across batch and block dimensions
-        mean = mean.view(1, -1, 1)
-        std = std.view(1, -1, 1)
+        if self.normalization == 'z-score':
+            # Ensure mean and std are on the correct device and have the correct shape for broadcasting
+            mean = torch.from_numpy(self.mean[:self.low_freqs]).to(normalized_tokens.device)
+            std = torch.from_numpy(self.std[:self.low_freqs]).to(normalized_tokens.device)
+            
+            # Reshape for broadcasting over batches and tokens
+            # Adds a batch dimension if the input is a single sample
+            if normalized_tokens.dim() == 2:
+                normalized_tokens = normalized_tokens.unsqueeze(0) # (low_freqs, num_blocks) -> (1, low_freqs, num_blocks)
+            
+            # Reshape mean and std to (1, low_freqs, 1) to broadcast across batch and block dimensions
+            mean = mean.view(1, -1, 1)
+            std = std.view(1, -1, 1)
 
-        # Apply denormalization: value = (normalized_value * std) + mean
-        denormalized_tokens = normalized_tokens * (std + 1e-8) + mean
+            # Apply denormalization: value = (normalized_value * std) + mean
+            denormalized_tokens = normalized_tokens * (std + 1e-8) + mean
+        elif self.normalization == 'minmax':
+            _min = torch.from_numpy(self.min[:self.low_freqs]).to(normalized_tokens.device)
+            _max = torch.from_numpy(self.max[:self.low_freqs]).to(normalized_tokens.device)
+
+            if normalized_tokens.dim() == 2:
+                normalized_tokens = normalized_tokens.unsqueeze(0) # (low_freqs, num_blocks) -> (1, low_freqs, num_blocks)
+
+            _min = _min.view(1, -1, 1)
+            _max = _max.view(1, -1, 1)
+
+            # Apply denormalization: value = ((normalized_value + 1) / 2) * (max - min) + min
+            denormalized_tokens = ((normalized_tokens + 1) / 2) * (_max - _min + 1e-8) + _min
         
         return denormalized_tokens.squeeze(0) # Remove batch dim if it was added
 

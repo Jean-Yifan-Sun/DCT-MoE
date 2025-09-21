@@ -31,7 +31,7 @@ def train(config):
         torch.backends.cudnn.deterministic = False
 
     # [DEBUG] Enable anomaly detection to find the operation that causes NaN gradients
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
 
     mp.set_start_method('spawn')
     process_group_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=3600))  # 1 hour
@@ -72,6 +72,8 @@ def train(config):
     train_dataset_loader = DataLoader(train_dataset, batch_size=mini_batch_size, shuffle=True, drop_last=True,
                                       num_workers=2, pin_memory=True, persistent_workers=True)
     logging.info(f'dataset samples: {len(train_dataset)}')
+    tokenwise_normalization = config.dataset.get("tokenwise_normalization","z-score")
+    logging.info(f'Using {tokenwise_normalization} for positional token normalization')
 
     # DP training is not yet adapted for this script, keeping the placeholder
     if config.private.use_dp:
@@ -145,23 +147,23 @@ def train(config):
                 total_loss = main_loss + alpha * aux_loss if alpha != 0.0 else main_loss
 
             # 检查损失是否有效
-            if not torch.all(torch.isfinite(total_loss)):
-                logging.error(f"[Step {train_state.step}] Loss contains NaN or Inf! Total loss: {total_loss.item()}")
-                raise RuntimeError("Loss contains NaN or Inf")
+            # if not torch.all(torch.isfinite(total_loss)):
+            #     logging.error(f"[Step {train_state.step}] Loss contains NaN or Inf! Total loss: {total_loss.item()}")
+            #     raise RuntimeError("Loss contains NaN or Inf")
 
             # 反向传播
             accelerator.backward(total_loss)
 
             # 检查梯度是否有效
-            nan_params = []
-            for name, param in nnet.named_parameters():
-                if param.grad is not None and not torch.all(torch.isfinite(param.grad)):
-                    nan_params.append(name)
-                    logging.error(f"[Step {train_state.step}] Gradient of {name} contains NaN or Inf")
-                    param.grad = torch.nan_to_num(param.grad, nan=0.0, posinf=1e6, neginf=-1e6)  # 修复无效梯度
+            # nan_params = []
+            # for name, param in nnet.named_parameters():
+            #     if param.grad is not None and not torch.all(torch.isfinite(param.grad)):
+            #         nan_params.append(name)
+            #         logging.error(f"[Step {train_state.step}] Gradient of {name} contains NaN or Inf")
+            #         param.grad = torch.nan_to_num(param.grad, nan=0.0, posinf=1e6, neginf=-1e6)  # 修复无效梯度
 
-            if nan_params:
-                raise RuntimeError(f"Non-finite gradients detected in parameters: {', '.join(nan_params)}")
+            # if nan_params:
+            #     raise RuntimeError(f"Non-finite gradients detected in parameters: {', '.join(nan_params)}")
 
             # 优化器更新
             optimizer.step()
@@ -197,6 +199,10 @@ def train(config):
                 model_fn = model_wrapper(score_model_ema.noise_pred, noise_schedule, time_input_type='0', model_kwargs=kwargs)
                 dpm_solver = DPM_Solver(model_fn, noise_schedule)
                 return dpm_solver.sample(_x_init, steps=sample_steps, eps=1e-4, adaptive_step_size=False, fast_version=True)
+            elif algorithm == 'euler_maruyama_ode':
+                return sde.euler_maruyama(sde.ODE(score_model_ema), _x_init, sample_steps, **kwargs)
+            elif algorithm == 'euler_maruyama_sde':
+                return sde.euler_maruyama(sde.ReverseSDE(score_model_ema), _x_init, sample_steps, **kwargs)
             else:
                 raise NotImplementedError
 
@@ -204,11 +210,19 @@ def train(config):
             os.makedirs(path, exist_ok=True)
 
         # Use the new positional token sampling function
-        utils.PositionalTokenSample2dir(
-            accelerator, path, n_samples, config.sample.mini_batch_size, sample_fn,
-            img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
-            block_sz=config.dataset.block_sz, mean=config.dataset.Y_mean, std=config.dataset.Y_std
-        )
+        if tokenwise_normalization == 'z-score':
+            utils.PositionalTokenSample2dir(
+                accelerator, path, n_samples, config.sample.mini_batch_size, sample_fn,
+                img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
+                block_sz=config.dataset.block_sz, mean=config.dataset.Y_mean, std=config.dataset.Y_std
+            )
+        elif tokenwise_normalization == 'minmax':
+            utils.PositionalTokenSample2dir(
+                accelerator, path, n_samples, config.sample.mini_batch_size, sample_fn,
+                img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
+                block_sz=config.dataset.block_sz, min=config.dataset.Y_min, max=config.dataset.Y_max
+            )
+    
 
         _fid = 0
         if accelerator.is_main_process:
@@ -253,12 +267,20 @@ def train(config):
                 samples = dpm_solver.sample(x_init, steps=config.sample.sample_steps, eps=1e-4, adaptive_step_size=False, fast_version=True)
                 
                 # Use the new positional token grid image function
-                utils.PositionalTokenSamples_to_grid_image(
-                    samples, labels=_y_init,
-                    img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
-                    block_sz=config.dataset.block_sz, mean=config.dataset.Y_mean, std=config.dataset.Y_std,
-                    grid_sz=4, path=grid_img_path
-                )
+                if tokenwise_normalization == 'z-score':
+                    utils.PositionalTokenSamples_to_grid_image(
+                        samples, labels=_y_init,
+                        img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
+                        block_sz=config.dataset.block_sz, mean=config.dataset.Y_mean, std=config.dataset.Y_std,
+                        grid_sz=4, path=grid_img_path
+                    )
+                elif tokenwise_normalization == 'minmax':
+                    utils.PositionalTokenSamples_to_grid_image(
+                        samples, labels=_y_init,
+                        img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
+                        block_sz=config.dataset.block_sz, min=config.dataset.Y_min, max=config.dataset.Y_max,
+                        grid_sz=4, path=grid_img_path
+                    )
 
                 wandb.log({"samples": wandb.Image(grid_img_path)}, step=train_state.step)
             torch.cuda.empty_cache()
