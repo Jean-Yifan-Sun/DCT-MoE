@@ -19,7 +19,7 @@ source /bask/projects/q/qingjiem-heart-tte/yifansun/conda/miniconda/etc/profile.
 conda init
 conda activate dctdiff
 conda info --envs
-cd /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff
+cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test

@@ -6,7 +6,7 @@
 #SBATCH --gres gpu:1
 #SBATCH --gpus-per-task 1
 #SBATCH --tasks-per-node 1
-#SBATCH --constraint=a100_80
+#SBATCH --constraint=a100_40
 #SBATCH --mem=256G  # 请求内存
 set -e
 module purge
@@ -19,7 +19,7 @@ source /bask/projects/q/qingjiem-heart-tte/yifansun/conda/miniconda/etc/profile.
 conda init
 conda activate dctdiff
 conda info --envs
-cd /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff
+cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test

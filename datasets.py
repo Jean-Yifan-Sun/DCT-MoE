@@ -718,7 +718,7 @@ class DCT_PositionalToken(Dataset):
         # The number of positions in a block determines the total number of tokens before truncation
         self.num_positions = block_sz ** 2
         assert self.low_freqs <= self.num_positions, "low_freqs cannot be greater than the number of DCT coefficients in a block."
-        assert len(self.mean) >= self.low_freqs and len(self.std) >= self.low_freqs, "Mean and std arrays must have at least low_freqs elements."
+        # assert len(self.mean) >= self.low_freqs and len(self.std) >= self.low_freqs, "Mean and std arrays must have at least low_freqs elements."
 
         # Zigzag order to arrange tokens by frequency
         self.low2high_order = zigzag_order(block_sz)

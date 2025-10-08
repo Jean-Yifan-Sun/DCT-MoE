@@ -41,6 +41,9 @@ def train(config):
 
     config.mixed_precision = accelerator.mixed_precision
     config = ml_collections.FrozenConfigDict(config)
+    # save config file
+    if accelerator.is_main_process:
+        config.to_yaml(os.path.join(config.workdir, 'config.yaml'))
 
     assert config.train.batch_size % accelerator.num_processes == 0
     mini_batch_size = config.train.batch_size // accelerator.num_processes  # batch per GPU

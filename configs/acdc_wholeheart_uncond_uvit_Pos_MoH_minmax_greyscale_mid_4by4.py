@@ -55,7 +55,7 @@ def get_config():
         num_heads=12,
         mlp_ratio=4,
         qkv_bias=False,
-        mlp_time_embed=False,
+        mlp_time_embed=True,
         num_classes=-1,
         use_moe=True,
         MoH={
@@ -77,14 +77,17 @@ def get_config():
         block_sz=4,  # B
         Y_mean=[-270.982, -0.725, 0.44, 0.107, 0.009, 0.154, -0.057, 0.0, -0.008, 0.019, 0.009, -0.012, 0.005, 0.002, 0.004, -0.002],  # eta
         Y_std=[182.433, 32.821, 34.996, 14.001, 17.621, 13.189, 5.79, 9.609, 9.805, 5.652, 4.634, 6.502, 4.963, 3.796, 3.44, 2.178],
-        Y_min=[-502.5, -119.312, -122.375, -51.25, -58.906, -49.5, -20.688, -32.906, -33.094, -19.891, -15.891, -21.75, -16.969, -12.773, -11.648, -7.492],
-        Y_max=[262.0, 112.375, 125.812, 49.0, 58.5, 46.5, 20.344, 32.906, 33.406, 19.953, 15.953, 22.0, 16.984, 12.812, 11.68, 7.461],
+        # Y_min=[-502.5, -119.312, -122.375, -51.25, -58.906, -49.5, -20.688, -32.906, -33.094, -19.891, -15.891, -21.75, -16.969, -12.773, -11.648, -7.492],
+        # Y_max=[262.0, 112.375, 125.812, 49.0, 58.5, 46.5, 20.344, 32.906, 33.406, 19.953, 15.953, 22.0, 16.984, 12.812, 11.68, 7.461],
+        Y_min=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],  # for min-max normalization
+        Y_max=[502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5,502.5],  # for min-max normalization
         Y_entropy=[5.883, 3.502, 2.341, 1.48, 3.576, 2.75, 2.018, 1.365, 2.418, 2.045, 1.586, 1.175, 1.453, 1.317, 1.108, 1.0],  # for loss reweighting
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
         positional_tokens=True,  # use positional tokens
         tokenwise_normalization="minmax",  # use token-wise normalization minmax or z-score
-        reweight=False,  # use loss reweighting
+        reweight=True,  # use loss reweighting
+        temperature=1.0,  # temperature for loss reweighting
     )
 
     config.sample = d(

@@ -3,8 +3,8 @@
 #SBATCH --qos=bham
 #SBATCH --time=128:00:00
 #SBATCH --nodes 1
-#SBATCH --gres gpu:2
-#SBATCH --gpus-per-task 2
+#SBATCH --gres gpu:1
+#SBATCH --gpus-per-task 1
 #SBATCH --tasks-per-node 1
 #SBATCH --constraint=a100_80
 #SBATCH --mem=256G  # 请求内存
@@ -19,8 +19,8 @@ source /bask/projects/q/qingjiem-heart-tte/yifansun/conda/miniconda/etc/profile.
 conda init
 conda activate dctdiff
 conda info --envs
-cd /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff
+cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test
-nohup accelerate launch --multi_gpu --mixed_precision fp16 train_greyscale_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_MoH_greyscale_mid_4by4.py --workdir output/acdc_wholeheart_uncond_moh_greyscale_uvit_mid_4by4
+nohup python train_greyscale_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_MoH_greyscale_mid_4by4.py --workdir output/acdc_wholeheart_uncond_moh_greyscale_uvit_mid_4by4

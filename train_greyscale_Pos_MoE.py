@@ -42,6 +42,9 @@ def train(config):
 
     config.mixed_precision = accelerator.mixed_precision
     config = ml_collections.FrozenConfigDict(config)
+    # save config file
+    if accelerator.is_main_process:
+        config.to_yaml(os.path.join(config.workdir, 'config.yaml'))
 
     assert config.train.batch_size % accelerator.num_processes == 0
     mini_batch_size = config.train.batch_size // accelerator.num_processes
@@ -101,8 +104,11 @@ def train(config):
         reweight = torch.from_numpy(reweight).to(device=device).float()
         # Reshape for broadcasting: (1, low_freqs, 1)
         reweight = reweight.view(1, -1, 1)
+        temperature = config.dataset.get("temperature", 1.0)
+        logging.info(f'Using temperature {temperature} for loss reweighting')
     else:
         reweight = None
+        temperature = None
         logging.info('Not using loss reweighting.')
 
 
@@ -130,14 +136,14 @@ def train(config):
                         score_model, _batch,
                         pred=config.pred,
                         use_moe=config.nnet.use_moe,
-                        reweight=reweight
+                        reweight=reweight, temperature=temperature
                     )
                 elif config.train.mode == 'cond':
                     main_loss, aux_loss = sde.LSimple(
                         score_model,  _batch['image'], y=_batch['label'],
                         pred=config.pred,
                         use_moe=config.nnet.use_moe,
-                        reweight=reweight
+                        reweight=reweight, temperature=temperature
                     )
                 try:    
                     alpha = config.nnet.MoE.get("aux_loss_alpha", 0.0)
@@ -294,13 +300,13 @@ def train(config):
             accelerator.wait_for_everyone()
             # calculate fid of the saved checkpoint using DPM-Solver (NFE=50)
             fid_dpm = eval_step(n_samples=config.sample.n_samples, sample_steps=50,
-                            algorithm='dpm_solver', path=f'{config.sample.path}_dpm')
+                            algorithm='dpm_solver', path=os.path.join(config.sample_dir, f'{config.name}_{train_state.step}_dpm'))
             torch.cuda.empty_cache()
             accelerator.wait_for_everyone()
             # calculate fid of the saved checkpoint using Euler ODE Solver (NFE=100)
             fid_euler = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
                             algorithm='euler_maruyama_ode', 
-                            path=f'{config.sample.path}_eulerODE')
+                            path=os.path.join(config.sample_dir, f'{config.name}_{train_state.step}_euler'))
             torch.cuda.empty_cache()
             
             if accelerator.is_main_process:

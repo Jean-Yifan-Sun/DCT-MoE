@@ -8,7 +8,11 @@ from tqdm import tqdm
 import random
 import shutil
 from DCT_utils import split_into_blocks, combine_blocks, dct_transform, idct_transform, zigzag_order, reverse_zigzag_order
-
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+from scipy import stats
+import torch
 
 def convert_png_to_jpg(folder_path):
     cnt = 0
@@ -134,11 +138,20 @@ def image_to_DCT_array(dataset=None, img_folder=None, block_sz=8, coe=None, need
 
 
 def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
+    """Statistics for DCT coefficients including bounds and entropy.
+    Args:
+        array_path: Path to the .npy file containing DCT coefficients
+        block_sz: Block size for DCT (e.g. 4 for 4x4)
+        tau: Percentile threshold for filtering outliers
+        eta: Scaling factor for entropy calculation
+    """
     coe_array = np.load(array_path)
     print(f"{coe_array.shape} loaded from {array_path}")
+    folder_path = os.path.dirname(array_path)
 
     low_thresh = 100 - tau
     up_thresh = tau
+    order = zigzag_order(block_sz)
 
     # get eta"""
     if not eta:
@@ -150,6 +163,9 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
             lower_bound = np.percentile(data, low_thresh)
             upper_bound = np.percentile(data, up_thresh)
             data = data[(data >= lower_bound) & (data <= upper_bound)]
+            os.makedirs(folder_path + f"/DCT_blocksz_{block_sz}/", exist_ok=True)
+            plot_data_distribution(data, title=f"Distribution of DCT coe {index} after filtering outliers",
+                                   save_path=folder_path + f"/DCT_blocksz_{block_sz}/DCT_coe_{index}_distribution.png")
 
             mean.append(np.around(np.mean(data), decimals=3))
             std.append(np.around(np.std(data), decimals=3))
@@ -164,7 +180,7 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
                 lower_bound = np.around(np.abs(lower_bound), decimals=3)
                 DCT_coe_bounds.append(float(np.abs(lower_bound)))
 
-        order = zigzag_order(block_sz)
+        
         mean = np.around(np.array(mean)[order], decimals=3).tolist()
         std = np.around(np.array(std)[order], decimals=3).tolist()
         _min = np.around(np.array(_min)[order], decimals=3).tolist()
@@ -193,6 +209,117 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
 
         print(f"entropy: {entropys}")
 
+def plot_data_distribution(data, title="Data Distribution", figsize=(12, 8), 
+                          save_path=None, style='seaborn-v0_8'):
+    """
+    Comprehensive function to plot data distribution with multiple visualization types
+    
+    Parameters:
+    -----------
+    data : array-like, torch.Tensor, list
+        Input data sequence
+    title : str
+        Plot title
+    figsize : tuple
+        Figure size (width, height)
+    save_path : str or None
+        If provided, save plot to this path
+    style : str
+        Matplotlib style ('seaborn', 'ggplot', 'classic', etc.)
+    """
+    
+    # Convert to numpy array
+    if isinstance(data, torch.Tensor):
+        data_np = data.detach().cpu().numpy()
+    else:
+        data_np = np.array(data)
+    
+    # Flatten if multi-dimensional
+    if data_np.ndim > 1:
+        data_np = data_np.flatten()
+        print(f"Data flattened from {data.shape} to 1D array with {len(data_np)} elements")
+    
+    # Set style
+    # print(plt.style.available)
+    plt.style.use(style)
+    
+    # Create figure with subplots
+    fig, axes = plt.subplots(2, 3, figsize=figsize)
+    fig.suptitle(title, fontsize=16, fontweight='bold')
+    
+    # Plot 1: Histogram with KDE
+    axes[0, 0].hist(data_np, bins=50, alpha=0.7, density=True, color='skyblue', edgecolor='black')
+    sns.kdeplot(data_np, ax=axes[0, 0], color='red', linewidth=2)
+    axes[0, 0].set_title('Histogram with KDE')
+    axes[0, 0].set_xlabel('Value')
+    axes[0, 0].set_ylabel('Density')
+    axes[0, 0].grid(True, alpha=0.3)
+    
+    # Plot 2: Box plot
+    axes[0, 1].boxplot(data_np, vert=True, patch_artist=True)
+    axes[0, 1].set_title('Box Plot')
+    axes[0, 1].set_ylabel('Value')
+    axes[0, 1].grid(True, alpha=0.3)
+    
+    # Plot 3: Violin plot
+    axes[0, 2].violinplot(data_np, showmeans=True, showmedians=True)
+    axes[0, 2].set_title('Violin Plot')
+    axes[0, 2].set_ylabel('Value')
+    axes[0, 2].grid(True, alpha=0.3)
+    
+    # Plot 4: Q-Q plot (normality check)
+    stats.probplot(data_np, dist="norm", plot=axes[1, 0])
+    axes[1, 0].set_title('Q-Q Plot (Normality Check)')
+    axes[1, 0].grid(True, alpha=0.3)
+    
+    # Plot 5: Cumulative distribution
+    axes[1, 1].hist(data_np, bins=50, density=True, cumulative=True, 
+                   alpha=0.7, color='green', edgecolor='black')
+    axes[1, 1].set_title('Cumulative Distribution')
+    axes[1, 1].set_xlabel('Value')
+    axes[1, 1].set_ylabel('Cumulative Probability')
+    axes[1, 1].grid(True, alpha=0.3)
+    
+    # Plot 6: Statistical summary
+    axes[1, 2].axis('off')
+    stats_text = generate_statistical_summary(data_np)
+    axes[1, 2].text(0.1, 0.9, stats_text, transform=axes[1, 2].transAxes, 
+                   fontfamily='monospace', verticalalignment='top', fontsize=10)
+    
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {save_path}")
+    plt.close()
+    # plt.show()
+    
+    # return fig
+
+def generate_statistical_summary(data):
+    """Generate detailed statistical summary text"""
+    stats_dict = {
+        'Count': len(data),
+        'Mean': np.mean(data),
+        'Std': np.std(data),
+        'Min': np.min(data),
+        '25%': np.percentile(data, 25),
+        'Median': np.median(data),
+        '75%': np.percentile(data, 75),
+        'Max': np.max(data),
+        'Skewness': stats.skew(data),
+        'Kurtosis': stats.kurtosis(data),
+        'Shapiro-Wilk p': stats.shapiro(data)[1] if len(data) < 5000 else 'N/A (>5000)'
+    }
+    
+    text = "Statistical Summary:\n\n"
+    for key, value in stats_dict.items():
+        if isinstance(value, float):
+            text += f"{key:<15}: {value:>10.4f}\n"
+        else:
+            text += f"{key:<15}: {value:>10}\n"
+    
+    return text
 
 def DCT_statis_eta_for_large_arr(array_path=None, block_sz=None, tau=98.25):
     """statistics of eta"""
@@ -636,15 +763,19 @@ if __name__ == "__main__":
     # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=2, low_freqs=4)
-
-    image_to_DCT_array(dataset='acdc', img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=4, coe='y',
+    block_sz = 12
+    image_to_DCT_array(dataset='acdc', 
+                       img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', 
+                       block_sz=block_sz, 
+                       coe='y',
                        need_batch=False,dest_folder='data/scratch/datasets/ACDC')
-    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_4by4_y.npy',
-                          block_sz=4, tau=98.25)
-    DCT_statis_from_array(array_path='data/scratch/datasets/ACDC/acdc_4by4_y.npy',
-                          block_sz=4, tau=98.25, eta=502.0)
-    calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=4)
-    calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=4, tau=96.0)
+    DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
+                          block_sz=block_sz, 
+                          tau=98.25)
+    DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
+                          block_sz=block_sz, tau=98.25, eta=502.0)
+    calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=block_sz)
+    calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=block_sz, tau=96.0)
     # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=4, low_freqs=4)

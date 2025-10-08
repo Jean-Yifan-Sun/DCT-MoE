@@ -15,7 +15,7 @@ def get_config():
 
     config.train = d(
         n_steps=500000,
-        batch_size=256,
+        batch_size=512,
         mode='uncond',
         log_interval=100,
         eval_interval=2000,
@@ -54,7 +54,7 @@ def get_config():
         num_heads=12,
         mlp_ratio=4,
         qkv_bias=False,
-        mlp_time_embed=False,
+        mlp_time_embed=True,
         num_classes=-1,
         use_moe=True,
         MoH={
@@ -80,6 +80,7 @@ def get_config():
         Cr_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
+        reweight=False,  # do not use reweighting
     )
 
     config.sample = d(

@@ -55,7 +55,7 @@ def get_config():
         num_heads=12,
         mlp_ratio=4,
         qkv_bias=False,
-        mlp_time_embed=False,
+        mlp_time_embed=True,
         num_classes=-1,
         use_moe=True,
         MoH={
@@ -84,7 +84,8 @@ def get_config():
         greyscale=True,  # use greyscale images
         positional_tokens=True,  # use positional tokens
         tokenwise_normalization="z-score",  # use token-wise normalization minmax or z-score
-        reweight=False,  # use loss reweighting
+        reweight=True,  # use loss reweighting
+        temperature=1.0,  # temperature for loss reweighting
     )
 
     config.sample = d(

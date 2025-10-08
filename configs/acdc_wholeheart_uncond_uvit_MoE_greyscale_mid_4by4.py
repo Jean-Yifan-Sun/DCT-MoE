@@ -54,7 +54,7 @@ def get_config():
         num_heads=12,
         mlp_ratio=4,
         qkv_bias=False,
-        mlp_time_embed=False,
+        mlp_time_embed=True,
         num_classes=-1,
         use_moe=True,
         MoE={

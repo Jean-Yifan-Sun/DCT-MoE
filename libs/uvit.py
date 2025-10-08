@@ -7,6 +7,7 @@ import einops
 import torch.utils.checkpoint
 from absl import logging
 import numpy as np
+from normalization import *
 
 if hasattr(torch.nn.functional, 'scaled_dot_product_attention'):
     ATTENTION_MODE = 'flash'
@@ -945,13 +946,15 @@ class UViT_greyscale_cond(nn.Module):
 class UViT_greyscale_MoE(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
                  qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
-                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=True, MoE={"depth": 1, "num_experts": 2, "router":"topk", "top_k": 2}):
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=True, MoE={"depth": 1, "num_experts": 2, "router":"topk", "top_k": 2},
+                 pos_normalize="minmax"):
         super().__init__()
         self.num_features = self.embed_dim = embed_dim
         self.num_classes = num_classes
         self.tokens = tokens
         self.DCT_coes = low_freqs
         assert use_moe==True, "UViT_greyscale_MoE is designed to use MoE. Set use_moe=True."
+        self.pos_normalize = False
         
         # --- MoE Configuration ---
         self.num_experts = MoE.get("num_experts", 2)
@@ -963,6 +966,19 @@ class UViT_greyscale_MoE(nn.Module):
         # --- Input and Embedding Layers ---
         if in_chans != 1:
             self.proj = nn.Linear(in_chans, embed_dim, bias=True)
+            self.pos_normalize = pos_normalize
+            if self.pos_normalize in ["minmax", "z-score"]:
+                self.input_normalize = PlaceholderNorm()
+            elif self.pos_normalize == "rfan":
+                self.input_normalize = ReversibleFrequencyAdaptiveNorm(num_freq_bins=self.DCT_coes,
+                                                       eps=1e-5,
+                                                       use_running_stats=False)
+            elif self.pos_normalize == "rlen":
+                self.input_normalize = ReversibleLogEnergyNorm(alpha=0.01,
+                                                               eps=1e-8,)
+            elif self.pos_normalize == "rmsn":
+                self.input_normalize = ReversibleMultiScaleDCTNorm(num_scales=4, 
+                                                                   num_freq_bins=self.DCT_coes)
         else:
             self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True) # For greyscale images, only use Y channel
         self.time_embed = nn.Sequential(
@@ -1035,6 +1051,9 @@ class UViT_greyscale_MoE(nn.Module):
 
     def forward(self, x, timesteps, y=None):
         # 1. Initial Projection and Embedding
+        if self.pos_normalize:
+            x = self.input_normalize(x)
+
         x = self.proj(x)
         time_token = self.time_embed(timestep_embedding(timesteps, self.embed_dim)).unsqueeze(1)
         x = torch.cat((time_token, x), dim=1)
@@ -1069,6 +1088,9 @@ class UViT_greyscale_MoE(nn.Module):
         x = self.norm(x)
         image_tokens = x[:, self.extras:, :]
         x = self.decoder_pred(image_tokens)
+
+        if self.pos_normalize:
+            x = self.input_normalize(x, reverse=True)
 
         # Return both the prediction and the accumulated auxiliary loss
         return x, total_aux_loss
