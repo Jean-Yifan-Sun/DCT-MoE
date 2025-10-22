@@ -313,16 +313,19 @@ class ODE(object):
         return 0
 
 class EntropyWeightedMSELoss(nn.Module):
-    def __init__(self, entropy_values, temperature=1.0, normalize_weights=True):
+    def __init__(self, entropy_values, temperature=1.0, normalize_weights=True, dim=1, fa_transform_fn=None):
         """
         entropy_values: List or array of entropy values for each token position.
         temperature: Temperature parameter to control the sharpness of the weights.
         normalize_weights: If True, normalize weights to sum to number of tokens.
+        dim: Dimension along which to normalize weights (1 for channel-wise, 2 for token-wise, -1 for FA tokens only).
         """
         super().__init__()
         self.entropy_values = entropy_values
         self.temperature = temperature
         self.normalize_weights = normalize_weights
+        self.normalized_dim = dim
+        self.fa_transform_fn = fa_transform_fn if fa_transform_fn is not None else lambda x: x  # Identity if no transform provided
         
         # Convert entropy to weights
         self.weights = self._entropy_to_weights()
@@ -345,12 +348,19 @@ class EntropyWeightedMSELoss(nn.Module):
         # logging.info(f"shape of predictions: {predictions.shape}, shape of targets: {targets.shape}")
         # Calculate MSE per token position
         mse_per_token = F.mse_loss(predictions, targets, reduction='none')  # [B, N, C]
-        mse_per_token = mse_per_token.mean(dim=-1)  # [B, N] - average over channels
-        
-        # Apply entropy-based weights
-        weights = self.weights.to(predictions.device)
-        weighted_mse = mse_per_token * weights  # [B, N]
-        
+        if self.normalized_dim == 2:
+            mse_per_token = mse_per_token.mean(dim=-1)  # [B, N] - average over channels
+            # Apply entropy-based weights
+            weights = self.weights.to(predictions.device)
+            weighted_mse = mse_per_token * weights  # [B, N]
+        elif self.normalized_dim == 1:
+            weights = self.weights.to(predictions.device)  # [C]
+            weighted_mse = mse_per_token * weights  # [B, N, C]
+            weighted_mse = weighted_mse.mean(dim=-1)  # [B, N] - average over channels
+        elif self.normalized_dim == -1:
+            weights = self.fa_transform_fn(self.weights, entropy_transform=True).to(predictions.device)  # [N, C]
+            weighted_mse = mse_per_token * weights  # [B, N, C]
+            weighted_mse = weighted_mse.mean(dim=-1)  # [B, N ] - average over channels        
         # Average over batch and tokens
         return weighted_mse.mean()
 
@@ -385,31 +395,33 @@ def euler_maruyama(rsde, x_init, sample_steps, eps=1e-3, T=1, trace=None, verbos
     return x
 
 
-def LSimple(score_model: ScoreModel, x0, pred='noise_pred', reweight=None, temperature=1.0, **kwargs):
+def LSimple(score_model: ScoreModel, x0, pred='noise_pred', criterion=None, **kwargs):
     """Compute the loss for a simple score model."""
     t, noise, xt = score_model.sde.sample(x0)
     use_moe = kwargs.get('use_moe', False)
+
+    if "reweight" in kwargs.keys():
+        reweight = kwargs.pop('reweight')  # default token-wise reweighting
+        
     if use_moe:
         if pred == 'noise_pred':
             noise_pred, aux_loss = score_model.noise_pred(xt, t, **kwargs)
             # 使用 F.mse_loss，设置 reduction='none' 以便后续 reweight
-            if reweight is None:
+            if criterion is None:
                 loss = F.mse_loss(noise_pred, noise, reduction='none')
                 # loss.flatten(start_dim=1).mean(dim=-1)
                 return loss.mean(), aux_loss
             else:
-                criterion = EntropyWeightedMSELoss(reweight, temperature=temperature, normalize_weights=True)
                 loss = criterion(noise_pred, noise)
                 return loss, aux_loss
                 
         elif pred == 'x0_pred':
             x0_pred, aux_loss = score_model.x0_pred(xt, t, **kwargs)
-            if reweight is None:
+            if criterion is None:
                 loss = F.mse_loss(x0_pred, x0, reduction='none')
                 # loss.flatten(start_dim=1).mean(dim=-1)
                 return loss.mean(), aux_loss
             else:
-                criterion = EntropyWeightedMSELoss(reweight, temperature=temperature, normalize_weights=True)
                 loss = criterion(x0_pred, x0)
                 return loss, aux_loss
         

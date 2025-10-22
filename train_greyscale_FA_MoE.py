@@ -60,7 +60,7 @@ def train(config):
         os.makedirs(config.ckpt_root, exist_ok=True)
         os.makedirs(config.sample_dir, exist_ok=True)
         wandb.init(
-            project="dct-diffusion-positional",
+            project="dct-diffusion-FA-MoE",
             config=config.to_dict(),
             name=config.get('name','Undefined'),
             dir=config.ckpt_root
@@ -83,7 +83,9 @@ def train(config):
     tokenwise_normalization = config.dataset.get("tokenwise_normalization","z-score")
     logging.info(f'Using {tokenwise_normalization} for positional token normalization')
     denorm_fn = train_dataset.denormalize if hasattr(train_dataset, 'denormalize') else None
+    reverse_ordering_fn = train_dataset.reverse_ordering if hasattr(train_dataset, 'reverse_ordering') else None
     assert denorm_fn is not None, "Denormalization function must be provided in the dataset."
+    assert reverse_ordering_fn is not None, "Reverse ordering function must be provided in the dataset."
 
     # DP training is not yet adapted for this script, keeping the placeholder
     if config.private.use_dp:
@@ -101,22 +103,21 @@ def train(config):
     lr_scheduler = train_state.lr_scheduler
     train_state.resume(config.ckpt_root)
 
-    # variables for loss reweighting (adapted for positional tokens)
+    # variables for loss reweighting 
     low2high_order = zigzag_order(config.dataset.block_sz)
     if config.dataset.reweight:
         Y_entropy = np.array(config.dataset.Y_entropy)
         logging.info(f'using {Y_entropy} for loss reweighting')
         reweight = Y_entropy[low2high_order][:config.dataset.low_freqs]
         # reweight = reweight / (reweight.sum() / reweight.shape[0])  # normalization
-        reweight = torch.from_numpy(reweight).to(device=device).float()
+        reweight = torch.from_numpy(reweight).float().to(device=device) 
         # Reshape for broadcasting: (1, low_freqs, 1)
         # reweight = reweight.view(1, -1, 1)
         temperature = config.dataset.get("temperature", 1.0)
         fa_transform_fn = train_dataset.FA_transform if hasattr(train_dataset, 'FA_transform') else None
         logging.info(f'Using temperature {temperature} for loss reweighting')
-        reweight_dim = config.dataset.get("reweight_dim", 2)  # default token-wise reweighting
+        reweight_dim = config.dataset.get("reweight_dim", -1)  # default token-wise reweighting
         criterion = sde.EntropyWeightedMSELoss(reweight, temperature=temperature, normalize_weights=True, dim=reweight_dim, fa_transform_fn=fa_transform_fn)
-        logging.info(f'Using temperature {temperature} for loss reweighting')
     else:
         reweight = None
         temperature = None
@@ -165,26 +166,9 @@ def train(config):
                     
                 total_loss = main_loss + alpha * aux_loss if alpha != 0.0 else main_loss
 
-            # 检查损失是否有效
-            # if not torch.all(torch.isfinite(total_loss)):
-            #     logging.error(f"[Step {train_state.step}] Loss contains NaN or Inf! Total loss: {total_loss.item()}")
-            #     raise RuntimeError("Loss contains NaN or Inf")
-
             # 反向传播
             accelerator.backward(total_loss)
 
-            # 检查梯度是否有效
-            # nan_params = []
-            # for name, param in nnet.named_parameters():
-            #     if param.grad is not None and not torch.all(torch.isfinite(param.grad)):
-            #         nan_params.append(name)
-            #         logging.error(f"[Step {train_state.step}] Gradient of {name} contains NaN or Inf")
-            #         param.grad = torch.nan_to_num(param.grad, nan=0.0, posinf=1e6, neginf=-1e6)  # 修复无效梯度
-
-            # if nan_params:
-            #     raise RuntimeError(f"Non-finite gradients detected in parameters: {', '.join(nan_params)}")
-
-            # 优化器更新
             optimizer.step()
             lr_scheduler.step()
             train_state.ema_update(config.get('ema_rate', 0.9999))
@@ -228,11 +212,11 @@ def train(config):
         if accelerator.is_main_process:
             os.makedirs(path, exist_ok=True)
 
-        # Use the new positional token sampling function
+        # generate samples
         utils.PositionalTokenSample2dir(
             accelerator, path, n_samples, config.sample.mini_batch_size, sample_fn,
             img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
-            block_sz=config.dataset.block_sz, denorm_fn=denorm_fn
+            block_sz=config.dataset.block_sz, denorm_fn=denorm_fn, reverse_ordering_fn=reverse_ordering_fn
         )
     
 
@@ -282,7 +266,7 @@ def train(config):
                 utils.PositionalTokenSamples_to_grid_image(
                     samples, labels=_y_init,
                     img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
-                    block_sz=config.dataset.block_sz, denorm_fn=denorm_fn,
+                    block_sz=config.dataset.block_sz, denorm_fn=denorm_fn, reverse_ordering_fn=reverse_ordering_fn,
                     grid_sz=4, path=grid_img_path
                 )
                 

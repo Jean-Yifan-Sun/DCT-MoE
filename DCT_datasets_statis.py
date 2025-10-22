@@ -148,66 +148,97 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
     coe_array = np.load(array_path)
     print(f"{coe_array.shape} loaded from {array_path}")
     folder_path = os.path.dirname(array_path)
+    
+    # Create stats file path
+    stats_file = os.path.join(folder_path, f'dct_stats_{block_sz}x{block_sz}.md')
 
-    low_thresh = 100 - tau
-    up_thresh = tau
-    order = zigzag_order(block_sz)
+    if not os.path.exists(stats_file):
+        with open(stats_file, 'w') as f:
+            f.write(f"# DCT Statistics for {os.path.basename(array_path)}\n\n")
+            f.write(f"- Block size: {block_sz}x{block_sz}\n")
+            f.write(f"- Tau: {tau}\n")
+            f.write(f"- Array shape: {coe_array.shape}\n\n")
+            f.close()
+    
+    with open(stats_file, 'a') as f:
 
-    # get eta"""
-    if not eta:
-        DCT_coe_bounds = []
-        mean, std = [], []
-        _min, _max = [], []
-        for index in range(block_sz * block_sz):
-            data = coe_array[:, index].astype(np.float64)  # avoid overflow
-            lower_bound = np.percentile(data, low_thresh)
-            upper_bound = np.percentile(data, up_thresh)
-            data = data[(data >= lower_bound) & (data <= upper_bound)]
-            os.makedirs(folder_path + f"/DCT_blocksz_{block_sz}/", exist_ok=True)
-            plot_data_distribution(data, title=f"Distribution of DCT coe {index} after filtering outliers",
-                                   save_path=folder_path + f"/DCT_blocksz_{block_sz}/DCT_coe_{index}_distribution.png")
+        low_thresh = 100 - tau
+        up_thresh = tau
+        order = zigzag_order(block_sz)
 
-            mean.append(np.around(np.mean(data), decimals=3))
-            std.append(np.around(np.std(data), decimals=3))
-            _min.append(np.around(lower_bound, decimals=3))
-            _max.append(np.around(upper_bound, decimals=3))
-            print(f"({up_thresh - low_thresh}%) coe {index} has upper bound {upper_bound} and lower bound {lower_bound}")
+        # Calculate statistics without eta
+        if not eta:
+            DCT_coe_bounds = []
+            mean, std = [], []
+            _min, _max = [], []
+            
+            f.write("## Coefficient Statistics\n\n")
+            f.write("| Index | Mean | Std | Min | Max | Bound |\n")
+            f.write("|-------|------|-----|-----|-----|-------|\n")
 
-            if np.abs(upper_bound) > np.abs(lower_bound):
-                upper_bound = np.around(np.abs(upper_bound), decimals=3)
-                DCT_coe_bounds.append(float(upper_bound))
-            else:
-                lower_bound = np.around(np.abs(lower_bound), decimals=3)
-                DCT_coe_bounds.append(float(np.abs(lower_bound)))
+            for index in range(block_sz * block_sz):
+                data = coe_array[:, index].astype(np.float64)
+                lower_bound = np.percentile(data, low_thresh)
+                upper_bound = np.percentile(data, up_thresh)
+                data = data[(data >= lower_bound) & (data <= upper_bound)]
+                
+                # Save distribution plot
+                os.makedirs(folder_path + f"/DCT_blocksz_{block_sz}/", exist_ok=True)
+                plot_data_distribution(data, 
+                    title=f"Distribution of DCT coe {index} after filtering outliers",
+                    save_path=folder_path + f"/DCT_blocksz_{block_sz}/DCT_coe_{index}_distribution.png")
 
-        
-        mean = np.around(np.array(mean)[order], decimals=3).tolist()
-        std = np.around(np.array(std)[order], decimals=3).tolist()
-        _min = np.around(np.array(_min)[order], decimals=3).tolist()
-        _max = np.around(np.array(_max)[order], decimals=3).tolist()
-        print(f"Mean: {mean} \n Std:{std}")
-        print(f"Min: {_min} \n Max:{_max}")
-        print(f"{up_thresh - low_thresh} percentile bound is {DCT_coe_bounds}:")
-        print(f"eta is {DCT_coe_bounds[0]}")
-        print(f"{'-' * 100}")
+                m = np.around(np.mean(data), decimals=3)
+                s = np.around(np.std(data), decimals=3)
+                mn = np.around(lower_bound, decimals=3)
+                mx = np.around(upper_bound, decimals=3)
+                
+                mean.append(m)
+                std.append(s)
+                _min.append(mn)
+                _max.append(mx)
 
-    # approximate the entropy by histogram
-    if eta:
-        entropys = []
-        for i in range(block_sz ** 2):
-            DCT_coe = coe_array[:, i].astype(np.float64)  # avoid overflow
-            lower_bound = np.percentile(DCT_coe, low_thresh)
-            upper_bound = np.percentile(DCT_coe, up_thresh)
-            filtered_coe = DCT_coe[(DCT_coe > lower_bound) & (DCT_coe < upper_bound)]
-            filtered_coe = filtered_coe / eta  # first get Y_bound, then compute entropy
+                bound = max(abs(upper_bound), abs(lower_bound))
+                bound = np.around(bound, decimals=3)
+                DCT_coe_bounds.append(float(bound))
 
-            counts, bin_edges = np.histogram(filtered_coe, bins=100, range=(-1, 1))
-            probabilities = counts / np.sum(counts)
-            entropy = -np.sum(probabilities * np.log2(probabilities + 1e-9))  # Adding a small epsilon to avoid log(0)
-            entropy = np.around(entropy, decimals=3)
-            entropys.append(float(entropy))
+                f.write(f"| {index} | {m:.3f} | {s:.3f} | {mn:.3f} | {mx:.3f} | {bound:.3f} |\n")
 
-        print(f"entropy: {entropys}")
+            # Write summary statistics in zigzag order
+            f.write("\n## Summary Statistics (Zigzag Order)\n\n")
+            f.write(f"- Mean: {np.around(np.array(mean)[order], decimals=3).tolist()}\n")
+            f.write(f"- Std: {np.around(np.array(std)[order], decimals=3).tolist()}\n")
+            f.write(f"- Min: {np.around(np.array(_min)[order], decimals=3).tolist()}\n")
+            f.write(f"- Max: {np.around(np.array(_max)[order], decimals=3).tolist()}\n")
+            f.write(f"\nBounds ({up_thresh - low_thresh}% confidence): {DCT_coe_bounds}\n")
+            f.write(f"Recommended eta: {DCT_coe_bounds[0]}\n")
+
+        # Calculate entropy if eta is provided
+        if eta:
+            f.write(f"\n## Entropy Analysis (eta={eta})\n\n")
+            f.write("| Index | Entropy |\n")
+            f.write("|-------|----------|\n")
+            
+            entropys = []
+            for i in range(block_sz ** 2):
+                DCT_coe = coe_array[:, i].astype(np.float64)
+                lower_bound = np.percentile(DCT_coe, low_thresh)
+                upper_bound = np.percentile(DCT_coe, up_thresh)
+                filtered_coe = DCT_coe[(DCT_coe > lower_bound) & (DCT_coe < upper_bound)]
+                filtered_coe = filtered_coe / eta
+
+                counts, _ = np.histogram(filtered_coe, bins=100, range=(-1, 1))
+                probabilities = counts / np.sum(counts)
+                entropy = -np.sum(probabilities * np.log2(probabilities + 1e-9))
+                entropy = np.around(entropy, decimals=3)
+                entropys.append(float(entropy))
+                
+                f.write(f"| {i} | {entropy:.3f} |\n")
+            
+            f.write(f"\nEntropy values (zigzag order): {np.array(entropys)[order].tolist()}\n")
+
+        print(f"Statistics saved to {stats_file}")
+
 
 def plot_data_distribution(data, title="Data Distribution", figsize=(12, 8), 
                           save_path=None, style='seaborn-v0_8'):
@@ -764,16 +795,17 @@ if __name__ == "__main__":
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=2, low_freqs=4)
     block_sz = 12
-    image_to_DCT_array(dataset='acdc', 
-                       img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', 
-                       block_sz=block_sz, 
-                       coe='y',
-                       need_batch=False,dest_folder='data/scratch/datasets/ACDC')
+    eta = 2100
+    # image_to_DCT_array(dataset='acdc', 
+    #                    img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', 
+    #                    block_sz=block_sz, 
+    #                    coe='y',
+    #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
     DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
                           block_sz=block_sz, 
                           tau=98.25)
     DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
-                          block_sz=block_sz, tau=98.25, eta=502.0)
+                          block_sz=block_sz, tau=98.25, eta=eta)
     calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=block_sz)
     calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=block_sz, tau=96.0)
     # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',

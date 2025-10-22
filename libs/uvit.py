@@ -7,7 +7,7 @@ import einops
 import torch.utils.checkpoint
 from absl import logging
 import numpy as np
-from normalization import *
+# from normalization import *
 
 if hasattr(torch.nn.functional, 'scaled_dot_product_attention'):
     ATTENTION_MODE = 'flash'
@@ -459,6 +459,150 @@ class TopKRouter(nn.Module):
         
         return final_weights.view(batch_size, seq_len, -1), topk_indices.view(batch_size, seq_len, -1), aux_loss
 
+class ECDiTRoutingLayer(nn.Module):
+    """
+    EC-DiT Routing Layer: Expert-Choice Routing for Diffusion Transformers
+    """
+
+    def __init__(self, dim, num_experts, expert_capacity_factor=2.0, mlp_hidden_dim=2048, act_layer=nn.GELU):
+        super().__init__()
+        self.dim = dim
+        self.num_experts = num_experts
+        self.capacity_factor = expert_capacity_factor
+        
+        # Router parameters (expert embeddings)
+        self.router = nn.Linear(dim, num_experts, bias=False)
+        
+        # Expert networks (FeedForward networks)
+        self.experts = nn.ModuleList([
+            Expert(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer) for _ in range(num_experts)
+        ])
+        
+    def forward(self, x_prime):
+        """
+        x_prime: [batch_size, seq_len, dim] - input after cross-attention
+        Returns: [batch_size, seq_len, dim] - routed output
+        """
+        batch_size, seq_len, dim = x_prime.shape
+        
+        # Step 1: Compute token-expert affinity scores
+        # A = softmax(x' @ W_r) - equation (5) in paper
+        affinity_scores = self.router(x_prime)  # [B, S, E]
+        affinity_scores = F.softmax(affinity_scores, dim=-1)  # [B, S, E]
+        
+        # Step 2: Calculate expert capacity
+        # C = S × f_c / E - capacity per expert
+        expert_capacity = int(seq_len * self.capacity_factor / self.num_experts)
+        expert_capacity = max(1, expert_capacity)  # Ensure at least 1
+        
+        # Step 3: Create gating tensor G using expert-choice routing
+        gating_tensor, selection_indices, selection_mask = self._expert_choice_routing(affinity_scores, expert_capacity)
+        
+        # Step 4: Process tokens through experts and combine outputs
+        output = self._apply_experts(x_prime, gating_tensor, selection_indices, selection_mask, expert_capacity)
+        
+        return output
+    
+    def _expert_choice_routing(self, affinity_scores, expert_capacity):
+        """
+        Expert-choice routing: Each expert selects top-C tokens
+        Corresponds to equation (6) in paper
+        """
+        batch_size, seq_len, num_experts = affinity_scores.shape
+        
+        # Reshape to [B, E, S] for expert-wise operations
+        affinity_scores_t = affinity_scores.transpose(1, 2)  # [B, E, S]
+        
+        # Find top-C tokens for each expert
+        topk_values, topk_indices = torch.topk(
+            affinity_scores_t, 
+            k=expert_capacity, 
+            dim=-1
+        )  # [B, E, C]
+        
+        # Create gating tensor initialized to zeros
+        # Create selection mask and indices for gathering
+        selection_indices = topk_indices  # [B, E, C]
+        selection_mask = torch.ones_like(topk_values, dtype=torch.bool)  # [B, E, C]
+        gating_tensor = torch.zeros_like(affinity_scores_t)  # [B, E, S]
+        
+        # Scatter top-k values to appropriate positions
+        batch_indices = torch.arange(batch_size, device=affinity_scores.device)
+        batch_indices = batch_indices.view(-1, 1, 1).expand(-1, num_experts, expert_capacity)
+        
+        expert_indices = torch.arange(num_experts, device=affinity_scores.device)
+        expert_indices = expert_indices.view(1, -1, 1).expand(batch_size, -1, expert_capacity)
+        
+        # Use scatter_ to assign values
+        gating_tensor.scatter_(
+            dim=-1,
+            index=topk_indices,
+            src=topk_values
+        )
+        
+        # Transpose back to [B, S, E]
+        gating_tensor = gating_tensor.transpose(1, 2)  # [B, S, E]
+        
+        return gating_tensor, selection_indices, selection_mask
+    
+    def _apply_experts(self, x_prime, gating_tensor, selection_indices, selection_mask, expert_capacity):
+        """
+        Apply experts to selected tokens and combine results
+        Corresponds to equation (8) in paper
+        """
+        batch_size, seq_len, dim = x_prime.shape
+        num_experts = len(self.experts)
+
+        # Initialize output
+        output = torch.zeros_like(x_prime)  # [B, S, D]
+        
+        # Process each expert separately (clearer and more debuggable)
+        for expert_idx in range(num_experts):
+            expert_fn = self.experts[expert_idx]
+            
+            # Get the tokens selected by this expert
+            # selection_indices: [B, E, C] -> for this expert: [B, C]
+            expert_token_indices = selection_indices[:, expert_idx, :]  # [B, C]
+            
+            # Get gating values for these tokens
+            expert_gating_values = torch.gather(
+                gating_tensor[:, :, expert_idx],  # [B, S]
+                dim=1,
+                index=expert_token_indices  # [B, C]
+            ).unsqueeze(-1)  # [B, C, 1]
+            
+            # Gather the actual tokens to process
+            # Create batch indices
+            batch_indices = torch.arange(batch_size, device=x_prime.device)
+            batch_indices = batch_indices.view(-1, 1).expand(batch_size, expert_capacity)  # [B, C]
+            
+            # Gather tokens: [B, C, D]
+            selected_tokens = x_prime[batch_indices, expert_token_indices, :]
+            
+            # Process through expert
+            # Flatten batch and capacity for processing
+            selected_tokens_flat = selected_tokens.reshape(-1, dim)  # [B*C, D]
+            expert_output_flat = expert_fn(selected_tokens_flat)  # [B*C, D]
+            expert_output = expert_output_flat.reshape(batch_size, expert_capacity, dim)  # [B, C, D]
+            
+            # Apply gating
+            gated_output = expert_output * expert_gating_values  # [B, C, D]
+            
+            # Scatter back to output - FIXED DIMENSION HANDLING
+            # We need to scatter along dimension 1 (sequence dimension)
+            # output: [B, S, D]
+            # expert_token_indices: [B, C] 
+            # gated_output: [B, C, D]
+            
+            # Use scatter_add_ with proper dimensions
+            output.scatter_add_(
+                dim=1,  # scatter along sequence dimension
+                index=expert_token_indices.unsqueeze(-1).expand(-1, -1, dim),  # [B, C, D]
+                src=gated_output  # [B, C, D]
+            )
+        
+        return output
+
 class Block_MoE(nn.Module):
     """ Transformer block with Mixture of Experts (MoE) layer. """
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
@@ -516,10 +660,10 @@ class Block_MoE(nn.Module):
             gating_weights, expert_indices, aux_loss = self.router(x)
             
             # 检查路由权重的有效性
-            if not torch.all(torch.isfinite(gating_weights)):
-                logging.error(f"非有效的路由权重: {gating_weights.min()}, {gating_weights.max()}")
-                gating_weights = torch.nan_to_num(gating_weights, nan=0.0, posinf=1.0, neginf=0.0)
-                gating_weights = F.normalize(gating_weights, p=1, dim=-1)
+            # if not torch.all(torch.isfinite(gating_weights)):
+            #     logging.error(f"非有效的路由权重: {gating_weights.min()}, {gating_weights.max()}")
+            #     gating_weights = torch.nan_to_num(gating_weights, nan=0.0, posinf=1.0, neginf=0.0)
+            #     gating_weights = F.normalize(gating_weights, p=1, dim=-1)
             
             flat_weights = gating_weights.view(-1, self.experts.__len__())
             topk_indices_flat = expert_indices.view(-1, expert_indices.shape[-1])
@@ -557,9 +701,9 @@ class Block_MoE(nn.Module):
                 final_output.view_as(flat_x).index_add_(0, token_indices, weighted_output)
             
             # 确保输出不包含极端值
-            if not torch.all(torch.isfinite(final_output)):
-                logging.error("MoE输出包含非有效值")
-                final_output = torch.nan_to_num(final_output, nan=0.0, posinf=1e6, neginf=-1e6)
+            # if not torch.all(torch.isfinite(final_output)):
+            #     logging.error("MoE输出包含非有效值")
+            #     final_output = torch.nan_to_num(final_output, nan=0.0, posinf=1e6, neginf=-1e6)
             
             # 6. 残差连接
             x = residual + final_output
@@ -660,6 +804,49 @@ class Block_MoH(nn.Module):
         
         # Return the final output and the auxiliary loss from the attention layer
         return x, aux_loss
+
+class Block_ECDiT(nn.Module):
+    """ Transformer block with EC-DiT Routing Layer. """
+    def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, skip=False, use_checkpoint=False, num_experts=2, expert_capacity_factor=1.0):
+        super().__init__()
+        self.norm1 = norm_layer(dim)
+        self.attn = Attention(
+            dim, num_heads=num_heads, qkv_bias=qkv_bias, qk_scale=qk_scale)
+        
+        # --- Recommended Change: Use a single LayerNorm before the MoE layer ---
+        self.norm2 = norm_layer(dim)
+        
+        mlp_hidden_dim = int(dim * mlp_ratio)
+        
+        # --- EC-DiT components ---
+        self.routing_layer = ECDiTRoutingLayer(dim=dim, num_experts=num_experts, expert_capacity_factor=expert_capacity_factor, mlp_hidden_dim=mlp_hidden_dim, act_layer=act_layer)
+            
+        self.skip_linear = nn.Linear(2 * dim, dim) if skip else None
+        self.use_checkpoint = use_checkpoint
+
+    def forward(self, x, skip=None):
+        if self.use_checkpoint and self.training:
+            return torch.utils.checkpoint.checkpoint(lambda inp, skp: self._forward(inp, skp), x, skip)
+        else:
+            return self._forward(x, skip)
+
+    def _forward(self, x, skip=None):
+        if self.skip_linear is not None:
+            x = self.skip_linear(torch.cat([x, skip], dim=-1))
+        
+        # 1. Attention Block
+        x = x + self.attn(self.norm1(x))
+        residual = x
+        
+        # 2. EC-DiT Routing Layer
+        x = self.norm2(x)
+        x = self.routing_layer(x)
+        
+        # 3. Residual Connection
+        x = residual + x
+        
+        return x
 
 class UViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
@@ -946,7 +1133,7 @@ class UViT_greyscale_cond(nn.Module):
 class UViT_greyscale_MoE(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
                  qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
-                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=True, MoE={"depth": 1, "num_experts": 2, "router":"topk", "top_k": 2},
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=True, MoE={"typr":'normal', "depth": 1, "num_experts": 2, "router":"topk", "top_k": 2},
                  pos_normalize="minmax"):
         super().__init__()
         self.num_features = self.embed_dim = embed_dim
@@ -954,9 +1141,10 @@ class UViT_greyscale_MoE(nn.Module):
         self.tokens = tokens
         self.DCT_coes = low_freqs
         assert use_moe==True, "UViT_greyscale_MoE is designed to use MoE. Set use_moe=True."
-        self.pos_normalize = False
+        # self.pos_normalize = False
         
         # --- MoE Configuration ---
+        self.moe_type = MoE.get("type", "normal") # 'normal', 'ecmoe'
         self.num_experts = MoE.get("num_experts", 2)
         self.router_type = MoE.get("router", "topk")
         self.top_k = MoE.get("top_k", 2) # How many experts to use per token
@@ -966,19 +1154,19 @@ class UViT_greyscale_MoE(nn.Module):
         # --- Input and Embedding Layers ---
         if in_chans != 1:
             self.proj = nn.Linear(in_chans, embed_dim, bias=True)
-            self.pos_normalize = pos_normalize
-            if self.pos_normalize in ["minmax", "z-score"]:
-                self.input_normalize = PlaceholderNorm()
-            elif self.pos_normalize == "rfan":
-                self.input_normalize = ReversibleFrequencyAdaptiveNorm(num_freq_bins=self.DCT_coes,
-                                                       eps=1e-5,
-                                                       use_running_stats=False)
-            elif self.pos_normalize == "rlen":
-                self.input_normalize = ReversibleLogEnergyNorm(alpha=0.01,
-                                                               eps=1e-8,)
-            elif self.pos_normalize == "rmsn":
-                self.input_normalize = ReversibleMultiScaleDCTNorm(num_scales=4, 
-                                                                   num_freq_bins=self.DCT_coes)
+            # self.pos_normalize = pos_normalize
+            # if self.pos_normalize in ["minmax", "z-score"]:
+            #     self.input_normalize = PlaceholderNorm()
+            # elif self.pos_normalize == "rfan":
+            #     self.input_normalize = ReversibleFrequencyAdaptiveNorm(num_freq_bins=self.DCT_coes,
+            #                                            eps=1e-5,
+            #                                            use_running_stats=False)
+            # elif self.pos_normalize == "rlen":
+            #     self.input_normalize = ReversibleLogEnergyNorm(alpha=0.01,
+            #                                                    eps=1e-8,)
+            # elif self.pos_normalize == "rmsn":
+            #     self.input_normalize = ReversibleMultiScaleDCTNorm(num_scales=4, 
+            #                                                        num_freq_bins=self.DCT_coes)
         else:
             self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True) # For greyscale images, only use Y channel
         self.time_embed = nn.Sequential(
@@ -998,10 +1186,15 @@ class UViT_greyscale_MoE(nn.Module):
         # --- Build Transformer Blocks with MoE ---
         in_blocks_list = []
         for i in range(depth // 2):
-            if self.moe_layer_index == 1 and i == 0: # First block
-                block = Block_MoE(
-                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k, noise_eps=self.moe_noise_eps)
+            if self.moe_layer_index == i + 1: # First block
+                if self.moe_type == 'ecmoe':
+                    block = Block_ECDiT(
+                        dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                        norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k)
+                elif self.moe_type == 'normal':
+                    block = Block_MoE(
+                        dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                        norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k, noise_eps=self.moe_noise_eps)
             else:
                  block = Block(
                     dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -1015,10 +1208,15 @@ class UViT_greyscale_MoE(nn.Module):
 
         out_blocks_list = []
         for i in range(depth // 2):
-            if self.moe_layer_index == 1 and i == (depth // 2) - 1: # Last block
-                 block = Block_MoE(
-                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                    norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k)
+            if self.moe_layer_index + i == (depth // 2): # Last block
+                if self.moe_type == 'ecmoe':
+                    block = Block_ECDiT(
+                        dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                        norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k) 
+                elif self.moe_type == 'normal':
+                    block = Block_MoE(
+                        dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                        norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k)
             else:
                 block = Block(
                     dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -1051,8 +1249,8 @@ class UViT_greyscale_MoE(nn.Module):
 
     def forward(self, x, timesteps, y=None):
         # 1. Initial Projection and Embedding
-        if self.pos_normalize:
-            x = self.input_normalize(x)
+        # if self.pos_normalize:
+        #     x = self.input_normalize(x)
 
         x = self.proj(x)
         time_token = self.time_embed(timestep_embedding(timesteps, self.embed_dim)).unsqueeze(1)
@@ -1063,7 +1261,7 @@ class UViT_greyscale_MoE(nn.Module):
         x = x + self.pos_embed
 
         # 2. Forward pass through the network, tracking aux loss
-        total_aux_loss = 0.0
+        total_aux_loss = torch.tensor(0.0).to(x.device)
         skips = []
 
         for blk in self.in_blocks:
@@ -1089,8 +1287,8 @@ class UViT_greyscale_MoE(nn.Module):
         image_tokens = x[:, self.extras:, :]
         x = self.decoder_pred(image_tokens)
 
-        if self.pos_normalize:
-            x = self.input_normalize(x, reverse=True)
+        # if self.pos_normalize:
+        #     x = self.input_normalize(x, reverse=True)
 
         # Return both the prediction and the accumulated auxiliary loss
         return x, total_aux_loss

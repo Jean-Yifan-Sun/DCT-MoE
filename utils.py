@@ -388,6 +388,8 @@ def PositionalToken_to_greyscale(sample, img_sz=96, low_freqs=16, block_sz=4, me
         mean_vals = np.array(mean[:low_freqs]).reshape(-1, 1)
         std_vals = np.array(std[:low_freqs]).reshape(-1, 1)
         denormalized_tokens = sample * (std_vals + 1e-8) + mean_vals
+    else:
+        denormalized_tokens = sample  # If no normalization info is provided, assume already denormalized
 
     # Step 2: Pad with zeros for the high-frequency coefficients that were removed
     padded_tokens = np.zeros((num_positions, num_blocks))
@@ -440,7 +442,9 @@ def DCTsamples_to_grid_image(samples, tokens=0, low_freqs=0, block_sz=0,
     final_image.save(path)
 
 def DCTsamples_to_grid_image_greyscale(samples, labels=None, tokens=0, low_freqs=0, block_sz=0,
-                                       reverse_order=None, resolution=0, grid_sz=0, path=None, Y_bound=None):
+                                       reverse_order=None, resolution=0, grid_sz=0, path=None, Y_bound=None, reverse_pos=None):
+    if reverse_pos is not None:
+        samples = reverse_pos(samples)
     samples = samples.detach().cpu().numpy()
     grey_imgs = []
     for sample in samples:
@@ -481,15 +485,17 @@ def DCTsamples_to_grid_image_greyscale(samples, labels=None, tokens=0, low_freqs
     final_image.save(path)
 
 def PositionalTokenSamples_to_grid_image(samples, labels=None, img_sz=96, low_freqs=16, block_sz=4,
-                                         mean=None, std=None, min=None, max=None, grid_sz=6, path=None):
+                                         denorm_fn=None, reverse_ordering_fn=None, grid_sz=6, path=None):
     """
     Converts a batch of positional token samples to a grid of greyscale images and saves it.
     Mimics DCTsamples_to_grid_image_greyscale.
     """
+    samples = reverse_ordering_fn(samples) if reverse_ordering_fn is not None else samples
+    samples = denorm_fn(samples)
     samples = samples.detach().cpu().numpy()
     grey_imgs = []
     for sample in samples:
-        grey_img = PositionalToken_to_greyscale(sample, img_sz, low_freqs, block_sz, mean, std, min, max)
+        grey_img = PositionalToken_to_greyscale(sample, img_sz, low_freqs, block_sz)
         grey_imgs.append(grey_img)
     grey_imgs = np.array(grey_imgs)
     
@@ -498,7 +504,7 @@ def PositionalTokenSamples_to_grid_image(samples, labels=None, img_sz=96, low_fr
         labels = labels.detach().cpu().numpy()
         grey_labs = []
         for label in labels:
-            grey_lab = PositionalToken_to_greyscale(label, img_sz, low_freqs, block_sz, mean, std, min, max)
+            grey_lab = PositionalToken_to_greyscale(label, img_sz, low_freqs, block_sz)
             grey_labs.append(grey_lab)
         grey_labs = np.array(grey_labs)
         assert img_sz == grey_labs.shape[1], "Image size and label size must match."
@@ -555,7 +561,7 @@ def DCTsample2dir(accelerator, path, n_samples, mini_batch_size, sample_fn,
         assert len(os.listdir(path)) == n_samples
 
 def DCTsample2dir_greyscale(accelerator, path, n_samples, mini_batch_size, sample_fn,
-                  tokens=0, low_freqs=0, reverse_order=None, resolution=0, block_sz=8, Y_bound=None):
+                  tokens=0, low_freqs=0, reverse_order=None, resolution=0, block_sz=8, Y_bound=None, reverse_pos=None):
     os.makedirs(path, exist_ok=True)
     batch_size = mini_batch_size * accelerator.num_processes
     num_iterations = n_samples // batch_size + 1
@@ -565,6 +571,8 @@ def DCTsample2dir_greyscale(accelerator, path, n_samples, mini_batch_size, sampl
 
     for i in tqdm(range(num_iterations), disable=not accelerator.is_main_process, desc='sample2dir'):
         samples = sample_fn(mini_batch_size)
+        if reverse_pos is not None:
+            samples = reverse_pos(samples)
         samples = samples.detach().cpu().numpy()
 
         # distributed save
@@ -582,7 +590,7 @@ def DCTsample2dir_greyscale(accelerator, path, n_samples, mini_batch_size, sampl
         assert len(os.listdir(path)) == n_samples
 
 def PositionalTokenSample2dir(accelerator, path, n_samples, mini_batch_size, sample_fn,
-                              img_sz=96, low_freqs=16, block_sz=4, mean=None, std=None, min=None, max=None):
+                              img_sz=96, low_freqs=16, block_sz=4, denorm_fn=None, reverse_ordering_fn=None):
     """
     Generates samples using a distributed setup and saves them as individual greyscale images.
     This is the positional token version of DCTsample2dir_greyscale.
@@ -594,8 +602,12 @@ def PositionalTokenSample2dir(accelerator, path, n_samples, mini_batch_size, sam
     world_size = accelerator.state.num_processes
     local_rank = accelerator.state.local_process_index
 
+    assert denorm_fn is not None, "denorm_fn must be provided for positional tokens."
+
     for i in tqdm(range(num_iterations), disable=not accelerator.is_main_process, desc='sample2dir (positional)'):
         samples = sample_fn(mini_batch_size)
+        samples = samples if reverse_ordering_fn is None else reverse_ordering_fn(samples)
+        samples = denorm_fn(samples)  # Denormalize the samples
         samples = samples.detach().cpu().numpy()
 
         # Distributed save
@@ -604,13 +616,13 @@ def PositionalTokenSample2dir(accelerator, path, n_samples, mini_batch_size, sam
             if img_id >= n_samples:
                 break
             
-            grey_img = PositionalToken_to_greyscale(samples[b_id], img_sz, low_freqs, block_sz, mean, std, min, max)
+            grey_img = PositionalToken_to_greyscale(samples[b_id], img_sz, low_freqs, block_sz)
             cv2.imwrite(os.path.join(path, f"{img_id}.jpg"), grey_img)
 
     accelerator.wait_for_everyone()
     if accelerator.is_main_process:
         # A small delay to ensure filesystem is synced before checking file count
-        time.sleep(2)
+        time.sleep(1)
         num_generated = len(os.listdir(path))
         print(f'Generated {num_generated} images...')
         # This assertion can sometimes fail on networked filesystems due to syncing delays
