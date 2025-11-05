@@ -93,8 +93,8 @@ def get_config():
         tokenwise_normalization="Y_bound",
         num_fa_length=8,  # number of frequency aware coefficients length
         num_fa_repeats=16,  # number of frequency aware repeats for each length
-        # num_fa_repeats_x=4,  # number of frequency aware repeats for each length in x direction
-        # num_fa_repeats_y=4,
+        num_fa_repeats_x=4,  # number of frequency aware repeats for each length in x direction
+        num_fa_repeats_y=4,
     )
 
     config.sample = d(

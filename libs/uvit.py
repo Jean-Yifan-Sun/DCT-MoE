@@ -464,7 +464,7 @@ class ECDiTRoutingLayer(nn.Module):
     EC-DiT Routing Layer: Expert-Choice Routing for Diffusion Transformers
     """
 
-    def __init__(self, dim, num_experts, expert_capacity_factor=2.0, mlp_hidden_dim=2048, act_layer=nn.GELU):
+    def __init__(self, dim, num_experts, expert_capacity_factor=2.0, mlp_hidden_dim=2048, act_layer=nn.GELU, num_tokens=1, counting=False):
         super().__init__()
         self.dim = dim
         self.num_experts = num_experts
@@ -477,6 +477,12 @@ class ECDiTRoutingLayer(nn.Module):
         self.experts = nn.ModuleList([
             Expert(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer) for _ in range(num_experts)
         ])
+        # 添加 buffer 来记录 token 分配情况
+        # Shape: [num_tokens] - 每个 token 被多少专家选中
+        self.counting = True
+        self.register_buffer('token_selection_count', torch.zeros(num_experts, num_tokens, dtype=torch.float))
+        self.decay = 0.99  # 指数移动平均的衰减率
+        
         
     def forward(self, x_prime):
         """
@@ -492,11 +498,37 @@ class ECDiTRoutingLayer(nn.Module):
         
         # Step 2: Calculate expert capacity
         # C = S × f_c / E - capacity per expert
-        expert_capacity = int(seq_len * self.capacity_factor / self.num_experts)
+        expert_capacity = int(seq_len * self.capacity_factor / self.num_experts) + 1
         expert_capacity = max(1, expert_capacity)  # Ensure at least 1
         
         # Step 3: Create gating tensor G using expert-choice routing
         gating_tensor, selection_indices, selection_mask = self._expert_choice_routing(affinity_scores, expert_capacity)
+
+        # 更新 token 分配统计
+        if self.training and self.counting:
+            with torch.no_grad():
+                # 计算每个 token 被选中的次数
+                token_counts = torch.zeros(self.num_experts, seq_len, device=x_prime.device)
+                token_score = torch.ones(self.num_experts, seq_len, device=x_prime.device, dtype=torch.float)
+                for _ in range(batch_size):
+                    for i in range(self.num_experts):
+                    # selection_indices: [B, E, C] -> [B*E*C]
+                        expert_selections = selection_indices[_, i, :]  # [C]
+                        
+                    # 累加每个 token 被选中的次数
+                        token_counts[i, expert_selections] += token_score[i, expert_selections]
+                
+                # 归一化: 除以专家总数
+                token_counts = token_counts / (batch_size)
+                
+                # 使用指数移动平均更新统计
+                # if self.token_selection_count.shape != token_counts.shape:
+                #     self.token_selection_count = token_counts
+                # else:
+                self.token_selection_count = (
+                        self.token_selection_count * self.decay + 
+                        token_counts * (1 - self.decay)
+                    )
         
         # Step 4: Process tokens through experts and combine outputs
         output = self._apply_experts(x_prime, gating_tensor, selection_indices, selection_mask, expert_capacity)
@@ -602,6 +634,10 @@ class ECDiTRoutingLayer(nn.Module):
             )
         
         return output
+    
+    def get_expert_distribution(self):
+        """获取专家选择的分布统计"""
+        return self.token_selection_count.cpu().numpy()
 
 class Block_MoE(nn.Module):
     """ Transformer block with Mixture of Experts (MoE) layer. """
@@ -808,7 +844,7 @@ class Block_MoH(nn.Module):
 class Block_ECDiT(nn.Module):
     """ Transformer block with EC-DiT Routing Layer. """
     def __init__(self, dim, num_heads, mlp_ratio=4., qkv_bias=False, qk_scale=None,
-                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, skip=False, use_checkpoint=False, num_experts=2, expert_capacity_factor=1.0):
+                 act_layer=nn.GELU, norm_layer=nn.LayerNorm, skip=False, use_checkpoint=False, num_experts=2, expert_capacity_factor=1.0, num_tokens=1):
         super().__init__()
         self.norm1 = norm_layer(dim)
         self.attn = Attention(
@@ -820,7 +856,7 @@ class Block_ECDiT(nn.Module):
         mlp_hidden_dim = int(dim * mlp_ratio)
         
         # --- EC-DiT components ---
-        self.routing_layer = ECDiTRoutingLayer(dim=dim, num_experts=num_experts, expert_capacity_factor=expert_capacity_factor, mlp_hidden_dim=mlp_hidden_dim, act_layer=act_layer)
+        self.routing_layer = ECDiTRoutingLayer(dim=dim, num_experts=num_experts, expert_capacity_factor=expert_capacity_factor, mlp_hidden_dim=mlp_hidden_dim, act_layer=act_layer, num_tokens=num_tokens)
             
         self.skip_linear = nn.Linear(2 * dim, dim) if skip else None
         self.use_checkpoint = use_checkpoint
@@ -847,6 +883,10 @@ class Block_ECDiT(nn.Module):
         x = residual + x
         
         return x
+    
+    def get_expert_distribution(self):
+        """获取专家选择的分布统计"""
+        return self.routing_layer.get_expert_distribution()
 
 class UViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
@@ -1190,7 +1230,7 @@ class UViT_greyscale_MoE(nn.Module):
                 if self.moe_type == 'ecmoe':
                     block = Block_ECDiT(
                         dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                        norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k)
+                        norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k, num_tokens=self.tokens + self.extras)
                 elif self.moe_type == 'normal':
                     block = Block_MoE(
                         dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -1212,7 +1252,7 @@ class UViT_greyscale_MoE(nn.Module):
                 if self.moe_type == 'ecmoe':
                     block = Block_ECDiT(
                         dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                        norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k) 
+                        norm_layer=norm_layer, skip=skip, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k, num_tokens=self.tokens + self.extras) 
                 elif self.moe_type == 'normal':
                     block = Block_MoE(
                         dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -1292,6 +1332,17 @@ class UViT_greyscale_MoE(nn.Module):
 
         # Return both the prediction and the accumulated auxiliary loss
         return x, total_aux_loss
+    
+    def get_expert_distribution(self):
+        """获取所有MoE层的专家选择的分布统计"""
+        distributions = {}
+        for i, blk in enumerate(self.in_blocks):
+            if isinstance(blk, Block_ECDiT):
+                distributions[f'in_block_{i}'] = blk.get_expert_distribution()
+        for i, blk in enumerate(self.out_blocks):
+            if isinstance(blk, Block_ECDiT):
+                distributions[f'out_block_{i}'] = blk.get_expert_distribution()
+        return distributions
 
 class UViT_greyscale_MoH(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,

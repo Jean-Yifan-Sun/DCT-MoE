@@ -23,7 +23,8 @@ from DCT_utils import zigzag_order, reverse_zigzag_order
 from opacus import PrivacyEngine
 from torch.utils.data import Subset
 import wandb,time
-
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 def train(config):
     if config.get('benchmark', False):
@@ -288,53 +289,80 @@ def train(config):
             accelerator.wait_for_everyone()
 
             # visualize generated images by DPM-Solver
-            if accelerator.is_main_process and train_state.step % config.train.eval_interval == 0:
-                grid_img_path = os.path.join(config.sample_dir, f'{train_state.step}.png')
-                logging.info(f'Save a grid of 16 samples into {grid_img_path} by DPM-Solver')
-                x_init = torch.randn(16, *dataset.data_shape, device=device)
+            if train_state.step % config.train.eval_interval == 0:
+    
+                if config.nnet.MoE.type == 'ecmoe':         
+                    # --- 1. COLLECTIVE CALL ---
+                    # ALL processes must call this function.
+                    # It will sync and gather data, and every process will have the full 'expert_dist'.
+                    if hasattr(nnet, 'module'):
+                        expert_dist = nnet.module.get_expert_distribution()
+                    else:
+                        expert_dist = nnet.get_expert_distribution()
 
-                if config.train.mode == 'uncond':
-                    kwargs = dict(use_moe=config.nnet.use_moe)
-                elif config.train.mode == 'cond':
-                    _y_init = dataset.sample_label(16, device=device)
-                    kwargs = dict(y=_y_init, use_moe=config.nnet.use_moe)
-                else:
-                    raise NotImplementedError
+                    # --- 2. MAIN-PROCESS I/O ---
+                    # Now that all processes have participated, only the main process
+                    # should save the files and plots.
+                    if accelerator.is_main_process:
+                        for i in expert_dist.keys():
+                            dist = expert_dist[i]
+                            dist_path = os.path.join(config.sample_dir, f'expert_distribution_{i}_step{train_state.step}.npy')
+                            np.save(dist_path, dist)
+                            logging.info(f'Saved expert distribution of layer {i} to {dist_path}')
+                            
+                            plt.figure(figsize=(18, 8))
+                            sns.heatmap(dist, annot=True)
+                            plt.title(f"Expert Selection Distribution of {i}")
+                            plt.savefig(os.path.join(config.sample_dir, f'expert_distribution_{i}_step{train_state.step}.png'))
+                            plt.close()
 
-                noise_schedule = NoiseScheduleVP(schedule='linear', SNR_scale=config.dataset.SNR_scale)
-                model_fn = model_wrapper(
-                    score_model_ema.noise_pred,
-                    noise_schedule,
-                    time_input_type='0',
-                    model_kwargs=kwargs
-                )
-                dpm_solver = DPM_Solver(model_fn, noise_schedule)
-                samples = dpm_solver.sample(
-                    x_init,
-                    steps=config.sample.sample_steps,
-                    eps=1e-4,
-                    adaptive_step_size=False,
-                    fast_version=True,
-                )
-                if config.train.mode == 'uncond':
-                    utils.DCTsamples_to_grid_image_greyscale(
-                        samples, tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
-                        block_sz=config.dataset.block_sz, reverse_order=reverse_order,
-                        resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                if accelerator.is_main_process:
+                    grid_img_path = os.path.join(config.sample_dir, f'{train_state.step}.png')
+                    logging.info(f'Save a grid of 16 samples into {grid_img_path} by DPM-Solver')
+                    x_init = torch.randn(16, *dataset.data_shape, device=device)
+
+                    if config.train.mode == 'uncond':
+                        kwargs = dict(use_moe=config.nnet.use_moe)
+                    elif config.train.mode == 'cond':
+                        _y_init = dataset.sample_label(16, device=device)
+                        kwargs = dict(y=_y_init, use_moe=config.nnet.use_moe)
+                    else:
+                        raise NotImplementedError
+
+                    noise_schedule = NoiseScheduleVP(schedule='linear', SNR_scale=config.dataset.SNR_scale)
+                    model_fn = model_wrapper(
+                        score_model_ema.noise_pred,
+                        noise_schedule,
+                        time_input_type='0',
+                        model_kwargs=kwargs
                     )
-                elif config.train.mode == 'cond':
-                    utils.DCTsamples_to_grid_image_greyscale(
-                        samples, 
-                        labels=_y_init,  # use the same labels as the sampled images
-                        tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
-                        block_sz=config.dataset.block_sz, reverse_order=reverse_order,
-                        resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                    dpm_solver = DPM_Solver(model_fn, noise_schedule)
+                    samples = dpm_solver.sample(
+                        x_init,
+                        steps=config.sample.sample_steps,
+                        eps=1e-4,
+                        adaptive_step_size=False,
+                        fast_version=True,
                     )
+                    if config.train.mode == 'uncond':
+                        utils.DCTsamples_to_grid_image_greyscale(
+                            samples, tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
+                            block_sz=config.dataset.block_sz, reverse_order=reverse_order,
+                            resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                        )
+                    elif config.train.mode == 'cond':
+                        utils.DCTsamples_to_grid_image_greyscale(
+                            samples, 
+                            labels=_y_init,  # use the same labels as the sampled images
+                            tokens=config.dataset.tokens, low_freqs=config.dataset.low_freqs,
+                            block_sz=config.dataset.block_sz, reverse_order=reverse_order,
+                            resolution=config.dataset.resolution, grid_sz=4, path=grid_img_path, Y_bound=config.dataset.Y_bound
+                        )
 
-                wandb.log({
-                        "samples": wandb.Image(grid_img_path),
-                        "step": train_state.step
-                    })
+                    wandb.log({
+                            "samples": wandb.Image(grid_img_path),
+                            "step": train_state.step
+                        })
             torch.cuda.empty_cache()
             # logging.info(f'over eval checkpoint {train_state.step}...')
         accelerator.wait_for_everyone()
@@ -354,21 +382,21 @@ def train(config):
             torch.cuda.empty_cache()
             accelerator.wait_for_everyone()
 
-            # calculate fid of the saved checkpoint using Euler ODE Solver (NFE=100)
-            fid_euler = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
-                            algorithm='euler_maruyama_ode', Y_bound=config.dataset.Y_bound,
-                            path=os.path.join(config.sample_dir, f'{config.name}_{train_state.step}_euler'))
-            torch.cuda.empty_cache()
+            # # calculate fid of the saved checkpoint using Euler ODE Solver (NFE=100)
+            # fid_euler = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
+            #                 algorithm='euler_maruyama_ode', Y_bound=config.dataset.Y_bound,
+            #                 path=os.path.join(config.sample_dir, f'{config.name}_{train_state.step}_euler'))
+            # torch.cuda.empty_cache()
             
             if accelerator.is_main_process:
                 wandb.log({
                     f"fid{config.sample.n_samples}_dpm_solver": fid_dpm,
                     "step": train_state.step
                 })
-                wandb.log({
-                    f"fid{config.sample.n_samples}_euler_maruyama_ode": fid_euler,
-                    "step": train_state.step
-                })
+                # wandb.log({
+                #     f"fid{config.sample.n_samples}_euler_maruyama_ode": fid_euler,
+                #     "step": train_state.step
+                # })
             accelerator.wait_for_everyone()
 
     logging.info(f'Finish fitting, step={train_state.step}')

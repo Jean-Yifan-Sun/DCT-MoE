@@ -66,87 +66,64 @@ def reverse_zigzag_order(block_sz=8):
 
     return reverse_order
 
-def reorder_to_squares(blocks, num_blocks_y, num_blocks_x):
+def get_macroblock_indices(image_shape, block_sz, x, y):
     """
-    Reorders blocks from row-major to a "square-shell" order.
-    
-    The first r^2 blocks in the new list will form the r x r top-left
-    square of blocks from the original image.
-    
-    Args:
-        blocks (np.array): The input blocks in row-major order.
-        num_blocks_y (int): The number of blocks in the y-direction (rows).
-        num_blocks_x (int): The number of blocks in the x-direction (cols).
-
-    Returns:
-        tuple:
-            - new_blocks (np.array): The reordered blocks.
-            - forward_permutation (np.array): The permutation array used.
-                                              (new_index -> original_index)
-    """
-    
-    # This array will store the original (row-major) indices 
-    # in the new "square-shell" order.
-    forward_permutation = []
-    
-    # We iterate up to the largest dimension to form squares
-    max_dim = max(num_blocks_y, num_blocks_x)
-    
-    for r in range(1, max_dim + 1):
-        # r is the side length of the current square (e.g., 1, 2, 3...)
-        # We are adding the "L-shaped" shell for square r.
-        
-        # 1. Add the new right column of the shell (from top to bottom)
-        j = r - 1  # Column index of the new shell
-        if j < num_blocks_x:
-            for i in range(r): # Row index from 0 to r-1
-                if i < num_blocks_y:
-                    # Convert 2D block index (i, j) to 1D row-major index
-                    original_flat_index = i * num_blocks_x + j
-                    forward_permutation.append(original_flat_index)
-                    
-        # 2. Add the new bottom row of the shell (from left to right)
-        #    (We skip the corner, as it was added in the column part)
-        i = r - 1 # Row index of the new shell
-        if i < num_blocks_y:
-            for j in range(r - 1): # Col index from 0 to r-2 (skips corner)
-                if j < num_blocks_x:
-                    original_flat_index = i * num_blocks_x + j
-                    forward_permutation.append(original_flat_index)
-
-    # Convert to a NumPy array for indexing
-    forward_permutation = np.array(forward_permutation)
-    
-    # Use the permutation array to reorder the blocks
-    # This is called "fancy indexing"
-    new_blocks = blocks[forward_permutation]
-    
-    return new_blocks, forward_permutation
-
-def restore_original_order(new_blocks, forward_permutation):
-    """
-    Restores the original row-major block order from the "square-shell" order.
-    
-    Args:
-        new_blocks (np.array): The reordered blocks.
-        forward_permutation (np.array): The permutation array from the
-                                        reorder_to_squares function.
+    Get the index permutation for macroblock ordering.
     
     Returns:
-        np.array: The blocks in their original row-major order.
+    - forward_indices: indices to go from block order to macroblock order
+    - reverse_indices: indices to go from macroblock order back to block order
     """
+    H, W = image_shape
     
-    # We need the inverse permutation, which maps:
-    # original_index -> new_index
-    # np.argsort() on the forward_permutation gives us exactly this.
-    inverse_permutation = np.argsort(forward_permutation)
+    # Basic validation
+    if H % block_sz != 0 or W % block_sz != 0:
+        raise ValueError(f"Image {H}x{W} not divisible by block size {block_sz}")
     
-    # Use the inverse permutation to "un-shuffle" the new_blocks array
-    # back to its original order.
-    original_blocks = new_blocks[inverse_permutation]
+    blocks_per_row = W // block_sz
+    blocks_per_col = H // block_sz
     
-    return original_blocks
+    if blocks_per_row % x != 0 or blocks_per_col % y != 0:
+        raise ValueError(f"Blocks {blocks_per_col}x{blocks_per_row} not divisible by {y}x{x}")
+    
+    # Calculate total blocks and macroblocks
+    total_blocks = blocks_per_row * blocks_per_col
+    macroblocks_per_row = blocks_per_row // x
+    macroblocks_per_col = blocks_per_col // y
+    # total_macroblocks = macroblocks_per_row * macroblocks_per_col
+    
+    # Create forward permutation: block index -> macroblock index
+    forward_indices = []
+    
+    # Iterate through macroblocks in row-major order
+    for macro_row in range(macroblocks_per_col):
+        for macro_col in range(macroblocks_per_row):
+            # For each macroblock, get all its block indices in row-major order
+            for i in range(y):
+                for j in range(x):
+                    block_row = macro_row * y + i
+                    block_col = macro_col * x + j
+                    block_idx = block_row * blocks_per_row + block_col
+                    forward_indices.append(block_idx)
+    
+    # Create reverse permutation
+    reverse_indices = [0] * total_blocks
+    for new_idx, old_idx in enumerate(forward_indices):
+        reverse_indices[old_idx] = new_idx
+    
+    # metadata = {
+    #     'image_shape': image_shape,
+    #     'block_sz': block_sz,
+    #     'x': x, 'y': y,
+    #     'total_blocks': total_blocks
+    # }
+    
+    return forward_indices, reverse_indices
 
-# if __name__ == "__main__":
-#     print(zigzag_order(block_sz=8))
-#     print(reverse_zigzag_order(block_sz=8))
+def blocks_to_macro_blocks(blocks, forward_indices):
+    """Convert blocks to macroblock order using index permutation"""
+    return [blocks[i] for i in forward_indices]
+
+def macro_blocks_to_blocks(macro_blocks, reverse_indices):
+    """Convert macroblocks back to original block order"""
+    return [macro_blocks[i] for i in reverse_indices]

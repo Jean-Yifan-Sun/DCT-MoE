@@ -23,7 +23,8 @@ from DCT_utils import zigzag_order, reverse_zigzag_order
 from opacus import PrivacyEngine
 from torch.utils.data import Subset
 import wandb,time
-
+from matplotlib import pyplot as plt
+import seaborn as sns
 
 def train(config):
     if config.get('benchmark', False):
@@ -108,7 +109,8 @@ def train(config):
     if config.dataset.reweight:
         Y_entropy = np.array(config.dataset.Y_entropy)
         logging.info(f'using {Y_entropy} for loss reweighting')
-        reweight = Y_entropy[low2high_order][:config.dataset.low_freqs]
+        reweight = Y_entropy[low2high_order]
+        reweight = reweight[:config.dataset.low_freqs]
         # reweight = reweight / (reweight.sum() / reweight.shape[0])  # normalization
         reweight = torch.from_numpy(reweight).float().to(device=device) 
         # Reshape for broadcasting: (1, low_freqs, 1)
@@ -188,11 +190,63 @@ def train(config):
             logging.error(f"[Step {train_state.step}] Error occurred: {str(e)}")
             raise e
 
+    def visualize_step():
+        if accelerator.is_main_process and config.nnet.MoE.type == 'ecmoe':
+            if hasattr(nnet, 'module'):
+                expert_dist = nnet.module.get_expert_distribution()
+            else:
+                expert_dist = nnet.get_expert_distribution()
+            for i in expert_dist.keys():
+                dist = expert_dist[i]
+                dist_path = os.path.join(config.sample_dir, f'expert_distribution_{i}_step{train_state.step}.npy')
+                np.save(dist_path, dist)
+                logging.info(f'Saved expert distribution of layer {i} to {dist_path}')
+                plt.figure(figsize=(18, 8))
+                sns.heatmap(dist, annot=True)
+                plt.title(f"Expert Selection Distribution of {i}")
+                plt.savefig(os.path.join(config.sample_dir, f'expert_distribution_{i}_step{train_state.step}.png'))
+                plt.close()
+
+        grid_img_path = os.path.join(config.sample_dir, f'{train_state.step}.png')
+        if accelerator.is_main_process:
+            logging.info(f'Save a grid of 16 samples into {grid_img_path} by DPM-Solver')
+        
+        with torch.no_grad():
+            x_init = torch.randn(16, *dataset.data_shape, device=device)
+            kwargs = dict(use_moe=config.nnet.use_moe)
+            _y_init = None
+            if config.train.mode == 'cond':
+                _y_init = dataset.sample_label(16, device=device)
+                kwargs['y'] = _y_init
+
+            noise_schedule = NoiseScheduleVP(schedule='linear', SNR_scale=config.dataset.SNR_scale)
+            model_fn = model_wrapper(score_model_ema.noise_pred, noise_schedule, time_input_type='0', model_kwargs=kwargs)
+            dpm_solver = DPM_Solver(model_fn, noise_schedule)
+            samples = dpm_solver.sample(x_init, steps=config.sample.sample_steps, eps=1e-4, adaptive_step_size=False, fast_version=True)
+            
+        utils.PositionalTokenSamples_to_grid_image(
+            samples, labels=_y_init,
+            img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
+            block_sz=config.dataset.block_sz, denorm_fn=denorm_fn, reverse_ordering_fn=reverse_ordering_fn,
+            grid_sz=4, path=grid_img_path
+        )
+        
+        if accelerator.is_main_process:
+            logging.info(f'Finished saving sample grid to {grid_img_path} by DPM-Solver.')
+            wandb.log({"samples": wandb.Image(grid_img_path)}, step=train_state.step)
+        
+        # Sync after visualization
 
     def eval_step(n_samples, sample_steps, algorithm, path):
-        logging.info(f'eval_step: n_samples={n_samples}, sample_steps={sample_steps}, algorithm={algorithm}, '
-                     f'mini_batch_size={config.sample.mini_batch_size}, samples save into {path}')
-
+        # logging.info(f"Process {accelerator.state.local_process_index} entered eval_step")
+        # Only log once from main process to avoid duplicate logs
+        if accelerator.is_main_process:
+            logging.info(f'Save and eval checkpoint {train_state.step}...')
+            train_state.save(os.path.join(config.ckpt_root, f'{train_state.step}.ckpt'))
+            logging.info(f'eval_step: n_samples={n_samples}, sample_steps={sample_steps}, algorithm={algorithm}, '
+                        f'mini_batch_size={config.sample.mini_batch_size}, samples save into {path}')
+            os.makedirs(path, exist_ok=True)
+        
         def sample_fn(_n_samples):
             _x_init = torch.randn(_n_samples, *dataset.data_shape, device=device)
             kwargs = dict(use_moe=config.nnet.use_moe) if config.train.mode == 'uncond' else dict(y=dataset.sample_label(_n_samples, device=device), use_moe=config.nnet.use_moe)
@@ -209,17 +263,13 @@ def train(config):
             else:
                 raise NotImplementedError
 
-        if accelerator.is_main_process:
-            os.makedirs(path, exist_ok=True)
-
-        # generate samples
+        # generate samples - ALL processes participate
         utils.PositionalTokenSample2dir(
             accelerator, path, n_samples, config.sample.mini_batch_size, sample_fn,
             img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
             block_sz=config.dataset.block_sz, denorm_fn=denorm_fn, reverse_ordering_fn=reverse_ordering_fn
         )
-    
-
+        
         _fid = 0
         if accelerator.is_main_process:
             _fid = calculate_fid_given_paths((dataset.fid_stat, path))
@@ -234,69 +284,46 @@ def train(config):
 
     """Training and Evaluation"""
     logging.info(f'Start fitting, step={train_state.step}, mixed_precision={config.mixed_precision}')
+    save_start = config.sample.get('save_start', 10000)
     while train_state.step < config.train.n_steps:
         nnet.train()
         batch = tree_map(lambda x: x.to(device), next(data_generator))
         metrics = train_step(batch)
 
         nnet.eval()
-        with torch.no_grad():
-            if accelerator.is_main_process and train_state.step % config.train.log_interval == 0:
-                logging.info(utils.dct2str(dict(step=train_state.step, **metrics)))
-                wandb.log(metrics, step=train_state.step)
-            accelerator.wait_for_everyone()
-
-            if accelerator.is_main_process and train_state.step % config.train.eval_interval == 0:
-                grid_img_path = os.path.join(config.sample_dir, f'{train_state.step}.png')
-                logging.info(f'Save a grid of 16 samples into {grid_img_path} by DPM-Solver')
-                x_init = torch.randn(16, *dataset.data_shape, device=device)
-                
-                kwargs = dict(use_moe=config.nnet.use_moe)
-                _y_init = None
-                if config.train.mode == 'cond':
-                    _y_init = dataset.sample_label(16, device=device)
-                    kwargs['y'] = _y_init
-
-                noise_schedule = NoiseScheduleVP(schedule='linear', SNR_scale=config.dataset.SNR_scale)
-                model_fn = model_wrapper(score_model_ema.noise_pred, noise_schedule, time_input_type='0', model_kwargs=kwargs)
-                dpm_solver = DPM_Solver(model_fn, noise_schedule)
-                samples = dpm_solver.sample(x_init, steps=config.sample.sample_steps, eps=1e-4, adaptive_step_size=False, fast_version=True)
-                
-                # Use the new positional token grid image function
-                utils.PositionalTokenSamples_to_grid_image(
-                    samples, labels=_y_init,
-                    img_sz=config.dataset.resolution, low_freqs=config.dataset.low_freqs,
-                    block_sz=config.dataset.block_sz, denorm_fn=denorm_fn, reverse_ordering_fn=reverse_ordering_fn,
-                    grid_sz=4, path=grid_img_path
-                )
-                
-
-                wandb.log({"samples": wandb.Image(grid_img_path)}, step=train_state.step)
-            torch.cuda.empty_cache()
-        accelerator.wait_for_everyone()
+        # Logging - only main process
+        if accelerator.is_main_process and train_state.step % config.train.log_interval == 0:
+            logging.info(utils.dct2str(dict(step=train_state.step, **metrics)))
+            wandb.log(metrics, step=train_state.step)
         
-        save_start = config.sample.get('save_start', 10000)
+        # Sync after training step before potential evaluation
+        accelerator.wait_for_everyone()
+
+        # Visualization (lightweight) - only main process
+        if train_state.step % config.train.eval_interval == 0:
+            visualize_step()
+        torch.cuda.empty_cache()
+        accelerator.wait_for_everyone()        
+        
+        # Checkpoint saving and FID evaluation - ALL processes participate
         if train_state.step >= save_start and train_state.step % config.train.save_interval == 0:
-            logging.info(f'Save and eval checkpoint {train_state.step}...')
-            if accelerator.local_process_index == 0:
-                train_state.save(os.path.join(config.ckpt_root, f'{train_state.step}.ckpt'))
+            
+            # Sync before evaluation
             accelerator.wait_for_everyone()
-            # calculate fid of the saved checkpoint using DPM-Solver (NFE=50)
+            
+            # FID evaluation - ALL processes call this
+            # logging.info(f'Evaluating fid for step {train_state.step} using DPM-Solver...')
             fid_dpm = eval_step(n_samples=config.sample.n_samples, sample_steps=50,
                             algorithm='dpm_solver', path=os.path.join(config.sample_dir, f'{config.name}_{train_state.step}_dpm'))
+            
             torch.cuda.empty_cache()
             accelerator.wait_for_everyone()
-            # calculate fid of the saved checkpoint using Euler ODE Solver (NFE=100)
-            fid_euler = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
-                            algorithm='euler_maruyama_ode', 
-                            path=os.path.join(config.sample_dir, f'{config.name}_{train_state.step}_euler'))
-            torch.cuda.empty_cache()
             
+            # Log FID - only main process
             if accelerator.is_main_process:
                 wandb.log({f"fid{config.sample.n_samples}_dpm_solver": fid_dpm}, 
-                          step=train_state.step)
-                wandb.log({f"fid{config.sample.n_samples}_euler_maruyama_ode": fid_euler},
-                           step=train_state.step)
+                        step=train_state.step)
+            
             accelerator.wait_for_everyone()
 
     logging.info(f'Finish fitting, step={train_state.step}')

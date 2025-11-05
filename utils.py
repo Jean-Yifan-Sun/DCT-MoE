@@ -131,10 +131,36 @@ class TrainState(object):
 
     def load(self, path):
         logging.info(f'load from {path}')
-        self.step = torch.load(os.path.join(path, 'step.pth'))
+        self.step = torch.load(os.path.join(path, 'step.pth'), weights_only=True)
+        
         for key, val in self.__dict__.items():
-            if key != 'step' and val is not None:
-                val.load_state_dict(torch.load(os.path.join(path, f'{key}.pth'), map_location='cpu'))
+            # Skip 'step' and anything that doesn't have a state_dict (like 'None')
+            if key == 'step' or val is None or not hasattr(val, 'load_state_dict'):
+                continue
+                
+            file_path = os.path.join(path, f'{key}.pth')
+            
+            if not os.path.exists(file_path):
+                logging.warning(f"Checkpoint file not found for '{key}', skipping: {file_path}")
+                continue
+
+            try:
+                # Load the state dict from the file
+                state_dict = torch.load(file_path, map_location='cpu', weights_only=True)
+                
+                if isinstance(val, nn.Module):
+                # Load with strict=False
+                    incompatible_keys = val.load_state_dict(state_dict, strict=False)
+                    # Log any mismatches
+                    if incompatible_keys.missing_keys:
+                        logging.warning(f"Missing keys for '{key}': {incompatible_keys.missing_keys}")
+                    if incompatible_keys.unexpected_keys:
+                        logging.warning(f"Unexpected keys for '{key}': {incompatible_keys.unexpected_keys}")
+                else:
+                    incompatible_keys = val.load_state_dict(state_dict)
+                
+            except Exception as e:
+                logging.error(f"Error loading state_dict for '{key}' from {file_path}: {e}")
 
     def resume(self, ckpt_root, step=None):
         if not os.path.exists(ckpt_root):
@@ -593,15 +619,81 @@ def PositionalTokenSample2dir(accelerator, path, n_samples, mini_batch_size, sam
                               img_sz=96, low_freqs=16, block_sz=4, denorm_fn=None, reverse_ordering_fn=None):
     """
     Generates samples using a distributed setup and saves them as individual greyscale images.
+    """
+    os.makedirs(path, exist_ok=True)
+    
+    # Calculate distribution across processes
+    world_size = accelerator.state.num_processes
+    local_rank = accelerator.state.local_process_index
+    print(f'Using world size {world_size} and local rank {local_rank}.')
+    
+    # Each process handles a portion of the total samples
+    samples_per_process = (n_samples + world_size - 1) // world_size  # ceiling division
+    start_idx = local_rank * samples_per_process
+    end_idx = min(start_idx + samples_per_process, n_samples)
+    actual_samples_this_process = end_idx - start_idx
+    
+    if actual_samples_this_process <= 0:
+        print(f"Process {local_rank}: No samples to generate")
+        accelerator.wait_for_everyone()
+        return
+    
+    print(f"Process {local_rank}: Generating {actual_samples_this_process} samples (indices {start_idx} to {end_idx-1})")
+    
+    # Calculate iterations for this process
+    num_iterations = (actual_samples_this_process + mini_batch_size - 1) // mini_batch_size
+    assert denorm_fn is not None, "denorm_fn must be provided for positional tokens."
+
+    for i in tqdm(range(num_iterations), disable=not accelerator.is_main_process, desc='sample2dir (positional)'):
+        # Calculate batch range for this iteration
+        batch_start = i * mini_batch_size
+        batch_end = min(batch_start + mini_batch_size, actual_samples_this_process)
+        current_batch_size = batch_end - batch_start
+        
+        if current_batch_size <= 0:
+            break
+            
+        # Generate samples
+        samples = sample_fn(current_batch_size)
+        samples = samples if reverse_ordering_fn is None else reverse_ordering_fn(samples)
+        samples = denorm_fn(samples)  # Denormalize the samples
+        samples = samples.detach().cpu().numpy()
+
+        # Save this batch
+        for b_id in range(current_batch_size):
+            # Calculate global image ID
+            img_id = start_idx + batch_start + b_id
+            if img_id >= n_samples:
+                break
+            
+            grey_img = PositionalToken_to_greyscale(samples[b_id], img_sz, low_freqs, block_sz)
+            cv2.imwrite(os.path.join(path, f"{img_id}.jpg"), grey_img)
+
+    accelerator.wait_for_everyone()
+    
+    if accelerator.is_main_process:
+        # Wait a bit for filesystem sync
+        time.sleep(2)
+        num_generated = len([f for f in os.listdir(path) if f.endswith('.jpg')])
+        print(f'Total generated images: {num_generated}/{n_samples}')
+        
+        # Verify all files are present
+        if num_generated != n_samples:
+            logging.warning(f"Expected {n_samples} images, but found {num_generated}")
+
+def PositionalTokenSample2dir_old(accelerator, path, n_samples, mini_batch_size, sample_fn,
+                              img_sz=96, low_freqs=16, block_sz=4, denorm_fn=None, reverse_ordering_fn=None):
+    """
+    Generates samples using a distributed setup and saves them as individual greyscale images.
     This is the positional token version of DCTsample2dir_greyscale.
     """
     os.makedirs(path, exist_ok=True)
     batch_size = mini_batch_size * accelerator.num_processes
     num_iterations = (n_samples + batch_size - 1) // batch_size # Ceiling division
-    print(f'Using mean/std for sampling normalization.')
+    # print(f'Using mean/std for sampling normalization.')
     world_size = accelerator.state.num_processes
     local_rank = accelerator.state.local_process_index
-
+    print(f'Using world size {world_size} and local rank {local_rank}.')
     assert denorm_fn is not None, "denorm_fn must be provided for positional tokens."
 
     for i in tqdm(range(num_iterations), disable=not accelerator.is_main_process, desc='sample2dir (positional)'):

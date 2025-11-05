@@ -142,7 +142,7 @@ class ACDCUncond(DatasetFactory):
                 print("Using DCT_PositionalToken dataset with token-wise normalization.")
                 self.train = DCT_PositionalToken(
                     data_property=data_property,
-                    root_dir=path, img_sz=resolution, low_freqs=low_freqs,
+                    path=path, img_sz=resolution, low_freqs=low_freqs,
                     block_sz=block_sz, normalization=self.tokenwise_normalization
                 )
                 self.tokens = low_freqs  # In positional token setting, number of tokens equals low_freqs
@@ -151,24 +151,26 @@ class ACDCUncond(DatasetFactory):
             elif self.frequency_aware_tokens:
                 self.num_fa_repeats = kwargs.get('num_fa_repeats', 4)
                 self.num_fa_length = kwargs.get('num_fa_length', 0)
+                self.num_fa_repeats_x = kwargs.get('num_fa_repeats_x', 0)
+                self.num_fa_repeats_y = kwargs.get('num_fa_repeats_y', 0)
                 assert self.num_fa_length > 0 and self.num_fa_repeats > 0, "num_fa_length and num_fa_repeatsmust be > 0 for frequency aware tokens."
                 self.train = DCT_FA_Customized(
                     data_property={'mean': kwargs.get('Y_mean', None), 'std': kwargs.get('Y_std', None),'min': kwargs.get('Y_min', None), 'max': kwargs.get('Y_max', None)},
-                    root_dir=path, img_sz=resolution, low_freqs=low_freqs, block_sz=block_sz, num_fa_length=self.num_fa_length, num_fa_repeats=self.num_fa_repeats, normalization=kwargs.get('tokenwise_normalization', 'Y_bound')
+                    path=path, img_sz=resolution, low_freqs=low_freqs, block_sz=block_sz, num_fa_length=self.num_fa_length, num_fa_repeats=self.num_fa_repeats, tokenwise_normalization=kwargs.get('tokenwise_normalization', 'Y_bound'), num_fa_repeats_x=self.num_fa_repeats_x, num_fa_repeats_y=self.num_fa_repeats_y
                 )
                 self.block_component = None  # will be determined by num_fa_length
 
             else:
                 self.block_component = 4  # only Y channel
                 self.train = DCT_4Y(
-                    root_dir=path, img_sz=resolution, tokens=tokens,
+                    path=path, img_sz=resolution, tokens=tokens,
                     low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
                 )
 
         else:
             self.block_component = 6  # Y-Cb-Cr 
             self.train = DCT_4YCbCr(
-                root_dir=path, img_sz=resolution, tokens=tokens,
+                path=path, img_sz=resolution, tokens=tokens,
                 low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
             )
 
@@ -263,7 +265,7 @@ class CIFAR10(DatasetFactory):
         transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor(),
                                         transforms.Normalize(0.5, 0.5)])
         self.train = DCT_4YCbCr(
-            root_dir=path, img_sz=resolution, tokens=tokens,
+            path=path, img_sz=resolution, tokens=tokens,
             low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
         )
         # self.train = UnlabeledDataset(self.train)
@@ -398,7 +400,9 @@ def _list_image_files_recursively(data_dir):
         ext = entry.split(".")[-1]
         if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif"]:
             results.append(full_path)
-        elif os.listdir(full_path):
+        elif os.path.isdir(full_path):
+            if entry.startswith('cache'):
+                continue
             results.extend(_list_image_files_recursively(full_path))
     return results
 
@@ -506,13 +510,13 @@ class Crop(object):
 
 
 class DCT_4YCbCr(Dataset):
-    def __init__(self, root_dir, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None):
-        self.root_dir = root_dir
-        self.classes = os.listdir(root_dir)
+    def __init__(self, path, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None):
+        self.path = path
+        self.classes = os.listdir(path)
         self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
         self.img_paths = []
         for cls in self.classes:
-            cls_dir = os.path.join(root_dir, cls)
+            cls_dir = os.path.join(path, cls)
             for img_name in os.listdir(cls_dir):
                 self.img_paths.append((os.path.join(cls_dir, img_name), self.class_to_idx[cls]))
 
@@ -604,13 +608,13 @@ class DCT_4YCbCr(Dataset):
         return DCT_blocks
 
 class DCT_4Y(Dataset):
-    def __init__(self, root_dir, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None):
-        self.root_dir = root_dir
-        self.classes = os.listdir(root_dir)
+    def __init__(self, path, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None):
+        self.path = path
+        self.classes = os.listdir(path)
         self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
         self.img_paths = []
         for cls in self.classes:
-            cls_dir = os.path.join(root_dir, cls)
+            cls_dir = os.path.join(path, cls)
             for img_name in os.listdir(cls_dir):
                 self.img_paths.append((os.path.join(cls_dir, img_name), self.class_to_idx[cls]))
 
@@ -677,15 +681,15 @@ class DCT_4Y(Dataset):
 
 class DCT_4Y_FA(Dataset):
     """decrepated"""
-    def __init__(self, root_dir, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None, **kwargs):
-        self.root_dir = root_dir
-        self.classes = os.listdir(root_dir)
+    def __init__(self, path, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None, **kwargs):
+        self.path = path
+        self.classes = os.listdir(path)
         self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
         self.num_fa_length = kwargs.get('num_fa_length', 2)
         assert low_freqs % self.num_fa_length == 0, "low_freqs must be divisible by num_fa_length."
         self.img_paths = []
         for cls in self.classes:
-            cls_dir = os.path.join(root_dir, cls)
+            cls_dir = os.path.join(path, cls)
             for img_name in os.listdir(cls_dir):
                 self.img_paths.append((os.path.join(cls_dir, img_name), self.class_to_idx[cls]))
 
@@ -793,17 +797,19 @@ class DCT_FA_Customized(Dataset):
     and high-frequency tokens are truncated based on `low_freqs`.
     The tokens are then normalized using a provided mean and std.
     """
-    def __init__(self, data_property:dict, root_dir, img_sz=96, low_freqs=16, block_sz=4, normalization='z-score', **kwargs):
-        self.root_dir = root_dir
+    def __init__(self, data_property:dict, path, img_sz=96, low_freqs=16, block_sz=4, tokenwise_normalization='z-score', **kwargs):
+        self.path = path
         # Assuming a flat directory of images for simplicity
-        self.img_paths = _list_image_files_recursively(root_dir)
-        print(f"Found {len(self.img_paths)} images in {root_dir}")
-        assert normalization in ['z-score','minmax','Y_bound'], "Normalization must be either 'z-score' or 'minmax' or 'Y_bound'."
-        self.normalization = normalization
+        self.img_paths = _list_image_files_recursively(path)
+        print(f"Found {len(self.img_paths)} images in {path}")
+        assert tokenwise_normalization in ['z-score','minmax','Y_bound'], "Normalization must be either 'z-score' or 'minmax' or 'Y_bound'."
+        self.normalization = tokenwise_normalization
         print(f"Using {self.normalization} normalization for tokens.")
         self.num_fa_length = kwargs.get('num_fa_length', 2)
         self.num_fa_repeats = kwargs.get('num_fa_repeats', 4)
-        print(f"Using num_fa_length={self.num_fa_length}, num_fa_repeats={self.num_fa_repeats} for frequency-aware tokenization.")
+        self.num_fa_repeats_x = kwargs.get('num_fa_repeats_x', None)
+        self.num_fa_repeats_y = kwargs.get('num_fa_repeats_y', None)
+        print(f"Using num_fa_length={self.num_fa_length}, num_fa_repeats={self.num_fa_repeats, self.num_fa_repeats_x, self.num_fa_repeats_y} for frequency-aware tokenization.")
         assert low_freqs % self.num_fa_length == 0, "low_freqs must be divisible by num_fa_length."
 
         if self.normalization == 'z-score': 
@@ -843,51 +849,71 @@ class DCT_FA_Customized(Dataset):
 
         # Zigzag order to arrange tokens by frequency
         self.low2high_order = zigzag_order(block_sz)
+        self.macroblock_forward_indices, self.macroblock_reverse_indices = get_macroblock_indices(
+            image_shape=(self.img_sz, self.img_sz),
+            block_sz=self.block_sz,
+            x=self.num_fa_repeats_x,
+            y=self.num_fa_repeats_y
+        )
+
+        self.cache = kwargs.get('cache', True)
+        if self.cache:
+            self.cache_dir = os.path.join(path, f'cache_dct_fa_{block_sz}by{block_sz}_low{low_freqs}_l{self.num_fa_length}r{self.num_fa_repeats}_{self.normalization}')
+            if os.path.exists(self.cache_dir):
+                print(f"Loading cached DCT tokens from {self.cache_dir}")
+            else:
+                print(f'Cache directory {self.cache_dir} does not exist. Caching will be skipped.')
+                self.cache = False
 
     def __len__(self):
         return len(self.img_paths)
 
     def __getitem__(self, idx):
-        img_path = self.img_paths[idx]
-        img = Image.open(img_path).convert('L')  # Convert to greyscale
-        img = transforms.RandomHorizontalFlip()(img)
-        img = np.array(img, dtype=np.float32)
+        if self.cache:
+            cached_file = os.path.join(self.cache_dir, f'{idx}.pt')
+            DCT_fa_tokens = torch.load(cached_file, weights_only=True)
+        else:
+            img_path = self.img_paths[idx]
+            img = Image.open(img_path).convert('L')  # Convert to greyscale
+            img = transforms.RandomHorizontalFlip()(img)
+            img = np.array(img, dtype=np.float32)
 
-        # Step 1: Split the Y channel (the greyscale image itself) into blocks
-        y_blocks = split_into_blocks(img, self.block_sz)  # Shape: (num_blocks, block_sz, block_sz)
+            # Step 1: Split the Y channel (the greyscale image itself) into blocks
+            y_blocks = split_into_blocks(img, self.block_sz)  # Shape: (num_blocks, block_sz, block_sz)
 
-        # Step 2: Apply DCT to each block
-        dct_y_blocks = dct_transform(y_blocks)  # Shape: (num_blocks, block_sz, block_sz)
+            # Step 2: Apply DCT to each block
+            dct_y_blocks = dct_transform(y_blocks)  # Shape: (num_blocks, block_sz, block_sz)
 
-        # Step 3: Reshape and transpose to group coefficients by position
-        positional_tokens = dct_y_blocks.reshape(self.num_blocks, self.num_positions) # (num_blocks, num_positions)
-        # positional_tokens = flattened_dct.T # Shape: (num_positions, num_blocks)
+            # Step 3: Reshape and transpose to group coefficients by position
+            positional_tokens = dct_y_blocks.reshape(self.num_blocks, self.num_positions) # (num_blocks, num_positions)
+            # positional_tokens = flattened_dct.T # Shape: (num_positions, num_blocks)
 
-        # Step 4: Order tokens by frequency using zigzag order
-        ordered_tokens = positional_tokens[:, self.low2high_order] # Shape: (num_blocks, num_positions)
+            # Step 4: Order tokens by frequency using zigzag order
+            ordered_tokens = positional_tokens[:, self.low2high_order] # Shape: (num_blocks, num_positions)
 
-        # Step 5: Truncate high-frequency tokens using `low_freqs`
-        final_tokens = ordered_tokens[:, :self.low_freqs] # Shape: (num_blocks, low_freqs)
+            # Step 5: Truncate high-frequency tokens using `low_freqs`
+            final_tokens = ordered_tokens[:, :self.low_freqs] # Shape: (num_blocks, low_freqs)
 
-        # Step 6: Normalize each token (frequency) using the provided mean and std.
-        if self.normalization == 'z-score':
-            mean = self.mean[:self.low_freqs].reshape(-1)
-            std = self.std[:self.low_freqs].reshape(-1)
-            # Add a small epsilon to std to avoid division by zero
-            normalized_tokens = (final_tokens - mean) / (std + 1e-8)
-        elif self.normalization == 'minmax':
-            _min = self.min[:self.low_freqs].reshape(-1)
-            _max = self.max[:self.low_freqs].reshape(-1)
-            normalized_tokens = 2 * (final_tokens - _min) / (_max - _min + 1e-8) - 1  # Scale to [-1, 1]
-        elif self.normalization == 'Y_bound':
-            # normalized_tokens = final_tokens / self.y_bound * 2 - 1 # Scale to approximately [-1, 1]
-            normalized_tokens = final_tokens / self.y_bound
+            # Step 6: Normalize each token (frequency) using the provided mean and std.
+            if self.normalization == 'z-score':
+                mean = self.mean[:self.low_freqs].reshape(-1)
+                std = self.std[:self.low_freqs].reshape(-1)
+                # Add a small epsilon to std to avoid division by zero
+                normalized_tokens = (final_tokens - mean) / (std + 1e-8)
+            elif self.normalization == 'minmax':
+                _min = self.min[:self.low_freqs].reshape(-1)
+                _max = self.max[:self.low_freqs].reshape(-1)
+                normalized_tokens = 2 * (final_tokens - _min) / (_max - _min + 1e-8) - 1  # Scale to [-1, 1]
+            elif self.normalization == 'Y_bound':
+                # normalized_tokens = final_tokens / self.y_bound * 2 - 1 # Scale to approximately [-1, 1]
+                normalized_tokens = final_tokens / self.y_bound
 
-        # step 6.5: select frequency-aware tokens by repeating separate DCT coefficients using num_fa_repeats and num_fa_length
-        # normalized_tokens = normalized_tokens.T  # (low_freqs, num_blocks) --> (num_blocks, low_freqs)
-        DCT_fa_tokens = self.FA_transform(normalized_tokens)  # (num_blocks//num_fa_repeats * low_freqs//num_fa_length, num_fa_repeats * num_fa_length)
+            # step 6.5: select frequency-aware tokens by repeating separate DCT coefficients using num_fa_repeats and num_fa_length
+            # normalized_tokens = normalized_tokens.T  # (low_freqs, num_blocks) --> (num_blocks, low_freqs)
+            normalized_tokens = normalized_tokens[self.macroblock_forward_indices, :]  # (num_blocks, low_freqs)
+            DCT_fa_tokens = self.FA_transform(normalized_tokens)  # (num_blocks//num_fa_repeats * low_freqs//num_fa_length, num_fa_repeats * num_fa_length)
 
-        # Step 7: Convert to a FloatTensor
+            # Step 7: Convert to a FloatTensor
         return DCT_fa_tokens
     
     def FA_transform(self, normalized_tokens, entropy_transform=False):
@@ -986,7 +1012,7 @@ class DCT_FA_Customized(Dataset):
             all_freqs = np.concatenate(all_freqs, axis=1)  # (num_fa_repeats, num_fa_length) --> (num_fa_repeats, low_freqs)
             reverse_order.append(all_freqs)
         reverse_order = np.concatenate(reverse_order, axis=0)  # (num_fa_repeats, low_freqs) --> (num_blocks, low_freqs)
-
+        reverse_order = reverse_order[self.macroblock_reverse_indices, :]  # (num_blocks, low_freqs)
         return torch.from_numpy(reverse_order).T.float()  # (low_freqs, num_blocks)
 
 class DCT_PositionalToken(Dataset):
@@ -997,11 +1023,11 @@ class DCT_PositionalToken(Dataset):
     and high-frequency tokens are truncated based on `low_freqs`.
     The tokens are then normalized using a provided mean and std.
     """
-    def __init__(self, data_property:dict, root_dir, img_sz=96, low_freqs=16, block_sz=4, normalization='z-score', **kwargs):
-        self.root_dir = root_dir
+    def __init__(self, data_property:dict, path, img_sz=96, low_freqs=16, block_sz=4, normalization='z-score', **kwargs):
+        self.path = path
         # Assuming a flat directory of images for simplicity
-        self.img_paths = _list_image_files_recursively(root_dir)
-        print(f"Found {len(self.img_paths)} images in {root_dir}")
+        self.img_paths = _list_image_files_recursively(path)
+        print(f"Found {len(self.img_paths)} images in {path}")
         assert normalization in ['z-score','minmax'], "Normalization must be either 'z-score' or 'minmax'."
         self.normalization = normalization
         print(f"Using {self.normalization} normalization for tokens.")
@@ -1380,7 +1406,7 @@ class CelebA(DatasetFactory):
         then do center crop to 64x64 and set the image folder as the following 'path'
         """
         self.train = DCT_4YCbCr(
-            root_dir=path, img_sz=resolution, tokens=tokens,
+            path=path, img_sz=resolution, tokens=tokens,
             low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
         )
         # self.train = UnlabeledDataset(self.train)
@@ -1408,7 +1434,7 @@ class FFHQ128(DatasetFactory):
         self.low_freqs = low_freqs
 
         self.train = DCT_4YCbCr(
-            root_dir=path, img_sz=resolution, tokens=tokens,
+            path=path, img_sz=resolution, tokens=tokens,
             low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
         )
         # self.train = UnlabeledDataset(self.train)
@@ -1436,7 +1462,7 @@ class FFHQ256(DatasetFactory):
         self.low_freqs = low_freqs
 
         self.train = DCT_4YCbCr(
-            root_dir=path, img_sz=resolution, tokens=tokens,
+            path=path, img_sz=resolution, tokens=tokens,
             low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
         )
         # self.train = UnlabeledDataset(self.train)
@@ -1464,7 +1490,7 @@ class FFHQ512(DatasetFactory):
         self.low_freqs = low_freqs
 
         self.train = DCT_4YCbCr(
-            root_dir=path, img_sz=resolution, tokens=tokens,
+            path=path, img_sz=resolution, tokens=tokens,
             low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
         )
         # self.train = UnlabeledDataset(self.train)
@@ -1492,7 +1518,7 @@ class AFHQ512(DatasetFactory):
         self.low_freqs = low_freqs
 
         self.train = DCT_4YCbCr(
-            root_dir=path, img_sz=resolution, tokens=tokens,
+            path=path, img_sz=resolution, tokens=tokens,
             low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
         )
         # self.train = UnlabeledDataset(self.train)
