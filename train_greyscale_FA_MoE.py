@@ -12,6 +12,7 @@ from tqdm.auto import tqdm
 from dpm_solver_pytorch import NoiseScheduleVP, model_wrapper, DPM_Solver
 import tempfile
 from tools.fid_score import calculate_fid_given_paths
+from tools.is_lpips import calculate_inception_score, calculate_lpips_score
 from absl import logging
 import builtins
 import os
@@ -191,7 +192,7 @@ def train(config):
             raise e
 
     def visualize_step():
-        if accelerator.is_main_process and config.nnet.MoE.type == 'ecmoe':
+        if accelerator.is_main_process and config.nnet.MoE.type == 'ecmoe' and config.nnet.use_moe:
             if hasattr(nnet, 'module'):
                 expert_dist = nnet.module.get_expert_distribution()
             else:
@@ -274,8 +275,24 @@ def train(config):
         if accelerator.is_main_process:
             _fid = calculate_fid_given_paths((dataset.fid_stat, path))
             logging.info(f'step={train_state.step} fid{n_samples}={_fid}')
+            try:
+                _is_mean, _is_std = calculate_inception_score(path,
+                                                            batch_size=32, 
+                                                            splits=10,
+                                                            device=device)
+                logging.info(f'step={train_state.step} IS{n_samples}={_is_mean} ± {_is_std}')
+                _lpips = calculate_lpips_score(path,
+                                            '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs',
+                                            device=device,
+                                            batch_size=32)
+                logging.info(f'step={train_state.step} LPIPS{n_samples}={_lpips}')
+            except Exception as e:
+                logging.error(f'Error in calculating IS/LPIPS: {e}')
+                _is_mean, _is_std, _lpips = -1.0, -1.0, -1.0
             with open(os.path.join(config.workdir, f'eval_{algorithm}_{n_samples}.log'), 'a') as f:
-                print(f'step={train_state.step} fid{n_samples}={_fid}', file=f)
+                print(f'step={train_state.step} fid{n_samples}={_fid}' , file=f)
+                print(f'step={train_state.step} IS{n_samples}={_is_mean} ± {_is_std}', file=f)
+                print(f'step={train_state.step} LPIPS{n_samples}={_lpips}', file=f)
             shutil.rmtree(path)
 
         _fid = torch.tensor(_fid, device=device)

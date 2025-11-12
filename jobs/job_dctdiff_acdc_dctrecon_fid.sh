@@ -6,7 +6,7 @@
 #SBATCH --gres gpu:1
 #SBATCH --gpus-per-task 1
 #SBATCH --tasks-per-node 1
-#SBATCH --constraint=a100_80
+#SBATCH --constraint=a100_40
 #SBATCH --mem=256G  # 请求内存
 set -e
 module purge
@@ -25,5 +25,5 @@ export CUDA_LAUNCH_BLOCKING=1
 # accelerate test
 # python -m pytorch_fid --save-stats /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Compact/16188_JPGs  /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_compact_greyscale.npz
 # python -m pytorch_fid --save-stats /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/all_frames_labeled/Image  /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/acdc_label_allframes_greyscale.npz
-python -m pytorch_fid --save-stats /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_wholeheart_greyscale.npz
+python -m pytorch_fid --save-stats /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_wholeheart_greyscale1.npz
 # nohup python -m pytorch_fid data/scratch/datasets/ACDC/Image data/scratch/datasets/ACDC/recon_acdc_cond_coe16

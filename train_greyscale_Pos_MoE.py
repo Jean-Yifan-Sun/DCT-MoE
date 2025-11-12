@@ -42,15 +42,7 @@ def train(config):
 
     config.mixed_precision = accelerator.mixed_precision
     config = ml_collections.FrozenConfigDict(config)
-    # save config file
-    if accelerator.is_main_process:
-        yaml = config.to_yaml()
-        os.makedirs(config.workdir, exist_ok=True)
-        with open(os.path.join(config.workdir, 'config.yaml'), 'w') as f:
-            f.write(yaml)
-            f.close()
-        logging.info(f'Config file saved to {os.path.join(config.workdir, "config.yaml")}')
-
+    
     assert config.train.batch_size % accelerator.num_processes == 0
     mini_batch_size = config.train.batch_size // accelerator.num_processes  # batch per GPU
     logging.info(f'use {accelerator.num_processes} GPUs with batch size {mini_batch_size}/GPU')
@@ -69,6 +61,13 @@ def train(config):
     if accelerator.is_main_process:
         utils.set_logger(log_level='info', fname=os.path.join(config.workdir, 'output.log'))
         logging.info(config)
+        yaml = config.to_yaml()
+        os.makedirs(config.workdir, exist_ok=True)
+        with open(os.path.join(config.workdir, 'config.yaml'), 'w') as f:
+            f.write(yaml)
+            f.close()
+        logging.info(f'Config file saved to {os.path.join(config.workdir, "config.yaml")}')
+
     else:
         utils.set_logger(log_level='error')
         builtins.print = lambda *args: None

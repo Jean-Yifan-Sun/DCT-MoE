@@ -6,7 +6,7 @@
 #SBATCH --gres gpu:2
 #SBATCH --gpus-per-task 2
 #SBATCH --tasks-per-node 1
-#SBATCH --constraint=a100_80
+#SBATCH --constraint=a100_40
 #SBATCH --mem=256G  # 请求内存
 set -e
 module purge
@@ -19,8 +19,9 @@ source /bask/projects/q/qingjiem-heart-tte/yifansun/conda/miniconda/etc/profile.
 conda init
 conda activate dctdiff
 conda info --envs
-cd /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff
+cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test
-nohup accelerate launch --multi_gpu --mixed_precision fp16 train_greyscale.py --config=configs/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4.py --workdir output/acdc_wholeheart_uncond_greyscale_uvit_mid_4by4
+# nohup accelerate launch --multi_gpu --mixed_precision no train_greyscale.py --config=configs/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4.py --workdir output/acdc_wholeheart_uncond_greyscale_uvit_mid_4by4
+nohup accelerate launch --multi_gpu --mixed_precision no train_greyscale_FA_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_FA_greyscale_mid_4by4_l8r16.py --workdir output/acdc_wholeheart_uncond_uvit_FA_greyscale_mid_4by4_l8r16

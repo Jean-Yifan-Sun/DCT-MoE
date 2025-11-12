@@ -18,19 +18,22 @@ def combine_blocks(blocks, height, width, block_sz):
             index += 1
     return image
 
-def dct_transform(blocks):
+def dct_transform(blocks, shift=False):
     dct_blocks = []
     for block in blocks:
         dct_block = np.float32(block) # no shift required for cv2.dct
+        if shift:
+            dct_block = dct_block - 128  # Shift to range [-128, 127]
         dct_block = cv2.dct(dct_block)
         dct_blocks.append(dct_block)
     return np.array(dct_blocks)
 
-def idct_transform(blocks):
+def idct_transform(blocks, shift=False):
     idct_blocks = []
     for block in blocks:
         idct_block = cv2.idct(block)
-        # idct_block = idct_block + 128  # Shift back
+        if shift:
+            idct_block = idct_block + 128  # Shift back
         idct_blocks.append(idct_block)
     return np.array(idct_blocks)
 

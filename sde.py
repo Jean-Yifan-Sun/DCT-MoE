@@ -329,6 +329,8 @@ class EntropyWeightedMSELoss(nn.Module):
         
         # Convert entropy to weights
         self.weights = self._entropy_to_weights()
+        if self.normalized_dim == -1:
+            self.fa_weights = self.fa_transform_fn(self.weights, entropy_transform=True)
         
     def _entropy_to_weights(self):
         # Higher entropy = higher weight
@@ -358,7 +360,7 @@ class EntropyWeightedMSELoss(nn.Module):
             weighted_mse = mse_per_token * weights  # [B, N, C]
             weighted_mse = weighted_mse.mean(dim=-1)  # [B, N] - average over channels
         elif self.normalized_dim == -1:
-            weights = self.fa_transform_fn(self.weights, entropy_transform=True).to(predictions.device)  # [N, C]
+            weights = self.fa_weights.to(predictions.device)  # [N, C]
             weighted_mse = mse_per_token * weights  # [B, N, C]
             weighted_mse = weighted_mse.mean(dim=-1)  # [B, N ] - average over channels        
         # Average over batch and tokens
@@ -429,15 +431,23 @@ def LSimple(score_model: ScoreModel, x0, pred='noise_pred', criterion=None, **kw
         if pred == 'noise_pred':
             noise_pred = score_model.noise_pred(xt, t, **kwargs)
             # 使用 F.mse_loss，设置 reduction='none' 以便后续 reweight
-            loss = F.mse_loss(noise_pred, noise, reduction='none')
-            loss = loss * reweight  # loss re-weighting
-            return loss.flatten(start_dim=1).mean(dim=-1)
+            if criterion is None:
+                loss = F.mse_loss(noise_pred, noise, reduction='none')
+                loss = loss * reweight  # loss re-weighting
+                return loss.flatten(start_dim=1).mean(dim=-1)
+            else:
+                loss = criterion(noise_pred, noise)
+                return loss
 
         elif pred == 'x0_pred':
             x0_pred = score_model.x0_pred(xt, t, **kwargs)
-            loss = F.mse_loss(x0_pred, x0, reduction='none')
-            loss = loss * reweight  # loss re-weighting
-            return loss.flatten(start_dim=1).mean(dim=-1)
+            if criterion is None:
+                loss = F.mse_loss(x0_pred, x0, reduction='none')
+                loss = loss * reweight  # loss re-weighting
+                return loss.flatten(start_dim=1).mean(dim=-1)
+            else:
+                loss = criterion(x0_pred, x0)
+                return loss
 
         else:
             raise NotImplementedError(pred)

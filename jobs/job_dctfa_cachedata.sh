@@ -6,7 +6,7 @@
 #SBATCH --gres gpu:1
 #SBATCH --gpus-per-task 1
 #SBATCH --tasks-per-node 1
-#SBATCH --constraint=a100_40
+#SBATCH --constraint=a100_80
 #SBATCH --mem=32G  # 请求内存
 set -e
 module purge

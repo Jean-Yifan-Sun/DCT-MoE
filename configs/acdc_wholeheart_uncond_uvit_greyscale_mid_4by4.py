@@ -12,10 +12,20 @@ def get_config():
     config.seed = 1234
     config.pred = 'noise_pred'
     config.name = 'acdc_wholeheart_uncond_uvit_greyscale_mid_4by4'
+    config.eval_dir = f"output/evaluation/uncond_{4}by{4}_low{16}"
+    config.eval = d(
+        eval_start=420000,
+        n_samples=50000,
+        mini_batch_size=500,
+        sample_steps=100,
+        is_batch_size=32,
+        lpips_batch_size=32,
+        cleanup_samples=True,
+    )
 
     config.train = d(
         n_steps=500000,
-        batch_size=256,
+        batch_size=512,
         mode='uncond',
         log_interval=100,
         eval_interval=25000,
@@ -56,6 +66,7 @@ def get_config():
         qkv_bias=False,
         mlp_time_embed=False,
         num_classes=-1,
+        use_moe=False,
     )
 
     config.dataset = d(
@@ -66,12 +77,15 @@ def get_config():
         tokens=144,  # number of tokens to the network
         low_freqs=16,  # B**2 - m
         block_sz=4,  # B
-        Y_bound=[774.0],  # eta
-        Y_std=[5.287, 2.936, 3.005, 1.94, 2.216, 1.866, 1.186, 1.561, 1.581, 1.169, 1.024, 1.252, 1.071, 1.0, 1.0, 1.0],
+        Y_bound=[502.0],  # eta
+        Y_entropy=[5.287, 2.936, 3.005, 1.94, 2.216, 1.866, 1.186, 1.561, 1.581, 1.169, 1.024, 1.252, 1.071, 1.0, 1.0, 1.0],
         Cb_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
         Cr_std=[1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5],
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
+        reweight=True,  # use loss reweighting based on entropy
+        tempature=1.0,  # temperature for loss reweighting
+        reweight_dim=1,
     )
 
     config.sample = d(

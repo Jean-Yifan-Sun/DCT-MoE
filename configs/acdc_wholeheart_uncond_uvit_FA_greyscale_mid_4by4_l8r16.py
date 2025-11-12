@@ -13,11 +13,11 @@ def get_config():
     config.pred = 'noise_pred'
     config.name = 'acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4'
 
-    num_fa_length = 4  # number of frequency aware coefficients length
-    num_fa_repeats = 9  # number of frequency aware repeats for each length
-    num_fa_repeats_x = 3  # number of frequency aware repeats for each length in x direction
-    num_fa_repeats_y = 3  # number of frequency aware repeats for
-    low_freqs = 12  # B**2 - m
+    num_fa_length = 8  # number of frequency aware coefficients length
+    num_fa_repeats = 16  # number of frequency aware repeats for each length
+    num_fa_repeats_x = 4  # number of frequency aware repeats for each length in x direction
+    num_fa_repeats_y = 4  # number of frequency aware repeats for
+    low_freqs = 16  # B**2 - m
     block_sz = 4  # B
     
     config.train = d(
@@ -53,7 +53,7 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale_moe',  # use greyscale UViT
+        name='uvit_greyscale',  # use greyscale UViT
         tokens=int(low_freqs*96*96/(num_fa_repeats * num_fa_length * block_sz**2)),  # number of tokens to the network
         low_freqs=low_freqs,  # B**2 - m
         embed_dim=768,
@@ -64,9 +64,9 @@ def get_config():
         mlp_time_embed=True,
         num_classes=-1,
         in_chans=num_fa_repeats * num_fa_length,
-        use_moe=True,
+        use_moe=False,
         MoE={
-            "type": "ecmoe",  # 'normal', 'ecmoe'
+            "type": "normal",  # 'normal', 'ecmoe'
             "depth": 1,
             "num_experts": 4,
             "router": "topk",

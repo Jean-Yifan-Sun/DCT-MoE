@@ -610,13 +610,7 @@ class DCT_4YCbCr(Dataset):
 class DCT_4Y(Dataset):
     def __init__(self, path, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None):
         self.path = path
-        self.classes = os.listdir(path)
-        self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
-        self.img_paths = []
-        for cls in self.classes:
-            cls_dir = os.path.join(path, cls)
-            for img_name in os.listdir(cls_dir):
-                self.img_paths.append((os.path.join(cls_dir, img_name), self.class_to_idx[cls]))
+        self.img_paths = _list_image_files_recursively(path)
 
         # parameters of DCT design
         self.Y_bound = np.array(Y_bound)
@@ -640,7 +634,7 @@ class DCT_4Y(Dataset):
         return len(self.img_paths)
 
     def __getitem__(self, idx):
-        img_path, label = self.img_paths[idx]
+        img_path = self.img_paths[idx]
         img = Image.open(img_path).convert('L')  # 灰度图
         img = transforms.RandomHorizontalFlip()(img)
         img = np.array(img)

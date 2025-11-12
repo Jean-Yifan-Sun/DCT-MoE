@@ -983,15 +983,19 @@ class UViT(nn.Module):
 class UViT_greyscale(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=1, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
                  qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
-                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0):
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=False, MoE=None):
         super().__init__()
         self.num_features = self.embed_dim = embed_dim
         self.num_classes = num_classes
         self.tokens = tokens
         self.DCT_coes = low_freqs
 
-        # 只用Y通道，输入输出都是 low_freqs*4
-        self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+        if in_chans == 1:
+            self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True)
+            self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
+        else:
+            self.proj = nn.Linear(in_chans, embed_dim, bias=True)
+            self.decoder_pred = nn.Linear(embed_dim, in_chans, bias=True)
 
         self.time_embed = nn.Sequential(
             nn.Linear(embed_dim, 4 * embed_dim),
@@ -1005,7 +1009,6 @@ class UViT_greyscale(nn.Module):
         else:
             self.extras = 1
         
-
         self.pos_embed = nn.Parameter(torch.zeros(1, self.extras + self.tokens, embed_dim))
 
         self.in_blocks = nn.ModuleList([
@@ -1025,8 +1028,7 @@ class UViT_greyscale(nn.Module):
             for _ in range(depth // 2)])
 
         self.norm = norm_layer(embed_dim)
-        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 4, bias=True)
-
+        
         trunc_normal_(self.pos_embed, std=.02)
         self.apply(self._init_weights)
 
@@ -1194,19 +1196,6 @@ class UViT_greyscale_MoE(nn.Module):
         # --- Input and Embedding Layers ---
         if in_chans != 1:
             self.proj = nn.Linear(in_chans, embed_dim, bias=True)
-            # self.pos_normalize = pos_normalize
-            # if self.pos_normalize in ["minmax", "z-score"]:
-            #     self.input_normalize = PlaceholderNorm()
-            # elif self.pos_normalize == "rfan":
-            #     self.input_normalize = ReversibleFrequencyAdaptiveNorm(num_freq_bins=self.DCT_coes,
-            #                                            eps=1e-5,
-            #                                            use_running_stats=False)
-            # elif self.pos_normalize == "rlen":
-            #     self.input_normalize = ReversibleLogEnergyNorm(alpha=0.01,
-            #                                                    eps=1e-8,)
-            # elif self.pos_normalize == "rmsn":
-            #     self.input_normalize = ReversibleMultiScaleDCTNorm(num_scales=4, 
-            #                                                        num_freq_bins=self.DCT_coes)
         else:
             self.proj = nn.Linear(self.DCT_coes * 4, embed_dim, bias=True) # For greyscale images, only use Y channel
         self.time_embed = nn.Sequential(

@@ -13,11 +13,11 @@ def get_config():
     config.pred = 'noise_pred'
     config.name = 'acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4'
 
-    num_fa_length = 4  # number of frequency aware coefficients length
+    num_fa_length = 8  # number of frequency aware coefficients length
     num_fa_repeats = 9  # number of frequency aware repeats for each length
     num_fa_repeats_x = 3  # number of frequency aware repeats for each length in x direction
     num_fa_repeats_y = 3  # number of frequency aware repeats for
-    low_freqs = 12  # B**2 - m
+    low_freqs = 16  # B**2 - m
     block_sz = 4  # B
     
     config.train = d(

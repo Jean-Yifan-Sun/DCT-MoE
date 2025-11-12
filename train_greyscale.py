@@ -39,9 +39,7 @@ def train(config):
 
     config.mixed_precision = accelerator.mixed_precision
     config = ml_collections.FrozenConfigDict(config)
-    # save config file
-    if accelerator.is_main_process:
-        config.to_yaml(os.path.join(config.workdir, 'config.yaml'))
+    
 
     assert config.train.batch_size % accelerator.num_processes == 0
     mini_batch_size = config.train.batch_size // accelerator.num_processes  # batch per GPU
@@ -77,7 +75,7 @@ def train(config):
     assert os.path.exists(dataset.fid_stat)
     train_dataset = dataset.get_split(split='train', labeled=(config.train.mode == 'cond'))
     train_dataset_loader = DataLoader(train_dataset, batch_size=mini_batch_size, shuffle=True, drop_last=True,
-                                      num_workers=16, pin_memory=False, persistent_workers=True)
+                                      num_workers=2, pin_memory=True, persistent_workers=True)
     logging.info(f'dataset samples: {len(train_dataset)}')
 
     # Use Opacus for DP training
@@ -128,15 +126,28 @@ def train(config):
     # variables for loss reweighting
     low2high_order = zigzag_order(config.dataset.block_sz)  # list
     reverse_order = reverse_zigzag_order(config.dataset.block_sz)  # list
+    if config.dataset.reweight:
+        Y_entropy = np.array(config.dataset.Y_entropy)
+        logging.info(f'using {Y_entropy} for loss reweighting')
+        reweight = Y_entropy[low2high_order][:config.dataset.low_freqs]
+        # reweight = reweight / (reweight.sum() / reweight.shape[0])  # normalization
+        reweight = torch.from_numpy(reweight).to(device=device).float()
+        reweight = torch.cat((reweight, reweight, reweight, reweight))
+        assert reweight.shape[0] == config.dataset.low_freqs * 4
+        # reweight = reweight.view(1, -1, 1)
+        temperature = config.dataset.get("temperature", 1.0)
+        fa_transform_fn = train_dataset.FA_transform if hasattr(train_dataset, 'FA_transform') else None
+        logging.info(f'Using temperature {temperature} for loss reweighting')
+        reweight_dim = config.dataset.get("reweight_dim", 2)  # default token-wise reweighting
+        criterion = sde.EntropyWeightedMSELoss(reweight, temperature=temperature, normalize_weights=True, dim=reweight_dim, fa_transform_fn=fa_transform_fn)
+        logging.info(f'Using temperature {temperature} for loss reweighting')
+    else:
+        reweight = None
+        temperature = None
+        fa_transform_fn = None
+        criterion=None
+        logging.info('Not using loss reweighting.')
 
-    Y_std = np.array(config.dataset.Y_std)
-    logging.info(f'using {Y_std} for Y_loss reweighting')
-    Y_reweight = Y_std[low2high_order][:config.dataset.low_freqs]
-    Y_reweight = Y_reweight / (Y_reweight.sum() / Y_reweight.shape[0])  # normalization
-    Y_reweight = torch.from_numpy(Y_reweight).to(device=device).float()
-
-    reweight_by_std = torch.cat((Y_reweight, Y_reweight, Y_reweight, Y_reweight)).to(device=device)
-    assert reweight_by_std.shape[0] == config.dataset.low_freqs * 4
 
     def get_data_generator():
         while True:
@@ -164,23 +175,22 @@ def train(config):
         # raise ValueError
 
         if config.train.mode == 'uncond':
-            loss = sde.LSimple(score_model, _batch, pred=config.pred, reweight=reweight_by_std, private=config.private.use_dp)
-            loss = loss.mean()  # mean over batch
+            loss = sde.LSimple(score_model, _batch,
+                                pred=config.pred,
+                                criterion=criterion)
+             # mean over batch
         elif config.train.mode == 'cond':
-            loss = sde.LSimple(score_model, _batch['image'], pred=config.pred, y=_batch['label'], reweight=reweight_by_std, private=config.private.use_dp)
-            loss = loss.mean()
+            loss = sde.LSimple(score_model, _batch['image'],
+                                pred=config.pred, y=_batch['label'], 
+                                criterion=criterion)
+            
         else:
             raise NotImplementedError(config.train.mode)
         
         accelerator.backward(loss)
         
-        if config.private.use_dp and config.private.dp_method == 'dpsgd':
-            _metrics['loss'] = accelerator.gather(loss.detach().mean()).mean()
-        else:
-            _metrics['loss'] = accelerator.gather(loss.detach()).mean()
-
+        _metrics['loss'] = accelerator.gather(loss.detach()).mean().item()       
         
-
         if 'grad_clip' in config and config.grad_clip > 0:
             accelerator.clip_grad_norm_(nnet.parameters(), max_norm=config.grad_clip)
 
@@ -205,13 +215,7 @@ def train(config):
 
         def sample_fn(_n_samples):
             _x_init = torch.randn(_n_samples, *dataset.data_shape, device=device)
-            if config.train.mode == 'uncond':
-                kwargs = dict(private=config.private.use_dp)
-            elif config.train.mode == 'cond':
-                _y_init = dataset.sample_label(_n_samples, device=device)
-                kwargs = dict(y=_y_init, private=config.private.use_dp)
-            else:
-                raise NotImplementedError
+            kwargs = dict(use_moe=config.nnet.use_moe) if config.train.mode == 'uncond' else dict(y=dataset.sample_label(_n_samples, device=device), use_moe=config.nnet.use_moe)
 
             if algorithm == 'euler_maruyama_sde':
                 return sde.euler_maruyama(sde.ReverseSDE(score_model_ema), _x_init, sample_steps, **kwargs)
@@ -274,7 +278,7 @@ def train(config):
         nnet.eval()
         if accelerator.is_main_process and train_state.step % config.train.log_interval == 0:
             logging.info(utils.dct2str(dict(step=train_state.step, **metrics)))
-            logging.info(config.workdir)
+            # logging.info(config.workdir)
             wandb.log(metrics, step=train_state.step)
         accelerator.wait_for_everyone()
 
@@ -285,10 +289,10 @@ def train(config):
             x_init = torch.randn(16, *dataset.data_shape, device=device)
 
             if config.train.mode == 'uncond':
-                kwargs = dict(private=config.private.use_dp)
+                kwargs = dict(use_moe=config.nnet.use_moe)
             elif config.train.mode == 'cond':
                 _y_init = dataset.sample_label(16, device=device)
-                kwargs = dict(y=_y_init, private=config.private.use_dp)
+                kwargs = dict(y=_y_init, use_moe=config.nnet.use_moe)
             else:
                 raise NotImplementedError
 
@@ -340,25 +344,25 @@ def train(config):
             # calculate fid of the saved checkpoint using DPM-Solver (NFE=50)
             fid_dpm = eval_step(n_samples=config.sample.n_samples, sample_steps=50,
                             algorithm='dpm_solver', Y_bound=config.dataset.Y_bound,
-                            path=f'{config.sample.path}_dpm')
+                            path=os.path.join(config.sample_dir, f'{config.name}_{train_state.step}_dpm'))
             torch.cuda.empty_cache()
             accelerator.wait_for_everyone()
 
             # calculate fid of the saved checkpoint using Euler ODE Solver (NFE=100)
-            fid_euler = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
-                            algorithm='euler_maruyama_ode', Y_bound=config.dataset.Y_bound,
-                            path=f'{config.sample.path}_eulerODE')
-            torch.cuda.empty_cache()
+            # fid_euler = eval_step(n_samples=config.sample.n_samples, sample_steps=100,
+            #                 algorithm='euler_maruyama_ode', Y_bound=config.dataset.Y_bound,
+            #                 path=f'{config.sample.path}_eulerODE')
+            # torch.cuda.empty_cache()
             
             if accelerator.is_main_process:
                 wandb.log({
                     f"fid{config.sample.n_samples}_dpm_solver": fid_dpm,
                     "step": train_state.step
                 })
-                wandb.log({
-                    f"fid{config.sample.n_samples}_euler_maruyama_ode": fid_euler,
-                    "step": train_state.step
-                })
+                # wandb.log({
+                #     f"fid{config.sample.n_samples}_euler_maruyama_ode": fid_euler,
+                #     "step": train_state.step
+                # })
             accelerator.wait_for_everyone()
 
     logging.info(f'Finish fitting, step={train_state.step}')

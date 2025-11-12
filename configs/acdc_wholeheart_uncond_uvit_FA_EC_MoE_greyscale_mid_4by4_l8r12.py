@@ -15,6 +15,10 @@ def get_config():
 
     num_fa_length = 8  # number of frequency aware coefficients length
     num_fa_repeats = 12  # number of frequency aware repeats for each length
+    num_fa_repeats_x = 3  # number of frequency aware repeats for each length in x direction
+    num_fa_repeats_y = 4  # number of frequency aware repeats for
+    low_freqs = 16  # B**2 - m
+    block_sz = 4  # B
     
     config.train = d(
         n_steps=500000,
@@ -50,8 +54,8 @@ def get_config():
 
     config.nnet = d(
         name='uvit_greyscale_moe',  # use greyscale UViT
-        tokens=int(96*96/(num_fa_repeats * num_fa_length)),  # number of tokens to the network
-        low_freqs=16,  # B**2 - m
+        tokens=int(low_freqs*96*96/(num_fa_repeats * num_fa_length * block_sz**2)),  # number of tokens to the network
+        low_freqs=low_freqs,  # B**2 - m
         embed_dim=768,
         depth=16,
         num_heads=12,
@@ -78,9 +82,9 @@ def get_config():
         path='data/scratch/datasets/ACDC/Unlabeled/Wholeheart',
         dataset_type='wholeheart',  # use wholeheart dataset
         resolution=96,
-        tokens=int(96*96/(num_fa_repeats * num_fa_length)),  # number of tokens to the network
-        low_freqs=16,  # B**2 - m
-        block_sz=4,  # B
+        tokens=int(low_freqs*96*96/(num_fa_repeats * num_fa_length * block_sz**2)),  # number of tokens to the network
+        low_freqs=low_freqs,  # B**2 - m
+        block_sz=block_sz,  # B
         Y_bound=[774.0],  # eta
         Y_mean=[241.045, -0.725, 0.44, 0.107, 0.009, 0.154, -0.057, 0.0, -0.008, 0.019, 0.009, -0.012, 0.005, 0.002, 0.004, -0.002],  # eta
         Y_std=[182.467, 32.821, 34.996, 14.001, 17.621, 13.189, 5.79, 9.609, 9.805, 5.652, 4.634, 6.502, 4.963, 3.796, 3.44, 2.178],
@@ -96,12 +100,12 @@ def get_config():
         tokenwise_normalization="minmax",
         num_fa_length=num_fa_length,  # number of frequency aware coefficients length
         num_fa_repeats=num_fa_repeats,  # number of frequency aware repeats for each length
-        num_fa_repeats_x=4,  # number of frequency aware repeats for each length in x direction
-        num_fa_repeats_y=3,  # number of frequency aware repeats for each length in y direction
+        num_fa_repeats_x=num_fa_repeats_x,  # number of frequency aware repeats for each length in x direction
+        num_fa_repeats_y=num_fa_repeats_y,  # number of frequency aware repeats for each length in y direction
     )
 
     config.sample = d(
-        save_start=100000,
+        save_start=20000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,
