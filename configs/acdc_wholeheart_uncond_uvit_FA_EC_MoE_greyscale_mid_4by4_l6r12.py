@@ -20,6 +20,17 @@ def get_config():
     low_freqs = 12  # B**2 - m
     block_sz = 4  # B
     
+    config.eval_dir = f"output/evaluation/FA_EC_l{num_fa_length}r{num_fa_repeats}_{block_sz}by{block_sz}_low{low_freqs}"
+    config.eval = d(
+        eval_start=420000,
+        n_samples=50000,
+        mini_batch_size=500,
+        sample_steps=100,
+        is_batch_size=32,
+        lpips_batch_size=32,
+        cleanup_samples=True,
+    )
+    
     config.train = d(
         n_steps=500000,
         batch_size=512,

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=qingjiem-heart-tte
 #SBATCH --qos=bham
-#SBATCH --time=48:00:00
+#SBATCH --time=128:00:00
 #SBATCH --nodes 1
 #SBATCH --gres gpu:2
 #SBATCH --gpus-per-task 2
@@ -19,8 +19,8 @@ source /bask/projects/q/qingjiem-heart-tte/yifansun/conda/miniconda/etc/profile.
 conda init
 conda activate dctdiff
 conda info --envs
-cd /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff
+cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test
-nohup accelerate launch --multi_gpu --mixed_precision fp16 train.py --config=configs/acdc_uncond_uvit_mid_4by4.py --workdir output/acdc_uncond_uvit_mid_4by4
+nohup accelerate launch --multi_gpu --mixed_precision no train_greyscale.py --config=configs/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4.py --workdir output/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4

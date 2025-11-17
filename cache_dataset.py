@@ -77,11 +77,11 @@ if __name__ == "__main__":
     # 示例用法
     config = ml_collections.ConfigDict()
 
-    num_fa_length = 8  # number of frequency aware coefficients length
+    num_fa_length = 4  # number of frequency aware coefficients length
     num_fa_repeats_x = 4  # number of frequency aware repeats for each length in x direction
     num_fa_repeats_y = 4  # number of frequency aware repeats for each length in y direction
     num_fa_repeats = num_fa_repeats_x * num_fa_repeats_y  # number of frequency aware repeats for each length
-    low_freqs = 16  # B**2 - m
+    low_freqs = 12  # B**2 - m
     block_sz = 4  # B
     normalization = "minmax"  # 归一化方法
 

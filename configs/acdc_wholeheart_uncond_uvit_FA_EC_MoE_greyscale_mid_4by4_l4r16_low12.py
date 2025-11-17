@@ -11,17 +11,27 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_wholeheart_uncond_uvit_greyscale_mid_4by4'
-    config.eval_dir = f"output/evaluation/uncond_{4}by{4}_low{16}"
+    config.name = 'acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4'
+
+    num_fa_length = 4  # number of frequency aware coefficients length
+    num_fa_repeats = 16  # number of frequency aware repeats for each length
+    num_fa_repeats_x = 4  # number of frequency aware repeats for each length in x direction
+    num_fa_repeats_y = 4  # number of frequency aware repeats for
+    low_freqs = 12  # B**2 - m
+    block_sz = 4  # B
+    normalization = "minmax"  # 归一化方法
+    
+    config.eval_dir = f"output/evaluation/FA_EC_l{num_fa_length}r{num_fa_repeats}_{block_sz}by{block_sz}_low{low_freqs}_{normalization}"  # 评估结果保存路径
     config.eval = d(
-        eval_start=470000,
-        n_samples=2000,
+        eval_start=400000,
+        n_samples=50000,
         mini_batch_size=500,
         sample_steps=100,
         is_batch_size=32,
         lpips_batch_size=32,
-        cleanup_samples=False,
+        cleanup_samples=True,
     )
+
 
     config.train = d(
         n_steps=500000,
@@ -56,17 +66,28 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale',  # use greyscale UViT
-        tokens=144,  # number of tokens to the network
-        low_freqs=16,  # B**2 - m
+        name='uvit_greyscale_moe',  # use greyscale UViT
+        tokens=int(low_freqs*96*96/(num_fa_repeats * num_fa_length * block_sz**2)),  # number of tokens to the network
+        low_freqs=low_freqs,  # B**2 - m
         embed_dim=768,
         depth=16,
         num_heads=12,
         mlp_ratio=4,
         qkv_bias=False,
-        mlp_time_embed=False,
+        mlp_time_embed=True,
         num_classes=-1,
-        use_moe=False,
+        in_chans=num_fa_repeats * num_fa_length,
+        use_moe=True,
+        MoE={
+            "type": "ecmoe",  # 'normal', 'ecmoe'
+            "depth": -1,
+            "num_experts": 6,
+            "router": "topk",
+            "top_k": 2,
+            "noise_eps": 1e-2,
+            "aux_loss_alpha": 0.00
+        },
+
     )
 
     config.dataset = d(
@@ -74,9 +95,9 @@ def get_config():
         path='data/scratch/datasets/ACDC/Unlabeled/Wholeheart',
         dataset_type='wholeheart',  # use wholeheart dataset
         resolution=96,
-        tokens=144,  # number of tokens to the network
-        low_freqs=16,  # B**2 - m
-        block_sz=4,  # B
+        tokens=int(low_freqs*96*96/(num_fa_repeats * num_fa_length * block_sz**2)),  # number of tokens to the network
+        low_freqs=low_freqs,  # B**2 - m
+        block_sz=block_sz,  # B
         Y_bound=[774.0],  # eta
         Y_mean=[241.045, -0.725, 0.44, 0.107, 0.009, 0.154, -0.057, 0.0, -0.008, 0.019, 0.009, -0.012, 0.005, 0.002, 0.004, -0.002],  # eta
         Y_std=[182.467, 32.821, 34.996, 14.001, 17.621, 13.189, 5.79, 9.609, 9.805, 5.652, 4.634, 6.502, 4.963, 3.796, 3.44, 2.178],
@@ -87,11 +108,17 @@ def get_config():
         greyscale=True,  # use greyscale images
         reweight=True,  # use loss reweighting based on entropy
         tempature=1.0,  # temperature for loss reweighting
-        reweight_dim=1,
+        reweight_dim=-1,  # dimension to apply loss reweighting (1: channel-wise, 2: token-wise, -1: element-wise)
+        frequency_aware_tokens=True,  # use frequency aware tokens
+        tokenwise_normalization=normalization,
+        num_fa_length=num_fa_length,  # number of frequency aware coefficients length
+        num_fa_repeats=num_fa_repeats,  # number of frequency aware repeats for each length
+        num_fa_repeats_x=num_fa_repeats_x,  # number of frequency aware repeats for each length in x direction
+        num_fa_repeats_y=num_fa_repeats_y,  # number of frequency aware repeats for each length in y direction
     )
 
     config.sample = d(
-        save_start=100000,
+        save_start=20000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

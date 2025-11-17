@@ -276,11 +276,11 @@ def train(config):
             _fid = calculate_fid_given_paths((dataset.fid_stat, path))
             logging.info(f'step={train_state.step} fid{n_samples}={_fid}')
             try:
-                _is_mean, _is_std = calculate_inception_score(path,
-                                                            batch_size=32, 
-                                                            splits=10,
-                                                            device=device)
-                logging.info(f'step={train_state.step} IS{n_samples}={_is_mean} ± {_is_std}')
+                # _is_mean, _is_std = calculate_inception_score(path,
+                #                                             batch_size=32, 
+                #                                             splits=10,
+                #                                             device=device)
+                # logging.info(f'step={train_state.step} IS{n_samples}={_is_mean} ± {_is_std}')
                 _lpips = calculate_lpips_score(path,
                                             '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs',
                                             device=device,
@@ -291,7 +291,7 @@ def train(config):
                 _is_mean, _is_std, _lpips = -1.0, -1.0, -1.0
             with open(os.path.join(config.workdir, f'eval_{algorithm}_{n_samples}.log'), 'a') as f:
                 print(f'step={train_state.step} fid{n_samples}={_fid}' , file=f)
-                print(f'step={train_state.step} IS{n_samples}={_is_mean} ± {_is_std}', file=f)
+                # print(f'step={train_state.step} IS{n_samples}={_is_mean} ± {_is_std}', file=f)
                 print(f'step={train_state.step} LPIPS{n_samples}={_lpips}', file=f)
             shutil.rmtree(path)
 

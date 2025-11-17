@@ -1215,7 +1215,7 @@ class UViT_greyscale_MoE(nn.Module):
         # --- Build Transformer Blocks with MoE ---
         in_blocks_list = []
         for i in range(depth // 2):
-            if self.moe_layer_index == i + 1: # First block
+            if self.moe_layer_index == i + 1 or self.moe_layer_index == -1: # First block or all blocks
                 if self.moe_type == 'ecmoe':
                     block = Block_ECDiT(
                         dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
@@ -1230,14 +1230,24 @@ class UViT_greyscale_MoE(nn.Module):
                     norm_layer=norm_layer, use_checkpoint=use_checkpoint)
             in_blocks_list.append(block)
         self.in_blocks = nn.ModuleList(in_blocks_list)
-
-        self.mid_block = Block(
+        
+        if self.moe_layer_index == -1:
+            if self.moe_type == 'ecmoe':
+                self.mid_block = Block_ECDiT(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k, num_tokens=self.tokens + self.extras)
+            elif self.moe_type == 'normal':
+                self.mid_block = Block_MoE(
+                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k, noise_eps=self.moe_noise_eps)
+        else:    
+            self.mid_block = Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
                 norm_layer=norm_layer, use_checkpoint=use_checkpoint)
 
         out_blocks_list = []
         for i in range(depth // 2):
-            if self.moe_layer_index + i == (depth // 2): # Last block
+            if self.moe_layer_index + i == (depth // 2) or self.moe_layer_index == -1: # Last block
                 if self.moe_type == 'ecmoe':
                     block = Block_ECDiT(
                         dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,

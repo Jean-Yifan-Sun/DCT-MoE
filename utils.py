@@ -380,7 +380,7 @@ def DCT_to_greyscale(sample, tokens=0, low_freqs=0, block_sz=0, reverse_order=No
     DCT_Y = np.array(y_blocks).reshape(num_y_blocks, block_sz, block_sz)  # (Y_blocks, B, B)
 
     # 逆 DCT
-    idct_y_blocks = idct_transform(DCT_Y, shift=True)
+    idct_y_blocks = idct_transform(DCT_Y)
     y_reconstructed = combine_blocks(idct_y_blocks, resolution, resolution, block_sz)
 
     # 转为 uint8 灰度图

@@ -32,7 +32,7 @@ def eval_checkpoints(config):
     """评估保存的检查点"""
     
     # 初始化加速器
-    process_group_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=7200))
+    process_group_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=20000))
     accelerator = Accelerator(kwargs_handlers=[process_group_kwargs])
     
     device = accelerator.device
@@ -159,16 +159,15 @@ def eval_checkpoints(config):
                 logging.info("Computing evaluation metrics...")
                 
                 # 计算 FID
-                # fid_score = calculate_fid_given_paths(
-                #     (dataset.fid_stat, sample_dir)
-                # )
+                fid_score = calculate_fid_given_paths(
+                    (dataset.fid_stat, sample_dir)
+                )
                 
                 # 计算 IS
                 inception_score, inception_score_std = calculate_inception_score(
                     sample_dir,
                     batch_size=config.eval.get('is_batch_size', 32),
-                    splits=10,
-                    device=device
+                    splits=10
                 )
                 
                 # 计算 LPIPS
@@ -181,7 +180,7 @@ def eval_checkpoints(config):
                 
                 result = {
                     'step': step,
-                    # 'fid': fid_score,
+                    'fid': fid_score,
                     'is_mean': inception_score,
                     'is_std': inception_score_std,
                     'lpips': lpips_score
@@ -189,7 +188,7 @@ def eval_checkpoints(config):
                 results.append(result)
                 
                 logging.info(f"Step {step} Results:")
-                # logging.info(f"  FID: {fid_score:.4f}")
+                logging.info(f"  FID: {fid_score:.4f}")
                 logging.info(f"  IS: {inception_score:.4f} ± {inception_score_std:.4f}")
                 logging.info(f"  LPIPS: {lpips_score:.4f}")
                 
@@ -197,7 +196,7 @@ def eval_checkpoints(config):
                 result_file = os.path.join(results_dir, f'metrics_step_{step}.txt')
                 with open(result_file, 'w') as f:
                     f.write(f"Step: {step}\n")
-                    # f.write(f"FID: {fid_score:.6f}\n")
+                    f.write(f"FID: {fid_score:.6f}\n")
                     f.write(f"IS (mean): {inception_score:.6f}\n")
                     f.write(f"IS (std): {inception_score_std:.6f}\n")
                     f.write(f"LPIPS: {lpips_score:.6f}\n")
@@ -219,9 +218,9 @@ def eval_checkpoints(config):
     if accelerator.is_main_process:
         results_file = os.path.join(results_dir, 'all_metrics.txt')
         with open(results_file, 'w') as f:
-            f.write("Step\tIS_mean\tIS_std\tLPIPS\n")
+            f.write("Step\tFID\tIS_mean\tIS_std\tLPIPS\n")
             for result in results:
-                f.write(f"{result['step']}\t{result['is_mean']:.6f}\t{result['is_std']:.6f}\t{result['lpips']:.6f}\n")
+                f.write(f"{result['step']}\t{result['fid']:.6f}\t{result['is_mean']:.6f}\t{result['is_std']:.6f}\t{result['lpips']:.6f}\n")
         
         logging.info(f"\nAll results saved to {results_file}")
         
@@ -230,7 +229,7 @@ def eval_checkpoints(config):
         logging.info("Evaluation Summary")
         logging.info("="*50)
         for result in results:
-            logging.info(f"Step {result['step']}: IS={result['is_mean']:.4f}±{result['is_std']:.4f}, LPIPS={result['lpips']:.4f}")
+            logging.info(f"Step {result['step']}: FID={result['fid']:.4f}, IS={result['is_mean']:.4f}±{result['is_std']:.4f}, LPIPS={result['lpips']:.4f}")
 
 
 if __name__ == "__main__":

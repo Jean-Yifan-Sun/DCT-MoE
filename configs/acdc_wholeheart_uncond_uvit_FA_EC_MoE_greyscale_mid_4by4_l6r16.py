@@ -79,7 +79,7 @@ def get_config():
         use_moe=True,
         MoE={
             "type": "ecmoe",  # 'normal', 'ecmoe'
-            "depth": 1,
+            "depth": -1,
             "num_experts": 4,
             "router": "topk",
             "top_k": 2,
