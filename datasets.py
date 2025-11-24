@@ -107,13 +107,14 @@ class DatasetFactory(object):
 # ACDC Unlabeled Dataset
 
 class ACDCUncond(DatasetFactory):
-    def __init__(self, path, resolution=0, tokens=0, low_freqs=0, block_sz=0, Y_bound=None, **kwargs):
+    def __init__(self, path, resolution=0, tokens=0, low_freqs=0, block_sz=0, **kwargs):
         super().__init__()
 
         self.resolution = resolution
         self.tokens = tokens
         self.low_freqs = low_freqs
         self.block_sz = block_sz
+        self.Y_bound = kwargs.get('Y_bound', None)
         # transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor(),
                                         # transforms.Normalize(0.5, 0.5)])
         self.greyscale = kwargs.get('greyscale', False)
@@ -155,7 +156,7 @@ class ACDCUncond(DatasetFactory):
                 self.num_fa_repeats_y = kwargs.get('num_fa_repeats_y', 0)
                 assert self.num_fa_length > 0 and self.num_fa_repeats > 0, "num_fa_length and num_fa_repeatsmust be > 0 for frequency aware tokens."
                 self.train = DCT_FA_Customized(
-                    data_property={'mean': kwargs.get('Y_mean', None), 'std': kwargs.get('Y_std', None),'min': kwargs.get('Y_min', None), 'max': kwargs.get('Y_max', None)},
+                    data_property={'mean': kwargs.get('Y_mean', None), 'std': kwargs.get('Y_std', None),'min': kwargs.get('Y_min', None), 'max': kwargs.get('Y_max', None), 'Y_bound': self.Y_bound},
                     path=path, img_sz=resolution, low_freqs=low_freqs, block_sz=block_sz, num_fa_length=self.num_fa_length, num_fa_repeats=self.num_fa_repeats, tokenwise_normalization=kwargs.get('tokenwise_normalization', 'Y_bound'), num_fa_repeats_x=self.num_fa_repeats_x, num_fa_repeats_y=self.num_fa_repeats_y
                 )
                 self.block_component = None  # will be determined by num_fa_length
@@ -164,14 +165,14 @@ class ACDCUncond(DatasetFactory):
                 self.block_component = 4  # only Y channel
                 self.train = DCT_4Y(
                     path=path, img_sz=resolution, tokens=tokens,
-                    low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
+                    low_freqs=low_freqs, block_sz=block_sz, Y_bound=self.Y_bound
                 )
 
         else:
             self.block_component = 6  # Y-Cb-Cr 
             self.train = DCT_4YCbCr(
                 path=path, img_sz=resolution, tokens=tokens,
-                low_freqs=low_freqs, block_sz=block_sz, Y_bound=Y_bound
+                low_freqs=low_freqs, block_sz=block_sz, Y_bound=self.Y_bound
             )
 
     @property
@@ -826,7 +827,7 @@ class DCT_FA_Customized(Dataset):
             print(f"Using min and max for token-wise normalization")
 
         elif self.normalization == 'Y_bound':
-            self.y_bound = np.array(data_property['max'], dtype=np.float32).max()
+            self.y_bound = np.array(data_property['Y_bound'], dtype=np.float32)
             print(f"Using Y_bound={self.y_bound} for scaling")
 
         self.low_freqs = low_freqs

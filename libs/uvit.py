@@ -891,7 +891,7 @@ class Block_ECDiT(nn.Module):
 class UViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.,
                  qkv_bias=False, qk_scale=None, norm_layer=nn.LayerNorm, mlp_time_embed=False, num_classes=-1,
-                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0):
+                 use_checkpoint=False, conv=True, skip=True, tokens=0, low_freqs=0, use_moe=False):
         super().__init__()
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.num_classes = num_classes

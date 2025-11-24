@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=qingjiem-heart-tte
 #SBATCH --qos=bham
-#SBATCH --time=4:00:00
+#SBATCH --time=1:00:00
 #SBATCH --nodes 1
 #SBATCH --gres gpu:1
 #SBATCH --gpus-per-task 1

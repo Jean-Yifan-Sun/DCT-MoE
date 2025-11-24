@@ -18,7 +18,7 @@ def combine_blocks(blocks, height, width, block_sz):
             index += 1
     return image
 
-def dct_transform(blocks, shift=False):
+def dct_transform(blocks, shift=True):
     dct_blocks = []
     for block in blocks:
         dct_block = np.float32(block) # no shift required for cv2.dct
@@ -28,7 +28,7 @@ def dct_transform(blocks, shift=False):
         dct_blocks.append(dct_block)
     return np.array(dct_blocks)
 
-def idct_transform(blocks, shift=False):
+def idct_transform(blocks, shift=True):
     idct_blocks = []
     for block in blocks:
         idct_block = cv2.idct(block)

@@ -12,6 +12,17 @@ def get_config():
     config.seed = 1234
     config.pred = 'noise_pred'
 
+    config.eval_dir = f"output/evaluation/DCTdiff"
+    config.eval = d(
+        eval_start=90000,
+        n_samples=2000,
+        mini_batch_size=500,
+        sample_steps=100,
+        is_batch_size=32,
+        lpips_batch_size=32,
+        cleanup_samples=True,
+    )
+
     config.train = d(
         n_steps=500000,
         batch_size=256,
@@ -44,6 +55,7 @@ def get_config():
         qkv_bias=False,
         mlp_time_embed=False,
         num_classes=-1,
+        use_moe=False,
     )
 
     config.dataset = d(

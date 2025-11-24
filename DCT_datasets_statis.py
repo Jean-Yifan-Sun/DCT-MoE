@@ -183,10 +183,10 @@ def DCT_statis_from_array(array_path=None, block_sz=None, tau=98.25, eta=None):
                 data = data[(data >= lower_bound) & (data <= upper_bound)]
                 
                 # Save distribution plot
-                os.makedirs(folder_path + f"/DCT_blocksz_{block_sz}/", exist_ok=True)
-                plot_data_distribution(data, 
-                    title=f"Distribution of DCT coe {index} after filtering outliers",
-                    save_path=folder_path + f"/DCT_blocksz_{block_sz}/DCT_coe_{index}_distribution.png")
+                # os.makedirs(folder_path + f"/DCT_blocksz_{block_sz}/", exist_ok=True)
+                # plot_data_distribution(data, 
+                #     title=f"Distribution of DCT coe {index} after filtering outliers",
+                #     save_path=folder_path + f"/DCT_blocksz_{block_sz}/DCT_coe_{index}_distribution.png")
 
                 m = np.around(np.mean(data), decimals=3)
                 s = np.around(np.std(data), decimals=3)
@@ -794,10 +794,10 @@ if __name__ == "__main__":
     # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=2, low_freqs=4)
-    block_sz = 12
-    eta = 2100
+    block_sz = 4
+    eta = 502.5
     # image_to_DCT_array(dataset='acdc', 
-    #                    img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', 
+    #                    img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', 
     #                    block_sz=block_sz, 
     #                    coe='y',
     #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
@@ -806,8 +806,8 @@ if __name__ == "__main__":
                           tau=98.25)
     DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
                           block_sz=block_sz, tau=98.25, eta=eta)
-    calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=block_sz)
-    calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs', block_sz=block_sz, tau=96.0)
+    calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', block_sz=block_sz)
+    calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', block_sz=block_sz, tau=96.0)
     # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=4, low_freqs=4)

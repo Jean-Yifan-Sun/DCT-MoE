@@ -282,7 +282,7 @@ def train(config):
                 #                                             device=device)
                 # logging.info(f'step={train_state.step} IS{n_samples}={_is_mean} ± {_is_std}')
                 _lpips = calculate_lpips_score(path,
-                                            '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs',
+                                            '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs',
                                             device=device,
                                             batch_size=32)
                 logging.info(f'step={train_state.step} LPIPS{n_samples}={_lpips}')

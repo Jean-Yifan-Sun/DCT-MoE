@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --account=chenhp-data-gen
+#SBATCH --account=qingjiem-heart-tte
 #SBATCH --qos=bham
-#SBATCH --time=2:00:00
+#SBATCH --time=12:00:00
 #SBATCH --nodes 1
 #SBATCH --gres gpu:2
 #SBATCH --gpus-per-task 2
@@ -22,28 +22,28 @@ conda info --envs
 cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
-accelerate launch \
-    --multi_gpu \
-    --mixed_precision=no \
-    --main_process_port=0 \
-    eval_FA.py \
-    --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9.py \
-    --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r9_minmax
-# python eval_FA.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16.py --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r16_minmax
+# accelerate launch \
+#     --multi_gpu \
+#     --mixed_precision=no \
+#     --main_process_port=0 \
+#     eval_FA.py \
+#     --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9.py \
+#     --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r9_minmax
+# # python eval_FA.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16.py --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r16_minmax
 
+
+# accelerate launch \
+#     --multi_gpu \
+#     --mixed_precision=no \
+#     --main_process_port=0 \
+#     eval.py \
+#     --config=configs/acdc_wholeheart_uncond_uvit_EC_MoE_greyscale_mid_4by4.py \
+#     --workdir output/acdc_wholeheart_uncond_ec_moe_greyscale_uvit_mid_4by4
 
 accelerate launch \
     --multi_gpu \
     --mixed_precision=no \
     --main_process_port=0 \
     eval.py \
-    --config=configs/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4.py \
-    --workdir output/acdc_wholeheart_uncond_greyscale_uvit_mid_4by4_old
-
-accelerate launch \
-    --multi_gpu \
-    --mixed_precision=no \
-    --main_process_port=0 \
-    eval.py \
-    --config=configs/acdc_wholeheart_uncond_uvit_EC_MoE_greyscale_mid_4by4.py \
-    --workdir output/acdc_wholeheart_uncond_ec_moe_greyscale_uvit_mid_4by4
+    --config=configs/acdc_uncond_uvit_mid_4by4.py \
+    --workdir output/acdc_uncond_uvit_mid_4by4

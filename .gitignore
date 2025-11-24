@@ -4,4 +4,5 @@ jobs/res/*
 output/*
 output_allbest/*
 output_moree/*
+output_shift/*
 *.pyc

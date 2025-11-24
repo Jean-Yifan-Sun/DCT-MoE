@@ -40,6 +40,7 @@ def eval_checkpoints(config):
     
     # 加载数据集
     dataset = get_dataset(**config.dataset)
+    greyscale = config.dataset.get('greyscale', False)
     train_dataset = dataset.get_split(split='train', labeled=(config.train.mode == 'cond'))
     accelerator.print(f'Data shape: {dataset.data_shape}')
     
@@ -137,19 +138,34 @@ def eval_checkpoints(config):
                     return samples
                 
                 # 生成并保存样本
-                utils.DCTsample2dir_greyscale(
-                    accelerator,
-                    sample_dir,
-                    samples_per_process,
-                    config.eval.get('mini_batch_size', 50),
-                    sample_fn,
-                    tokens=config.nnet.tokens,
-                    resolution=config.dataset.resolution,
-                    low_freqs=config.dataset.low_freqs,
-                    block_sz=config.dataset.block_sz,
-                    reverse_order=reverse_zigzag_order(config.dataset.block_sz),
-                    Y_bound=config.dataset.Y_bound
-                )
+                if greyscale:
+                    utils.DCTsample2dir_greyscale(
+                        accelerator,
+                        sample_dir,
+                        samples_per_process,
+                        config.eval.get('mini_batch_size', 50),
+                        sample_fn,
+                        tokens=config.nnet.tokens,
+                        resolution=config.dataset.resolution,
+                        low_freqs=config.dataset.low_freqs,
+                        block_sz=config.dataset.block_sz,
+                        reverse_order=reverse_zigzag_order(config.dataset.block_sz),
+                        Y_bound=config.dataset.Y_bound
+                    )
+                else:
+                    utils.DCTsample2dir(
+                        accelerator,
+                        sample_dir,
+                        samples_per_process,
+                        config.eval.get('mini_batch_size', 50),
+                        sample_fn,
+                        tokens=config.nnet.tokens,
+                        resolution=config.dataset.resolution,
+                        low_freqs=config.dataset.low_freqs,
+                        block_sz=config.dataset.block_sz,
+                        reverse_order=reverse_zigzag_order(config.dataset.block_sz),
+                        Y_bound=config.dataset.Y_bound
+                    )
             
             # 确保所有进程完成
             accelerator.wait_for_everyone()
@@ -173,7 +189,7 @@ def eval_checkpoints(config):
                 # 计算 LPIPS
                 lpips_score = calculate_lpips_score(
                     sample_dir,
-                    '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs',  # 真实图像目录
+                    '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs',  # 真实图像目录
                     device,
                     batch_size=config.eval.get('lpips_batch_size', 32)
                 )

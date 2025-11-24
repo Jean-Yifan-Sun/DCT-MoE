@@ -21,7 +21,7 @@ def get_config():
         sample_steps=100,
         is_batch_size=32,
         lpips_batch_size=32,
-        cleanup_samples=False,
+        cleanup_samples=True,
     )
 
     config.train = d(
