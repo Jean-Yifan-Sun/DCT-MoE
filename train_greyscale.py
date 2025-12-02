@@ -129,7 +129,7 @@ def train(config):
     if config.dataset.reweight:
         Y_entropy = np.array(config.dataset.Y_entropy)
         logging.info(f'using {Y_entropy} for loss reweighting')
-        reweight = Y_entropy[low2high_order][:config.dataset.low_freqs]
+        reweight = Y_entropy[:config.dataset.low_freqs]
         # reweight = reweight / (reweight.sum() / reweight.shape[0])  # normalization
         reweight = torch.from_numpy(reweight).to(device=device).float()
         reweight = torch.cat((reweight, reweight, reweight, reweight))

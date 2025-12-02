@@ -5,4 +5,5 @@ output/*
 output_allbest/*
 output_moree/*
 output_shift/*
+output_shift_fa/*
 *.pyc

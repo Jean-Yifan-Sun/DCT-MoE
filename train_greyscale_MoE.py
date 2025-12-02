@@ -132,10 +132,9 @@ def train(config):
     if config.dataset.reweight:
         Y_entropy = np.array(config.dataset.Y_entropy)
         logging.info(f'using {Y_entropy} for Y_loss reweighting')
-        Y_reweight = Y_entropy[low2high_order][:config.dataset.low_freqs]
+        Y_reweight = Y_entropy[:config.dataset.low_freqs]
         # Y_reweight = Y_reweight / (Y_reweight.sum() / Y_reweight.shape[0])  # normalization
         Y_reweight = torch.from_numpy(Y_reweight).to(device=device).float()
-
         reweight_by_std = torch.cat((Y_reweight, Y_reweight, Y_reweight, Y_reweight)).to(device=device)
         assert reweight_by_std.shape[0] == config.dataset.low_freqs * 4
         temperature = config.dataset.get('temperature', 1.0)

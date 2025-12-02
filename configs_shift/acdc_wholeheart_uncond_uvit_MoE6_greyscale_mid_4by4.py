@@ -56,7 +56,7 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale',  # use greyscale UViT
+        name='uvit_greyscale_moe',  # use greyscale UViT
         tokens=144,  # number of tokens to the network
         low_freqs=12,  # B**2 - m
         embed_dim=768,
@@ -66,7 +66,16 @@ def get_config():
         qkv_bias=False,
         mlp_time_embed=True,
         num_classes=-1,
-        use_moe=False,
+        use_moe=True,
+        MoE={
+            "type": "normal",  # 'normal', 'ecmoe'
+            "depth": 1,
+            "num_experts": 6,
+            "router": "topk",
+            "top_k": 2,
+            "noise_eps": 1e-2,
+            "aux_loss_alpha": 0.001
+        },
     )
 
     config.dataset = d(

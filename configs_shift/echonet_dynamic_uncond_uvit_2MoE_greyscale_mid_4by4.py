@@ -11,8 +11,8 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_wholeheart_uncond_uvit_greyscale_mid_4by4'
-    config.eval_dir = f"output/evaluation/uncond_{4}by{4}_low{16}_new"
+    config.name = 'echonet_dynamic_uncond_uvit_greyscale_mid_4by4'
+    config.eval_dir = f"output/evaluation/echonet_uncond_{4}by{4}_low{16}_new"
     config.eval = d(
         eval_start=110000,
         n_samples=50000,
@@ -56,8 +56,8 @@ def get_config():
     )
 
     config.nnet = d(
-        name='uvit_greyscale',  # use greyscale UViT
-        tokens=144,  # number of tokens to the network
+        name='uvit_greyscale_moe',  # use greyscale UViT
+        tokens=196,  # number of tokens to the network
         low_freqs=12,  # B**2 - m
         embed_dim=768,
         depth=16,
@@ -66,34 +66,43 @@ def get_config():
         qkv_bias=False,
         mlp_time_embed=True,
         num_classes=-1,
-        use_moe=False,
+        use_moe=True,
+        MoE={
+            "type": "normal",  # 'normal', 'ecmoe'
+            "depth": 2,
+            "num_experts": 4,
+            "router": "topk",
+            "top_k": 2,
+            "noise_eps": 1e-2,
+            "aux_loss_alpha": 0.001
+        },
     )
 
     config.dataset = d(
-        name='acdc_uncond',
-        path='data/scratch/datasets/ACDC/Unlabeled/Wholeheart',
-        dataset_type='wholeheart',  # use wholeheart dataset
-        resolution=96,
-        tokens=144,  # number of tokens to the network
+        name='echonet',
+        path='data/scratch/datasets/EchoNet-Dynamic',
+        dataset_type='dynamic',  # use wholeheart dataset
+        resolution=112,
+        tokens=196,  # number of tokens to the network
         low_freqs=12,  # B**2 - m
         block_sz=4,  # B
-        Y_bound=[502.5],  # eta
-        Y_mean=[-270.982, -0.725, 0.44, 0.107, 0.009, 0.154, -0.058, 0.0, -0.008, 0.019, 0.009, -0.012, 0.005, 0.002, 0.004, -0.002],  # eta
-        Y_std=[182.433, 32.822, 34.997, 14.001, 17.621, 13.189, 5.791, 9.609, 9.805, 5.653, 4.634, 6.503, 4.964, 3.796, 3.44, 2.178],
-        Y_min=[-502.5, -119.312, -122.375, -51.25, -58.906, -49.5, -20.703, -32.906, -33.094, -19.891, -15.891, -21.75, -16.969, -12.773, -11.648, -7.492],
-        Y_max=[262.0, 112.375, 125.812, 49.0, 58.5, 46.5, 20.344, 32.906, 33.406, 19.953, 15.953, 22.0, 16.984, 12.812, 11.68, 7.461],
-        Y_entropy=[5.883, 3.501, 3.575, 2.418, 2.75, 2.341, 1.479, 2.017, 2.044, 1.453, 1.316, 1.586, 1.365, 1.174, 1.108, 1.0],
+        Y_bound=[512.0],  # eta
+        Y_mean=[-390.081, 0.103, -0.947, 0.171, 0.192, 0.203, 0.001, 0.061, 0.233, -0.075, -0.051, -0.199, -0.046, -0.076, -0.042, 0.029],  # eta
+        Y_std=[163.706, 28.348, 26.485, 11.872, 13.871, 8.085, 2.919, 6.039, 8.605, 7.49, 5.683, 4.875, 2.372, 2.172, 3.337, 1.668],
+        Y_min=[-512.0, -108.688, -112.5, -52.5, -55.75, -36.75, -14.586, -27.062, -37.156, -36.156, -28.484, -27.75, -13.672, -14.266, -19.562, -10.367],
+        Y_max=[148.0, 107.812, 89.625, 47.0, 56.938, 34.0, 14.758, 29.281, 38.125, 35.156, 27.938, 22.0, 12.641, 12.125, 18.391, 11.641],
+        Y_entropy=[5.419, 2.769, 2.659, 1.88, 2.022, 1.575, 1.018, 1.338, 1.593, 1.484, 1.309, 1.163, 0.928, 0.925, 1.051, 0.852],
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
         reweight=True,  # use loss reweighting based on entropy
         temperature=0.0,  # temperature for loss reweighting
         reweight_dim=1,
-        cache=True,  # cache the dataset
-        cache_name='acdc_uncond_wholeheart_4Y',
+        cache=True,  # cache dataset in memory
+        cache_name='cached_echonet_dynamic_4by4_4Y'
     )
 
     config.sample = d(
-        save_start=100000,
+        save_start=10000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

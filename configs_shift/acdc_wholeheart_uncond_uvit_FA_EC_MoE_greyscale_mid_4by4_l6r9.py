@@ -106,10 +106,10 @@ def get_config():
         SNR_scale=4.0,
         greyscale=True,  # use greyscale images
         reweight=True,  # use loss reweighting based on entropy
-        tempature=1.0,  # temperature for loss reweighting
+        temperature=0.0,  # temperature for loss reweighting
         reweight_dim=-1,  # dimension to apply loss reweighting (1: channel-wise, 2: token-wise, -1: element-wise)
         frequency_aware_tokens=True,  # use frequency aware tokens
-        tokenwise_normalization="Y_bound",  # 'minmax' or 'Y_bound' normalization for each token
+        tokenwise_normalization="minmax",  # 'minmax' or 'Y_bound' normalization for each token
         num_fa_length=num_fa_length,  # number of frequency aware coefficients length
         num_fa_repeats=num_fa_repeats,  # total number of frequency aware repeats
         num_fa_repeats_x=num_fa_repeats_x,  # number of frequency aware repeats for each length in x direction

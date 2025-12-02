@@ -1231,19 +1231,19 @@ class UViT_greyscale_MoE(nn.Module):
             in_blocks_list.append(block)
         self.in_blocks = nn.ModuleList(in_blocks_list)
         
-        if self.moe_layer_index == -1:
-            if self.moe_type == 'ecmoe':
-                self.mid_block = Block_ECDiT(
-                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k, num_tokens=self.tokens + self.extras)
-            elif self.moe_type == 'normal':
-                self.mid_block = Block_MoE(
-                    dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                    norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k, noise_eps=self.moe_noise_eps)
-        else:    
-            self.mid_block = Block(
-                dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
-                norm_layer=norm_layer, use_checkpoint=use_checkpoint)
+        # if self.moe_layer_index == -1:
+        #     if self.moe_type == 'ecmoe':
+        #         self.mid_block = Block_ECDiT(
+        #             dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+        #             norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, expert_capacity_factor=self.top_k, num_tokens=self.tokens + self.extras)
+        #     elif self.moe_type == 'normal':
+        #         self.mid_block = Block_MoE(
+        #             dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+        #             norm_layer=norm_layer, use_checkpoint=use_checkpoint, num_experts=self.num_experts, top_k=self.top_k, noise_eps=self.moe_noise_eps)
+        # else:    
+        self.mid_block = Block(
+            dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+            norm_layer=norm_layer, use_checkpoint=use_checkpoint)
 
         out_blocks_list = []
         for i in range(depth // 2):
@@ -1302,11 +1302,13 @@ class UViT_greyscale_MoE(nn.Module):
         # 2. Forward pass through the network, tracking aux loss
         total_aux_loss = torch.tensor(0.0).to(x.device)
         skips = []
+        moe_count = 0
 
         for blk in self.in_blocks:
             if isinstance(blk, Block_MoE):
                 x, aux_loss = blk(x)
                 total_aux_loss += aux_loss
+                moe_count += 1
             else:
                 x = blk(x)
             skips.append(x)
@@ -1318,6 +1320,7 @@ class UViT_greyscale_MoE(nn.Module):
             if isinstance(blk, Block_MoE):
                 x, aux_loss = blk(x, skips.pop())
                 total_aux_loss += aux_loss
+                moe_count += 1
             else:
                 x = blk(x, skips.pop())
 
@@ -1330,6 +1333,7 @@ class UViT_greyscale_MoE(nn.Module):
         #     x = self.input_normalize(x, reverse=True)
 
         # Return both the prediction and the accumulated auxiliary loss
+        total_aux_loss = total_aux_loss / moe_count if moe_count > 0 else total_aux_loss
         return x, total_aux_loss
     
     def get_expert_distribution(self):

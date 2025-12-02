@@ -334,7 +334,10 @@ class EntropyWeightedMSELoss(nn.Module):
         
     def _entropy_to_weights(self):
         # Higher entropy = higher weight
-        weights = torch.exp(self.entropy_values / self.temperature)
+        if self.temperature <= 0:
+            weights = self.entropy_values
+        else:
+            weights = torch.exp(self.entropy_values / self.temperature)
         
         if self.normalize_weights:
             # Normalize so weights sum to num_tokens (maintains loss scale)

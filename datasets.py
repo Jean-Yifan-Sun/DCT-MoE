@@ -103,6 +103,67 @@ class DatasetFactory(object):
     def label_prob(self, k):
         raise NotImplementedError
 
+# EchoNet-Dynamic Dataset
+
+class EchoNetUncond(DatasetFactory):
+    def __init__(self, path, resolution=0, tokens=0, low_freqs=0, block_sz=0, **kwargs):
+        super().__init__()
+
+        self.resolution = resolution
+        self.tokens = tokens
+        self.low_freqs = low_freqs
+        self.block_sz = block_sz
+        self.Y_bound = kwargs.get('Y_bound', None)
+        # transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor(),
+                                        # transforms.Normalize(0.5, 0.5)])
+        self.greyscale = kwargs.get('greyscale', False)
+        self.dataset_type = kwargs.get('dataset_type', 'dynamic')
+        self.frequency_aware_tokens = kwargs.get('frequency_aware_tokens', False)
+
+        if self.greyscale:
+            if self.frequency_aware_tokens:
+                self.num_fa_repeats = kwargs.get('num_fa_repeats', 4)
+                self.num_fa_length = kwargs.get('num_fa_length', 0)
+                self.num_fa_repeats_x = kwargs.get('num_fa_repeats_x', 0)
+                self.num_fa_repeats_y = kwargs.get('num_fa_repeats_y', 0)
+                assert self.num_fa_length > 0 and self.num_fa_repeats > 0, "num_fa_length and num_fa_repeatsmust be > 0 for frequency aware tokens."
+                self.train = DCT_FA_Customized(
+                    data_property={'mean': kwargs.get('Y_mean', None), 'std': kwargs.get('Y_std', None),'min': kwargs.get('Y_min', None), 'max': kwargs.get('Y_max', None), 'Y_bound': self.Y_bound},
+                    path=path, img_sz=resolution, low_freqs=low_freqs, block_sz=block_sz, num_fa_length=self.num_fa_length, num_fa_repeats=self.num_fa_repeats, tokenwise_normalization=kwargs.get('tokenwise_normalization', 'Y_bound'), num_fa_repeats_x=self.num_fa_repeats_x, num_fa_repeats_y=self.num_fa_repeats_y
+                )
+                self.block_component = None  # will be determined by num_fa_length
+
+            else:
+                self.block_component = 4  # only Y channel
+                self.train = DCT_4Y(
+                    path=path, img_sz=resolution, tokens=tokens,
+                    low_freqs=low_freqs, block_sz=block_sz, Y_bound=self.Y_bound, cache=kwargs.get('cache', False), cache_name=kwargs.get('cache_name', 'echonet_cache')
+                )
+
+        else:
+            self.block_component = 6  # Y-Cb-Cr 
+            self.train = DCT_4YCbCr(
+                path=path, img_sz=resolution, tokens=tokens,
+                low_freqs=low_freqs, block_sz=block_sz, Y_bound=self.Y_bound
+            )
+
+    @property
+    def data_shape(self):
+        if self.frequency_aware_tokens:
+            return self.tokens, self.num_fa_length * self.num_fa_repeats
+        else: 
+            return self.tokens, self.low_freqs*self.block_component
+
+    @property
+    def fid_stat(self):
+        # specify the fid_stats file that will be used for FID computation during the training
+        return 'data/scratch/U-ViT2/assets/fid_stats/echo.npz'
+        
+    @property
+    def has_label(self):
+        return False
+
+
 
 # ACDC Unlabeled Dataset
 
@@ -165,7 +226,7 @@ class ACDCUncond(DatasetFactory):
                 self.block_component = 4  # only Y channel
                 self.train = DCT_4Y(
                     path=path, img_sz=resolution, tokens=tokens,
-                    low_freqs=low_freqs, block_sz=block_sz, Y_bound=self.Y_bound
+                    low_freqs=low_freqs, block_sz=block_sz, Y_bound=self.Y_bound, cache=kwargs.get('cache', False), cache_name=kwargs.get('cache_name', 'acdc_uncond_wholeheart_4Y')
                 )
 
         else:
@@ -609,7 +670,7 @@ class DCT_4YCbCr(Dataset):
         return DCT_blocks
 
 class DCT_4Y(Dataset):
-    def __init__(self, path, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None):
+    def __init__(self, path, img_sz=64, tokens=0, low_freqs=0, block_sz=8, Y_bound=None, cache=False, cache_name='Undefined'):
         self.path = path
         self.img_paths = _list_image_files_recursively(path)
 
@@ -630,49 +691,62 @@ class DCT_4Y(Dataset):
 
         self.low2high_order = zigzag_order(block_sz)
         self.reverse_order = reverse_zigzag_order(block_sz)
+        self.cache = cache
+        if self.cache:
+            self.cache_path = os.path.join(path, f'{cache_name}')
+            if os.path.exists(self.cache_path):
+                print(f'Loading cached DCT_4Y data from {self.cache_path}...')
+            else:
+                print(f'Cache data {self.cache_path} not found. Skipping cache...')
+                self.cache = False
 
     def __len__(self):
         return len(self.img_paths)
 
     def __getitem__(self, idx):
-        img_path = self.img_paths[idx]
-        img = Image.open(img_path).convert('L')  # 灰度图
-        img = transforms.RandomHorizontalFlip()(img)
-        img = np.array(img)
+        if self.cache:
+            cached_file = os.path.join(self.cache_path, f'{idx}.pt')
+            DCT_blocks = torch.load(cached_file, weights_only=True)
+            return DCT_blocks
+        else:
+            img_path = self.img_paths[idx]
+            img = Image.open(img_path).convert('L')  # 灰度图
+            img = transforms.RandomHorizontalFlip()(img)
+            img = np.array(img)
 
-        # Step 1: Y channel就是灰度图本身
-        img_y = img.astype(np.float32)
+            # Step 1: Y channel就是灰度图本身
+            img_y = img.astype(np.float32)
 
-        # Step 2: Split Y into BxB blocks
-        y_blocks = split_into_blocks(img_y, self.block_sz)  # (h, w) --> (h/B * w/B, B, B)
+            # Step 2: Split Y into BxB blocks
+            y_blocks = split_into_blocks(img_y, self.block_sz)  # (h, w) --> (h/B * w/B, B, B)
 
-        # Step 3: Apply DCT on each block
-        dct_y_blocks = dct_transform(y_blocks)  # (num_blocks, B, B)
+            # Step 3: Apply DCT on each block
+            dct_y_blocks = dct_transform(y_blocks)  # (num_blocks, B, B)
 
-        # Step 4: 组织token顺序
-        DCT_blocks = []
-        for i in range(dct_y_blocks.shape[0]// 4):
-            DCT_blocks.append([
-                dct_y_blocks[self.index[i]],
-                dct_y_blocks[self.index[i] + 1],
-                dct_y_blocks[self.index[i] + self.Y_blocks_per_row],
-                dct_y_blocks[self.index[i] + self.Y_blocks_per_row + 1],
-            ])
-        DCT_blocks = np.array(DCT_blocks).reshape(-1, 4, self.block_sz * self.block_sz)  # (tokens, 4, B**2)
+            # Step 4: 组织token顺序
+            DCT_blocks = []
+            for i in range(dct_y_blocks.shape[0]// 4):
+                DCT_blocks.append([
+                    dct_y_blocks[self.index[i]],
+                    dct_y_blocks[self.index[i] + 1],
+                    dct_y_blocks[self.index[i] + self.Y_blocks_per_row],
+                    dct_y_blocks[self.index[i] + self.Y_blocks_per_row + 1],
+                ])
+            DCT_blocks = np.array(DCT_blocks).reshape(-1, 4, self.block_sz * self.block_sz)  # (tokens, 4, B**2)
 
-        # Step 5: scale into [-1, 1]
-        assert DCT_blocks.shape == (self.tokens, 4, self.block_sz * self.block_sz)
-        DCT_blocks = DCT_blocks / self.Y_bound  # 广播
+            # Step 5: scale into [-1, 1]
+            assert DCT_blocks.shape == (self.tokens, 4, self.block_sz * self.block_sz)
+            DCT_blocks = DCT_blocks / self.Y_bound  # 广播
 
-        # Step 6: zigzag排序+mask高频
-        DCT_blocks = DCT_blocks[:, :, self.low2high_order]  # (tokens, 4, B**2)
-        DCT_blocks = DCT_blocks[:, :, :self.low_freqs]      # (tokens, 4, low_freqs)
+            # Step 6: zigzag排序+mask高频
+            DCT_blocks = DCT_blocks[:, :, self.low2high_order]  # (tokens, 4, B**2)
+            DCT_blocks = DCT_blocks[:, :, :self.low_freqs]      # (tokens, 4, low_freqs)
 
-        # numpy to torch
-        DCT_blocks = torch.from_numpy(DCT_blocks).reshape(self.tokens, -1)  # (tokens, 4*low_freqs)
-        DCT_blocks = DCT_blocks.float()
+            # numpy to torch
+            DCT_blocks = torch.from_numpy(DCT_blocks).reshape(self.tokens, -1)  # (tokens, 4*low_freqs)
+            DCT_blocks = DCT_blocks.float()
 
-        return DCT_blocks
+            return DCT_blocks
 
 class DCT_4Y_FA(Dataset):
     """decrepated"""
@@ -1719,5 +1793,7 @@ def get_dataset(name, **kwargs):
         return ACDCUncond(**kwargs)
     elif name == 'acdc_cond':
         return ACDCCond(**kwargs)
+    elif name == 'echonet':
+        return EchoNetUncond(**kwargs)
     else:
         raise NotImplementedError(name)

@@ -795,19 +795,34 @@ if __name__ == "__main__":
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=2, low_freqs=4)
     block_sz = 4
-    eta = 502.5
+    eta = 512.0
     # image_to_DCT_array(dataset='acdc', 
     #                    img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', 
     #                    block_sz=block_sz, 
     #                    coe='y',
     #                    need_batch=False,dest_folder='data/scratch/datasets/ACDC')
-    DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
+    # DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
+    #                       block_sz=block_sz, 
+    #                       tau=98.25)
+    # DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
+    #                       block_sz=block_sz, tau=98.25, eta=eta)
+    # calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', block_sz=block_sz)
+    # calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', block_sz=block_sz, tau=96.0)
+
+    # image_to_DCT_array(dataset='echo', 
+    #                    img_folder='/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/EchoNet-Dynamic/images', 
+    #                    block_sz=block_sz, 
+    #                    coe='y',
+    #                    need_batch=False, dest_folder='data/scratch/datasets/EchoNet-Dynamic')
+    DCT_statis_from_array(array_path=f'data/scratch/datasets/EchoNet-Dynamic/echo_{block_sz}by{block_sz}_y.npy',
                           block_sz=block_sz, 
                           tau=98.25)
-    DCT_statis_from_array(array_path=f'data/scratch/datasets/ACDC/acdc_{block_sz}by{block_sz}_y.npy',
+    DCT_statis_from_array(array_path=f'data/scratch/datasets/EchoNet-Dynamic/echo_{block_sz}by{block_sz}_y.npy',
                           block_sz=block_sz, tau=98.25, eta=eta)
-    calculate_block_stats(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', block_sz=block_sz)
-    calculate_block_stats_y_channel(img_folder='data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs', block_sz=block_sz, tau=96.0)
+    calculate_block_stats(img_folder='/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/EchoNet-Dynamic/images', block_sz=block_sz)
+    calculate_block_stats_y_channel(img_folder='/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/EchoNet-Dynamic/images', block_sz=block_sz, tau=96.0)
+
+
     # mask_high_freq_coe_from_img_folder(img_folder='data/scratch/datasets/ACDC/JPGs/25351_JPGs',
     #                                    save_folder='data/scratch/datasets/ACDC/recon_acdc_coe4',
     #                                    img_sz=96, block_sz=4, low_freqs=4)

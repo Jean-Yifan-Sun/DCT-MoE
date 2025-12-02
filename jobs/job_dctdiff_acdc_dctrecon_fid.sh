@@ -19,11 +19,11 @@ source /bask/projects/q/qingjiem-heart-tte/yifansun/conda/miniconda/etc/profile.
 conda init
 conda activate dctdiff
 conda info --envs
-cd /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff
+cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate test
 # python -m pytorch_fid --save-stats /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Compact/16188_JPGs  /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_compact_greyscale.npz
 # python -m pytorch_fid --save-stats /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/all_frames_labeled/Image  /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/acdc_label_allframes_greyscale.npz
-python -m pytorch_fid --save-stats /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25023_JPGs /bask/projects/q/qingjiem-heart-tte/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_wholeheart_greyscale1.npz
+python -m pytorch_fid --save-stats /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/EchoNet-Dynamic/images /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/U-ViT2/assets/fid_stats/echo.npz
 # nohup python -m pytorch_fid data/scratch/datasets/ACDC/Image data/scratch/datasets/ACDC/recon_acdc_cond_coe16
