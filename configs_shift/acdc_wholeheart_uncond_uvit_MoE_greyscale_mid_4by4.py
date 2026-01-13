@@ -9,13 +9,14 @@ def d(**kwargs):
 def get_config():
     config = ml_collections.ConfigDict()
 
+    name = 'acdc_wholeheart_uncond_uvit_MoE_greyscale_mid_4by4'
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_wholeheart_uncond_uvit_greyscale_mid_4by4'
-    config.eval_dir = f"output/evaluation/uncond_{4}by{4}_low{16}_new"
+    config.name = name
+    config.eval_dir = f"output_shift/evaluation/{name}"
     config.eval = d(
-        eval_start=110000,
-        n_samples=50000,
+        eval_start=100000,
+        n_samples=2000,
         mini_batch_size=500,
         sample_steps=100,
         is_batch_size=32,

@@ -25,7 +25,7 @@ def get_config():
 
     config.train = d(
         n_steps=500000,
-        batch_size=512,
+        batch_size=256,
         mode='uncond',
         log_interval=100,
         eval_interval=25000,
@@ -102,7 +102,7 @@ def get_config():
     )
 
     config.sample = d(
-        save_start=100000,
+        save_start=10000,
         sample_steps=100,
         n_samples=50000,
         mini_batch_size=500,

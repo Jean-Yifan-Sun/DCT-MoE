@@ -22,23 +22,6 @@ conda info --envs
 cd /bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
-# accelerate launch \
-#     --multi_gpu \
-#     --mixed_precision=no \
-#     --main_process_port=0 \
-#     eval_FA.py \
-#     --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9.py \
-#     --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r9_minmax
-# # python eval_FA.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16.py --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r16_minmax
-
-
-# accelerate launch \
-#     --multi_gpu \
-#     --mixed_precision=no \
-#     --main_process_port=0 \
-#     eval.py \
-#     --config=configs/acdc_wholeheart_uncond_uvit_EC_MoE_greyscale_mid_4by4.py \
-#     --workdir output/acdc_wholeheart_uncond_ec_moe_greyscale_uvit_mid_4by4
 
 # accelerate launch \
 #     --multi_gpu \
@@ -46,7 +29,7 @@ export CUDA_LAUNCH_BLOCKING=1
 #     --main_process_port=0 \
 #     eval.py \
 #     --config=configs_shift/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4.py \
-#     --workdir output_shift/acdc_wholeheart_uncond_greyscale_uvit_mid_Y_bound_4by4
+#     --workdir=output_shift/acdc_wholeheart_uncond_greyscale_uvit_mid_Y_bound_4by4
 
 # accelerate launch \
 #     --multi_gpu \
@@ -54,13 +37,30 @@ export CUDA_LAUNCH_BLOCKING=1
 #     --main_process_port=0 \
 #     eval.py \
 #     --config=configs_shift/acdc_wholeheart_uncond_uvit_MoE_greyscale_mid_4by4.py \
-#     --workdir output_shift/acdc_wholeheart_uncond_MoE_greyscale_uvit_mid_4by4_Y_bound
+#     --workdir=output_shift/acdc_wholeheart_uncond_MoE_greyscale_uvit_mid_4by4_Y_bound
 
+
+# accelerate launch \
+#     --multi_gpu \
+#     --mixed_precision=no \
+#     --main_process_port=0 \
+#     eval.py \
+#     --config=configs/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4.py \
+#     --workdir=output/acdc_wholeheart_uncond_greyscale_uvit_mid_4by4_old
+
+
+# accelerate launch \
+#     --multi_gpu \
+#     --mixed_precision=no \
+#     --main_process_port=0 \
+#     eval.py \
+#     --config=configs_shift/echonet_dynamic_uncond_uvit_greyscale_mid_4by4.py \
+#     --workdir=output_shift/echonet_dynamic_uncond_greyscale_uvit_mid_Y_bound    
 
 accelerate launch \
     --multi_gpu \
     --mixed_precision=no \
     --main_process_port=0 \
     eval.py \
-    --config=configs_shift/acdc_wholeheart_uncond_uvit_greyscale_mid_4by4.py \
-    --workdir output/acdc_wholeheart_uncond_greyscale_uvit_mid_4by4_old
+    --config=configs_shift/echonet_dynamic_uncond_uvit_MoE_greyscale_mid_4by4.py \
+    --workdir=output_shift/echonet_dynamic_uncond_MoE_greyscale_uvit_mid_Y_bound 

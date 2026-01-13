@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --account=qingjiem-heart-tte
+#SBATCH --account=chenhp-data-gen
 #SBATCH --qos=bham
 #SBATCH --time=128:00:00
 #SBATCH --nodes 1
-#SBATCH --gres gpu:4
-#SBATCH --gpus-per-task 4
+#SBATCH --gres gpu:2
+#SBATCH --gpus-per-task 2
 #SBATCH --tasks-per-node 1
-#SBATCH --constraint=a100_40
+#SBATCH --constraint=a100_80
 #SBATCH --mem=256G  # 请求内存
 set -e
 module purge
@@ -24,10 +24,10 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs_shift/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16.py --workdir output_shift/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r16_minmax
 
-accelerate launch --multi_gpu --num_processes=4 --mixed_precision=no train_greyscale_MoE.py \
-    --config=configs_shift/acdc_wholeheart_uncond_uvit_MoE8_greyscale_mid_4by4.py \
-    --workdir output_shift/acdc_wholeheart_uncond_MoE8_greyscale_uvit_mid_4by4_Y_bound
+# accelerate launch --multi_gpu --num_processes=2 --mixed_precision=no train_greyscale_MoE.py \
+#     --config=configs_shift/acdc_wholeheart_uncond_uvit_MoE8_greyscale_mid_4by4.py \
+#     --workdir output_shift/acdc_wholeheart_uncond_MoE8_greyscale_uvit_mid_4by4_Y_bound
 
-# accelerate launch --multi_gpu --num_processes=4 --mixed_precision=no train_greyscale_MoE.py \
-#     --config=configs_shift/echonet_dynamic_uncond_uvit_MoE8_greyscale_mid_4by4.py \
-#     --workdir output_shift/echonet_dynamic_uncond_MoE8_greyscale_uvit_mid_4by4_Y_bound
+accelerate launch --multi_gpu --num_processes=2 --mixed_precision=no train_greyscale_MoE.py \
+    --config=configs_shift/echonet_dynamic_uncond_uvit_MoE6_greyscale_mid_4by4.py \
+    --workdir output_shift/echonet_dynamic_uncond_MoE6_greyscale_uvit_mid_4by4_Y_bound

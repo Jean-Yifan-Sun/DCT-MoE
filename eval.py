@@ -187,9 +187,11 @@ def eval_checkpoints(config):
                 )
                 
                 # 计算 LPIPS
+                real_samples_dir = '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/EchoNet-Dynamic/images'
+                # real_samples_dir = '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs'
                 lpips_score = calculate_lpips_score(
                     sample_dir,
-                    '/bask/projects/c/chenhp-data-gen/yifansun/project/DCTdiff/data/scratch/datasets/ACDC/Unlabeled/Wholeheart/25022_JPGs',  # 真实图像目录
+                    real_samples_dir,  # 真实图像目录
                     device,
                     batch_size=config.eval.get('lpips_batch_size', 32)
                 )
