@@ -1,3 +1,7 @@
+import os
+# Disable xformers due to triton compatibility issues
+os.environ['DISABLE_XFORMERS'] = '1'
+
 import sde
 import ml_collections
 import torch
@@ -15,7 +19,6 @@ import tempfile
 from tools.fid_score import calculate_fid_given_paths
 from absl import logging
 import builtins
-import os
 import wandb
 import libs.autoencoder
 
@@ -63,16 +66,31 @@ def train(config):
     lr_scheduler = train_state.lr_scheduler
     train_state.resume(config.ckpt_root)
 
-    autoencoder = libs.autoencoder.get_model(config.autoencoder.pretrained_path)
+    autoencoder = libs.autoencoder.get_model_diffusers(config.autoencoder.pretrained_path)
     autoencoder.to(device)
 
     @ torch.cuda.amp.autocast()
     def encode(_batch):
-        return autoencoder.encode(_batch)
+        # return autoencoder.encode(_batch)
+        with torch.no_grad():
+            latent = autoencoder.encode(_batch).latent_dist.sample()
+            z = latent * autoencoder.config.scaling_factor
+        b, c, h, w = z.shape
+        z = z.permute(0, 2, 3, 1).reshape(b, h * w, c)    
+        return z
 
     @ torch.cuda.amp.autocast()
     def decode(_batch):
-        return autoencoder.decode(_batch)
+        # return autoencoder.decode(_batch)
+        with torch.no_grad():
+            # _batch shape: (B, 1024, 4)
+            b, tokens, c = _batch.shape
+            h = w = int(tokens ** 0.5)
+            # Reshape: (B, 1024, 4) → (B, 4, 32, 32)
+            z = _batch.reshape(b, h, w, c).permute(0, 3, 1, 2)
+            z = z / autoencoder.config.scaling_factor
+            decoded = autoencoder.decode(z).sample
+        return decoded
 
     def get_data_generator():
         while True:

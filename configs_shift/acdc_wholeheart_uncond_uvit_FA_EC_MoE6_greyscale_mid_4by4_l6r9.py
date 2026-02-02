@@ -80,9 +80,9 @@ def get_config():
         MoE={
             "type": "ecmoe",  # 'normal', 'ecmoe'
             "depth": 1,
-            "num_experts": 4,
+            "num_experts": 6,
             "router": "topk",
-            "top_k": 2,
+            "top_k": 3,
             "noise_eps": 1e-2,
             "aux_loss_alpha": 0.00
         },

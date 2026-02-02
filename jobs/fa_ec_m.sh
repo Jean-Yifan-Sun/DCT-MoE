@@ -32,7 +32,11 @@ export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=1200
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9.py --workdir output_allbest/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r9_minmax
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16.py --workdir output_allbest/acdc_wholeheart_uncond_fa_ec_moe_allbest_greyscale_uvit_mid_4by4_l6r16_Y_bound
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16.py --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r16_Y_bound
-accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs_shift/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9.py --workdir output_shift_fa/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r9_minmax
+# accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs_shift/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9.py --workdir output_shift_fa/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r9_Y_bound
+
+accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs_shift/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9_low16.py --workdir output_shift_fa/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r9_low16_Y_bound
+
+
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l5r9.py --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l5r9_minmax
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l5r16.py --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l5r16_Y_bound
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l4r9_low8.py --workdir output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax

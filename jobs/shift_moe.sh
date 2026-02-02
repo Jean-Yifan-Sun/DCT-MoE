@@ -24,10 +24,10 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 export CUDA_LAUNCH_BLOCKING=1
 # accelerate launch --multi_gpu --mixed_precision=no train_greyscale_FA_MoE.py --config=configs_shift/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16.py --workdir output_shift/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l6r16_minmax
 
-# accelerate launch --multi_gpu --num_processes=2 --mixed_precision=no train_greyscale_MoE.py \
-#     --config=configs_shift/acdc_wholeheart_uncond_uvit_MoE8_greyscale_mid_4by4.py \
-#     --workdir output_shift/acdc_wholeheart_uncond_MoE8_greyscale_uvit_mid_4by4_Y_bound
-
 accelerate launch --multi_gpu --num_processes=2 --mixed_precision=no train_greyscale_MoE.py \
-    --config=configs_shift/echonet_dynamic_uncond_uvit_MoE6_greyscale_mid_4by4.py \
-    --workdir output_shift/echonet_dynamic_uncond_MoE6_greyscale_uvit_mid_4by4_Y_bound
+    --config=configs_shift/acdc_wholeheart_uncond_uvit_MoE_greyscale_mid_4by4_low16.py \
+    --workdir output_shift/acdc_wholeheart_uncond_MoE_greyscale_uvit_mid_4by4_Y_bound_low16
+
+# accelerate launch --multi_gpu --num_processes=2 --mixed_precision=no train_greyscale_MoE.py \
+#     --config=configs_shift/echonet_dynamic_uncond_uvit_MoE6_greyscale_mid_4by4.py \
+#     --workdir output_shift/echonet_dynamic_uncond_MoE6_greyscale_uvit_mid_4by4_Y_bound

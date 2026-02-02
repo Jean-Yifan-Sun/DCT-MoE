@@ -262,6 +262,45 @@ class ACDCUncond(DatasetFactory):
     def has_label(self):
         return False
 
+# ACDC Uncond Images Dataset
+class UnlabeledImageDataset(Dataset):
+    def __init__(self, path, transform):
+        self.transform = transform
+        self.img_paths = _list_image_files_recursively(path)
+        
+    def __len__(self):
+        return len(self.img_paths)
+
+    def __getitem__(self, item):
+        img = Image.open(self.img_paths[item]).convert('RGB')
+        img = self.transform(img)
+        img = img * 2.0 - 1.0  # scale to [-1, 1]
+        return img
+
+class ACDCUncondImages(DatasetFactory):
+    def __init__(self, path, resolution=96, **kwargs):
+        super().__init__()
+
+        self.resolution = resolution
+        transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
+        self.train = UnlabeledImageDataset(path=path, transform=transform)
+
+    @property
+    def data_shape(self):
+        return 1, self.resolution, self.resolution  # greyscale images
+
+    @property
+    def fid_stat(self):
+        # specify the fid_stats file that will be used for FID computation during the training
+        return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_images_greyscale.npz'
+        
+    @property
+    def has_label(self):
+        return False
+
+    def unpreprocess(self, v):
+        return super().unpreprocess(v)
+
 # ACDC labeled Dataset
 
 class ACDCCond(DatasetFactory):
@@ -1791,6 +1830,8 @@ def get_dataset(name, **kwargs):
         return MSCOCO256Features(**kwargs)
     elif name == 'acdc_uncond':
         return ACDCUncond(**kwargs)
+    elif name == 'acdc_uncond_images':
+        return ACDCUncondImages(**kwargs)
     elif name == 'acdc_cond':
         return ACDCCond(**kwargs)
     elif name == 'echonet':

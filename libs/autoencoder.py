@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from einops import rearrange
-
+from diffusers import AutoencoderKL
 
 class LinearAttention(nn.Module):
     def __init__(self, dim, heads=4, dim_head=32):
@@ -475,6 +475,11 @@ def get_model(pretrained_path, scale_factor=0.18215):
     )
     return FrozenAutoencoderKL(ddconfig, 4, pretrained_path, scale_factor)
 
+def get_model_diffusers(name='black-forest-labs/FLUX.1-dev'):
+    vae = AutoencoderKL.from_pretrained(name, subfolder='vae')
+    vae.eval()
+    vae.requires_grad_(False)
+    return vae
 
 def main():
     import torchvision.transforms as transforms
