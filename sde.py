@@ -407,6 +407,8 @@ def LSimple(score_model: ScoreModel, x0, pred='noise_pred', criterion=None, **kw
 
     if "reweight" in kwargs.keys():
         reweight = kwargs.pop('reweight')  # default token-wise reweighting
+    else:
+        reweight = 1.0
         
     if use_moe:
         if pred == 'noise_pred':

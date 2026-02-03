@@ -898,7 +898,12 @@ class UViT(nn.Module):
         self.tokens = tokens
         self.DCT_coes = low_freqs
 
-        self.proj = nn.Linear(self.DCT_coes * 6, embed_dim, bias=True)
+        if in_chans == 1:
+            self.proj = nn.Linear(self.DCT_coes * 6, embed_dim, bias=True)
+            self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 6, bias=True)
+        else:
+            self.proj = nn.Linear(in_chans, embed_dim, bias=True)
+            self.decoder_pred = nn.Linear(embed_dim, in_chans, bias=True)
 
         self.time_embed = nn.Sequential(
             nn.Linear(embed_dim, 4 * embed_dim),
@@ -931,7 +936,6 @@ class UViT(nn.Module):
             for _ in range(depth // 2)])
 
         self.norm = norm_layer(embed_dim)
-        self.decoder_pred = nn.Linear(embed_dim, self.DCT_coes * 6, bias=True)
 
         trunc_normal_(self.pos_embed, std=.02)
         self.apply(self._init_weights)

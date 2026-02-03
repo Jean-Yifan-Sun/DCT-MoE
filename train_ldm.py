@@ -58,7 +58,7 @@ def train(config):
     assert os.path.exists(dataset.fid_stat)
     train_dataset = dataset.get_split(split='train', labeled=config.train.mode == 'cond')
     train_dataset_loader = DataLoader(train_dataset, batch_size=mini_batch_size, shuffle=True, drop_last=True,
-                                      num_workers=8, pin_memory=True, persistent_workers=True)
+                                      num_workers=2, pin_memory=True, persistent_workers=True)
 
     train_state = utils.initialize_train_state(config, device)
     nnet, nnet_ema, optimizer, train_dataset_loader = accelerator.prepare(
@@ -69,7 +69,7 @@ def train(config):
     autoencoder = libs.autoencoder.get_model_diffusers(config.autoencoder.pretrained_path)
     autoencoder.to(device)
 
-    @ torch.cuda.amp.autocast()
+    @ torch.amp.autocast('cuda')
     def encode(_batch):
         # return autoencoder.encode(_batch)
         with torch.no_grad():
@@ -79,7 +79,7 @@ def train(config):
         z = z.permute(0, 2, 3, 1).reshape(b, h * w, c)    
         return z
 
-    @ torch.cuda.amp.autocast()
+    @ torch.amp.autocast('cuda')
     def decode(_batch):
         # return autoencoder.decode(_batch)
         with torch.no_grad():

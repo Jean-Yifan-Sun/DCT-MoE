@@ -292,7 +292,7 @@ class ACDCUncondImages(DatasetFactory):
     @property
     def fid_stat(self):
         # specify the fid_stats file that will be used for FID computation during the training
-        return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_images_greyscale.npz'
+        return 'data/scratch/U-ViT2/assets/fid_stats/acdc_unlabel_wholeheart_greyscale.npz'
         
     @property
     def has_label(self):
