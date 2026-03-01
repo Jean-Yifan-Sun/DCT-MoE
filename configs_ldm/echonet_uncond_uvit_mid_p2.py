@@ -41,15 +41,17 @@ def get_config():
     config.seed = 1234
     config.pred = 'noise_pred'
     config.name = name
-    config.eval_dir = f"output_shift/evaluation/{name}"
     config.eval = d(
         eval_start=100000,
-        n_samples=2000,
+        lpips_n_samples=2000,
+        n_samples=50000,
         mini_batch_size=500,
-        sample_steps=100,
+        algorithm='dpm_solver',
+        sample_steps=50,
         is_batch_size=32,
         lpips_batch_size=32,
         cleanup_samples=True,
+        real_dir='data/scratch/datasets/EchoNet-Dynamic/images',  # 用于计算 LPIPS 的真实图像目录
     )
 
     config.train = d(
@@ -85,11 +87,11 @@ def get_config():
     )
 
     config.encode = d(
-        patch_size=1,  # ← 只需改这一个地方！1 或者 null 表示不使用 patchify，其他值表示使用对应的 patch 大小
+        patch_size=2,  # ← 只需改这一个地方！1 或者 null 表示不使用 patchify，其他值表示使用对应的 patch 大小
     )
 
     # 原始潜在空间形状（自编码器输出）
-    config.latent_shape = [16, 12, 12]  # [C, H, W]
+    config.latent_shape = [16, 14, 14]  # [C, H, W]
     
     # 自动计算 z_shape（不需要手动改）
     config.z_shape = compute_z_shape(config.latent_shape, config.encode.patch_size)
@@ -113,9 +115,11 @@ def get_config():
     )
     
     config.dataset = d(
-        name='acdc_uncond_images',
-        path='data/scratch/datasets/ACDC/Unlabeled/Wholeheart',
-        resolution=96
+        name='echonet_images',
+        path='data/scratch/datasets/EchoNet-Dynamic',
+        dataset_type='dynamic',  # use wholeheart dataset
+        resolution=112,
+        SNR_scale=4
     )
 
     config.sample = d(
@@ -124,7 +128,7 @@ def get_config():
         n_samples=50000,
         mini_batch_size=500,
         algorithm='euler_maruyama_ode',
-        path='data/scratch/samples',  # must be specified for distributed image saving
+        # path='data/scratch/samples',  # must be specified for distributed image saving
         save_npz=''  # save generated sample if not None (used for precision/recall computation)
     )
 

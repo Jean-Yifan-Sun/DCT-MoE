@@ -78,8 +78,8 @@ if __name__ == "__main__":
     config = ml_collections.ConfigDict()
 
     num_fa_length = 8  # number of frequency aware coefficients length
-    num_fa_repeats_x = 3  # number of frequency aware repeats for each length in x direction
-    num_fa_repeats_y = 3  # number of frequency aware repeats for each length in y direction
+    num_fa_repeats_x = 4  # number of frequency aware repeats for each length in x direction
+    num_fa_repeats_y = 4  # number of frequency aware repeats for each length in y direction
     num_fa_repeats = num_fa_repeats_x * num_fa_repeats_y  # number of frequency aware repeats for each length
     low_freqs = 16  # B**2 - m
     block_sz = 4  # B
@@ -118,9 +118,10 @@ if __name__ == "__main__":
     #     path='data/scratch/datasets/EchoNet-Dynamic',
     #     dataset_type='dynamic',  # use wholeheart dataset
     #     resolution=112,
-    #     tokens=196,  # number of tokens to the network
-    #     low_freqs=12,  # B**2 - m
-    #     block_sz=4,  # B
+    #     tokens=int(low_freqs*112*112/(num_fa_repeats * num_fa_length * block_sz**2)),
+    #     # tokens=196,  # number of tokens to the network
+    #     low_freqs=low_freqs,  # B**2 - m
+    #     block_sz=block_sz,  # B
     #     Y_bound=[512.0],  # eta
     #     Y_mean=[-390.081, 0.103, -0.947, 0.171, 0.192, 0.203, 0.001, 0.061, 0.233, -0.075, -0.051, -0.199, -0.046, -0.076, -0.042, 0.029],  # eta
     #     Y_std=[163.706, 28.348, 26.485, 11.872, 13.871, 8.085, 2.919, 6.039, 8.605, 7.49, 5.683, 4.875, 2.372, 2.172, 3.337, 1.668],
@@ -131,28 +132,37 @@ if __name__ == "__main__":
     #     greyscale=True,  # use greyscale images
     #     reweight=True,  # use loss reweighting based on entropy
     #     tempature=1.0,  # temperature for loss reweighting
-    #     reweight_dim=1,
+    #     reweight_dim=-1,
+    #     frequency_aware_tokens=True,  # use frequency aware tokens
+    #     tokenwise_normalization=normalization,
+    #     num_fa_length=num_fa_length,  # number of frequency aware coefficients length
+    #     num_fa_repeats=num_fa_repeats,  # number of frequency aware repeats for each length
+    #     num_fa_repeats_x=num_fa_repeats_x,  # number of frequency aware repeats for each length in x direction
+    #     num_fa_repeats_y=num_fa_repeats_y,  # number of frequency aware repeats for each length in y direction
     # )
     
     kwargs = config.dataset.to_dict()
     path = kwargs.get('path', '')
-    # train = DCT_FA_Customized(
-    #                 data_property={'mean': kwargs.get('Y_mean', None), 'std': kwargs.get('Y_std', None),'min': kwargs.get('Y_min', None), 'max': kwargs.get('Y_max', None), 'Y_bound': kwargs.get('Y_bound', None)},
-    #                 **kwargs
-    #             )
-    train = DCT_4Y(
-        path=path,
-        img_sz=kwargs.get('resolution'),
-        tokens=kwargs.get('tokens'),
-        low_freqs=kwargs.get('low_freqs'),
-        block_sz=kwargs.get('block_sz'),
-        Y_bound=kwargs.get('Y_bound'),
-        cache=False,
-        cache_name=f'acdc_uncond_wholeheart_4Y_low{low_freqs}',
-    )
+    img_sz = kwargs.get('resolution')
+    train = DCT_FA_Customized(
+                    data_property={'mean': kwargs.get('Y_mean', None), 'std': kwargs.get('Y_std', None),'min': kwargs.get('Y_min', None), 'max': kwargs.get('Y_max', None), 'Y_bound': kwargs.get('Y_bound', None)},
+                    img_sz=img_sz,
+                    **kwargs
+                )
+    # train = DCT_4Y(
+    #     path=path,
+    #     img_sz=kwargs.get('resolution'),
+    #     tokens=kwargs.get('tokens'),
+    #     low_freqs=kwargs.get('low_freqs'),
+    #     block_sz=kwargs.get('block_sz'),
+    #     Y_bound=kwargs.get('Y_bound'),
+    #     cache=False,
+    #     cache_name=f'acdc_uncond_wholeheart_4Y_low{low_freqs}',
+    # )
 
-    # cache_dir = os.path.join(kwargs.get('path'), f'cache_dct_fa_{block_sz}by{block_sz}_low{low_freqs}_l{num_fa_length}r{num_fa_repeats}_{normalization}')
-    cache_dir = os.path.join(kwargs.get('path'), f'acdc_uncond_wholeheart_4Y_low{low_freqs}')
+    cache_dir = os.path.join(kwargs.get('path'), f'cache_dct_fa_{block_sz}by{block_sz}_low{low_freqs}_l{num_fa_length}r{num_fa_repeats}_{normalization}')
+    # cache_dir = os.path.join(kwargs.get('path'), f'cache_echo_dct_fa_{block_sz}by{block_sz}_low{low_freqs}_l{num_fa_length}r{num_fa_repeats}_{normalization}')
+    # cache_dir = os.path.join(kwargs.get('path'), f'acdc_uncond_wholeheart_4Y_low{low_freqs}')
     cache_dataset(train, cache_dir)
     # 可选:验证缓存
     # verify_cache(train, cache_dir)

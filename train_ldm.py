@@ -1,7 +1,4 @@
 import os
-# Disable xformers due to triton compatibility issues
-os.environ['DISABLE_XFORMERS'] = '1'
-
 import sde
 import ml_collections
 import torch
@@ -21,6 +18,7 @@ from absl import logging
 import builtins
 import wandb
 import libs.autoencoder
+from libs.uvit import patchify, unpatchify
 
 
 def train(config):
@@ -70,24 +68,57 @@ def train(config):
     autoencoder.to(device)
 
     @ torch.amp.autocast('cuda')
-    def encode(_batch):
-        # return autoencoder.encode(_batch)
+    def encode(_batch, patch_size=None):
+        """
+        编码函数，支持通过 patch_size 灵活调整 token 形状
+        
+        Args:
+            _batch: 输入图像 (B, C, H, W)
+            patch_size: patch 大小（默认为 None，即不使用 patchify）
+                       设为 1, 2, 4 等来改变 token 数量和维度
+        
+        Returns:
+            z: (B, num_patches, patch_dim) 或 (B, H*W, C)
+        """
         with torch.no_grad():
             latent = autoencoder.encode(_batch).latent_dist.sample()
             z = latent * autoencoder.config.scaling_factor
-        b, c, h, w = z.shape
-        z = z.permute(0, 2, 3, 1).reshape(b, h * w, c)    
+        
+        if patch_size is not None and patch_size > 1:
+            # 使用 patchify 重新组织 token
+            z = patchify(z, patch_size=patch_size)
+            # 输出: (B, num_patches, patch_size^2 * C)
+        else:
+            # 原始方式：(B, C, H, W) → (B, H*W, C)
+            b, c, h, w = z.shape
+            z = z.permute(0, 2, 3, 1).reshape(b, h * w, c)
+        
         return z
 
     @ torch.amp.autocast('cuda')
-    def decode(_batch):
-        # return autoencoder.decode(_batch)
+    def decode(_batch, patch_size=None):
+        """
+        解码函数，支持通过 patch_size 反向处理 token
+        
+        Args:
+            _batch: token 张量
+            patch_size: 对应的 patch 大小
+        
+        Returns:
+            decoded: 解码后的图像
+        """
         with torch.no_grad():
-            # _batch shape: (B, 1024, 4)
-            b, tokens, c = _batch.shape
-            h = w = int(tokens ** 0.5)
-            # Reshape: (B, 1024, 4) → (B, 4, 32, 32)
-            z = _batch.reshape(b, h, w, c).permute(0, 3, 1, 2)
+            if patch_size is not None and patch_size > 1:
+                # 使用 unpatchify 恢复原始形状
+                # _batch shape: (B, num_patches, patch_size^2 * C)
+                z = unpatchify(_batch, channels=autoencoder.config.latent_channels)
+                # 输出: (B, C, H, W)
+            else:
+                # 原始方式：(B, tokens, C) → (B, C, H, W)
+                b, tokens, c = _batch.shape
+                h = w = int(tokens ** 0.5)
+                z = _batch.reshape(b, h, w, c).permute(0, 3, 1, 2)
+            
             z = z / autoencoder.config.scaling_factor
             decoded = autoencoder.decode(z).sample
         return decoded
@@ -101,18 +132,20 @@ def train(config):
 
 
     # set the score_model to train
-    score_model = sde.ScoreModel(nnet, pred=config.pred, sde=sde.VPSDE())
-    score_model_ema = sde.ScoreModel(nnet_ema, pred=config.pred, sde=sde.VPSDE())
+    score_model = sde.ScoreModel(nnet, pred=config.pred, sde=sde.VPSDE(SNR_scale=config.dataset.SNR_scale))
+    score_model_ema = sde.ScoreModel(nnet_ema, pred=config.pred, sde=sde.VPSDE(SNR_scale=config.dataset.SNR_scale))
 
 
     def train_step(_batch):
         _metrics = dict()
         optimizer.zero_grad()
+        patch_size = config.encode.get('patch_size', None)
+        
         if config.train.mode == 'uncond':
-            _z = autoencoder.sample(_batch) if 'feature' in config.dataset.name else encode(_batch)
+            _z = autoencoder.sample(_batch) if 'feature' in config.dataset.name else encode(_batch, patch_size=patch_size)
             loss = sde.LSimple(score_model, _z, pred=config.pred)
         elif config.train.mode == 'cond':
-            _z = autoencoder.sample(_batch[0]) if 'feature' in config.dataset.name else encode(_batch[0])
+            _z = autoencoder.sample(_batch[0]) if 'feature' in config.dataset.name else encode(_batch[0], patch_size=patch_size)
             loss = sde.LSimple(score_model, _z, pred=config.pred, y=_batch[1])
         else:
             raise NotImplementedError(config.train.mode)
@@ -128,6 +161,8 @@ def train(config):
     def eval_step(n_samples, sample_steps, algorithm):
         logging.info(f'eval_step: n_samples={n_samples}, sample_steps={sample_steps}, algorithm={algorithm}, '
                      f'mini_batch_size={config.sample.mini_batch_size}')
+        
+        patch_size = config.encode.get('patch_size', None)
 
         def sample_fn(_n_samples):
             _z_init = torch.randn(_n_samples, *config.z_shape, device=device)
@@ -143,7 +178,7 @@ def train(config):
             elif algorithm == 'euler_maruyama_ode':
                 _z = sde.euler_maruyama(sde.ODE(score_model_ema), _z_init, sample_steps, **kwargs)
             elif algorithm == 'dpm_solver':
-                noise_schedule = NoiseScheduleVP(schedule='linear')
+                noise_schedule = NoiseScheduleVP(schedule='linear', SNR_scale=config.dataset.SNR_scale)
                 model_fn = model_wrapper(
                     score_model_ema.noise_pred,
                     noise_schedule,
@@ -160,10 +195,10 @@ def train(config):
                 )
             else:
                 raise NotImplementedError
-            return decode(_z)
+            return decode(_z, patch_size=patch_size)
 
         with tempfile.TemporaryDirectory() as temp_path:
-            path = config.sample.path or temp_path
+            path = temp_path
             if accelerator.is_main_process:
                 os.makedirs(path, exist_ok=True)
             utils.sample2dir(accelerator, path, n_samples, config.sample.mini_batch_size, sample_fn, dataset.unpreprocess)
@@ -198,6 +233,8 @@ def train(config):
             torch.cuda.empty_cache()
             logging.info('Save a grid of images...')
             z_init = torch.randn(5 * 10, *config.z_shape, device=device)
+            patch_size = config.encode.get('patch_size', None)
+            
             if config.train.mode == 'uncond':
                 z = sde.euler_maruyama(sde.ODE(score_model_ema), x_init=z_init, sample_steps=50)
             elif config.train.mode == 'cond':
@@ -205,7 +242,7 @@ def train(config):
                 z = sde.euler_maruyama(sde.ODE(score_model_ema), x_init=z_init, sample_steps=50, y=y)
             else:
                 raise NotImplementedError
-            samples = decode(z)
+            samples = decode(z, patch_size=patch_size)
             samples = make_grid(dataset.unpreprocess(samples), 10)
             save_image(samples, os.path.join(config.sample_dir, f'{train_state.step}.png'))
             wandb.log({'samples': wandb.Image(samples)}, step=train_state.step)
@@ -218,7 +255,7 @@ def train(config):
             if accelerator.local_process_index == 0:
                 train_state.save(os.path.join(config.ckpt_root, f'{train_state.step}.ckpt'))
             accelerator.wait_for_everyone()
-            fid = eval_step(n_samples=10000, sample_steps=50, algorithm='dpm_solver')  # calculate fid of the saved checkpoint
+            fid = eval_step(n_samples=50000, sample_steps=50, algorithm='dpm_solver')  # calculate fid of the saved checkpoint
             step_fid.append((train_state.step, fid))
             torch.cuda.empty_cache()
         accelerator.wait_for_everyone()

@@ -301,6 +301,29 @@ class ACDCUncondImages(DatasetFactory):
     def unpreprocess(self, v):
         return super().unpreprocess(v)
 
+class EchoNetUncondImages(DatasetFactory):
+    def __init__(self, path, resolution=112, **kwargs):
+        super().__init__()
+
+        self.resolution = resolution
+        transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
+        self.train = UnlabeledImageDataset(path=path, transform=transform)
+
+    @property
+    def data_shape(self):
+        return 1, self.resolution, self.resolution  # greyscale images
+
+    @property
+    def fid_stat(self):
+        # specify the fid_stats file that will be used for FID computation during the training
+        return 'data/scratch/U-ViT2/assets/fid_stats/echo.npz'
+        
+    @property
+    def has_label(self):
+        return False
+
+    def unpreprocess(self, v):
+        return super().unpreprocess(v)
 # ACDC labeled Dataset
 
 class ACDCCond(DatasetFactory):
@@ -1836,5 +1859,7 @@ def get_dataset(name, **kwargs):
         return ACDCCond(**kwargs)
     elif name == 'echonet':
         return EchoNetUncond(**kwargs)
+    elif name == 'echonet_images':
+        return EchoNetUncondImages(**kwargs)
     else:
         raise NotImplementedError(name)
