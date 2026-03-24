@@ -1,0 +1,5 @@
+Config File,Model Type,GFLOPs,Parameters (M),Depth,Embed Dim,Num Heads,Resolution,Train Batch Size
+acdc_wholeheart_uncond_uvit_mid,uvit,66.14,134.76,16,768,12,96,512
+echonet_uncond_uvit_mid_p2,uvit,23.1,134.76,16,768,12,112,512
+acdc_wholeheart_uncond_uvit_mid_p2,uvit,17.21,134.75,16,768,12,96,512
+__pycache__,ERROR,,,ERROR,ERROR,ERROR,ERROR,ERROR

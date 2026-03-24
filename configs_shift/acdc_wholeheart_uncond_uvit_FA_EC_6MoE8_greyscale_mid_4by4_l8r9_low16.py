@@ -11,7 +11,7 @@ def get_config():
 
     config.seed = 1234
     config.pred = 'noise_pred'
-    config.name = 'acdc_wholeheart_uncond_uvit_FA_EC_4MoE8_greyscale_mid_4by4_low16'
+    config.name = 'acdc_wholeheart_uncond_uvit_FA_EC_6MoE8_greyscale_mid_4by4_low16'
 
     num_fa_length = 8  # number of frequency aware coefficients length
     num_fa_repeats_x = 3  # number of frequency aware repeats for each length in x direction
@@ -82,7 +82,7 @@ def get_config():
             "depth": 1,
             "num_experts": 8,
             "router": "topk",
-            "top_k": 4,
+            "top_k": 6,
             "noise_eps": 1e-2,
             "aux_loss_alpha": 0.00
         },

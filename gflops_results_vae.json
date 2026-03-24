@@ -1,0 +1,46 @@
+[
+  {
+    "Config File": "acdc_wholeheart_uncond_uvit_mid",
+    "Model Type": "uvit",
+    "GFLOPs": 66.14,
+    "Parameters (M)": 134.76,
+    "Depth": 16,
+    "Embed Dim": 768,
+    "Num Heads": 12,
+    "Resolution": 96,
+    "Train Batch Size": 512
+  },
+  {
+    "Config File": "echonet_uncond_uvit_mid_p2",
+    "Model Type": "uvit",
+    "GFLOPs": 23.1,
+    "Parameters (M)": 134.76,
+    "Depth": 16,
+    "Embed Dim": 768,
+    "Num Heads": 12,
+    "Resolution": 112,
+    "Train Batch Size": 512
+  },
+  {
+    "Config File": "acdc_wholeheart_uncond_uvit_mid_p2",
+    "Model Type": "uvit",
+    "GFLOPs": 17.21,
+    "Parameters (M)": 134.75,
+    "Depth": 16,
+    "Embed Dim": 768,
+    "Num Heads": 12,
+    "Resolution": 96,
+    "Train Batch Size": 512
+  },
+  {
+    "Config File": "__pycache__",
+    "Model Type": "ERROR",
+    "GFLOPs": NaN,
+    "Parameters (M)": NaN,
+    "Depth": "ERROR",
+    "Embed Dim": "ERROR",
+    "Num Heads": "ERROR",
+    "Resolution": "ERROR",
+    "Train Batch Size": "ERROR"
+  }
+]
