@@ -25,8 +25,8 @@ export CUDA_LAUNCH_BLOCKING=1
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=1200
 
 python compare_gflops.py \
-  --config-dir configs_ldm\
+  --config-dir configs_shift\
   --pattern "**" \
   --device cuda \
-  --output-csv gflops_results.csv \
-  --output-json gflops_results.json
+  --output-csv gflops_results_shift.csv \
+  --output-json gflops_results_shift.json

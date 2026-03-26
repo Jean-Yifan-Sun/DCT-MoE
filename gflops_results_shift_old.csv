@@ -1,0 +1,26 @@
+Config File,Model Type,GFLOPs,Parameters (M),Depth,Embed Dim,Num Heads,Resolution,Train Batch Size
+echonet_dynamic_uncond_uvit_MoE_greyscale_mid_4by4,uvit_greyscale_moe,89.69,163.19,16,768,12,112,512
+echonet_dynamic_uncond_uvit_greyscale_mid_4by4,uvit_greyscale,89.69,134.85,16,768,12,112,512
+echonet_dynamic_uncond_uvit_-1MoE_greyscale_mid_4by4,uvit_greyscale_moe,89.69,361.57,16,768,12,112,512
+echonet_dynamic_uncond_uvit_2MoE_greyscale_mid_4by4,uvit_greyscale_moe,89.69,163.19,16,768,12,112,512
+echonet_dynamic_uncond_uvit_MoE8_greyscale_mid_4by4,uvit_greyscale_moe,89.69,200.97,16,768,12,112,512
+echonet_dynamic_uncond_uvit_MoE6_greyscale_mid_4by4,uvit_greyscale_moe,89.69,182.08,16,768,12,112,512
+acdc_wholeheart_uncond_uvit_-1MoE_greyscale_mid_4by4,uvit_greyscale_moe,66.14,361.53,16,768,12,96,256
+acdc_wholeheart_uncond_uvit_2MoE_greyscale_mid_4by4,uvit_greyscale_moe,66.14,163.15,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_MoE6_greyscale_mid_4by4,uvit_greyscale_moe,66.14,182.04,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_MoE8_greyscale_mid_4by4,uvit_greyscale_moe,66.14,200.93,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_greyscale_mid_4by4,uvit_greyscale,66.14,134.81,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_MoE_greyscale_mid_4by4,uvit_greyscale_moe,66.14,163.15,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_MoE_greyscale_mid_4by4_low16,uvit_greyscale_moe,66.14,163.17,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_4MoE8_greyscale_mid_4by4_l8r9_low16,uvit_greyscale_moe,58.89,200.96,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_6MoE8_greyscale_mid_4by4_l8r9_low16,uvit_greyscale_moe,58.89,200.96,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_MoE6_greyscale_mid_4by4_l6r9,uvit_greyscale_moe,58.89,182.04,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9_low16_nomlp,uvit_greyscale_moe,58.89,158.45,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r9,uvit_greyscale_moe,58.89,163.15,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_MoE8_greyscale_mid_4by4_l8r9_low16,uvit_greyscale_moe,58.89,200.96,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l8r9_low16,uvit_greyscale_moe,58.89,163.17,16,768,12,96,512
+echonet_dynamic_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l8r16_low16,uvit_greyscale_moe,45.3,163.24,16,768,12,112,512
+acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l6r16,uvit_greyscale_moe,33.52,163.17,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_l8r16_low16,uvit_greyscale_moe,33.52,163.22,16,768,12,96,512
+acdc_wholeheart_uncond_uvit_FA_MoE_greyscale_mid_4by4_l6r16,uvit_greyscale_moe,33.52,163.17,16,768,12,96,512
+__pycache__,ERROR,,,ERROR,ERROR,ERROR,ERROR,ERROR
