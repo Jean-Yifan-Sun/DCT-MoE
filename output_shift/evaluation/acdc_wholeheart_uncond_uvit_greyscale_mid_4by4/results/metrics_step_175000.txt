@@ -1,0 +1,5 @@
+Step: 175000
+FID: 467.887194
+IS (mean): inf
+IS (std): nan
+LPIPS: 0.770290

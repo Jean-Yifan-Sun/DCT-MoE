@@ -1,0 +1,353 @@
+2025-11-12 10:35:47,663 - train_greyscale_FA_MoE.py - ckpt_root: output/acdc_wholeheart_uncond_fa_moe_greyscale_uvit_mid_4by4_l8r16_minmax/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 774.0
+  Y_entropy: !!python/tuple
+  - 5.287
+  - 2.936
+  - 3.005
+  - 1.94
+  - 2.216
+  - 1.866
+  - 1.186
+  - 1.561
+  - 1.581
+  - 1.169
+  - 1.024
+  - 1.252
+  - 1.071
+  - 1.0
+  - 1.0
+  - 1.0
+  Y_max: !!python/tuple
+  - 774.0
+  - 112.375
+  - 125.812
+  - 49.0
+  - 58.5
+  - 46.5
+  - 20.344
+  - 32.906
+  - 33.406
+  - 19.953
+  - 15.953
+  - 22.0
+  - 16.984
+  - 12.812
+  - 11.68
+  - 7.461
+  Y_mean: !!python/tuple
+  - 241.045
+  - -0.725
+  - 0.44
+  - 0.107
+  - 0.009
+  - 0.154
+  - -0.057
+  - 0.0
+  - -0.008
+  - 0.019
+  - 0.009
+  - -0.012
+  - 0.005
+  - 0.002
+  - 0.004
+  - -0.002
+  Y_min: !!python/tuple
+  - 9.5
+  - -119.312
+  - -122.375
+  - -51.25
+  - -58.906
+  - -49.5
+  - -20.688
+  - -32.906
+  - -33.094
+  - -19.891
+  - -15.891
+  - -21.75
+  - -16.969
+  - -12.773
+  - -11.648
+  - -7.492
+  Y_std: !!python/tuple
+  - 182.467
+  - 32.821
+  - 34.996
+  - 14.001
+  - 17.621
+  - 13.189
+  - 5.79
+  - 9.609
+  - 9.805
+  - 5.652
+  - 4.634
+  - 6.502
+  - 4.963
+  - 3.796
+  - 3.44
+  - 2.178
+  block_sz: 4
+  dataset_type: wholeheart
+  frequency_aware_tokens: true
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  num_fa_length: 8
+  num_fa_repeats: 16
+  num_fa_repeats_x: 4
+  num_fa_repeats_y: 4
+  path: data/scratch/datasets/ACDC/Unlabeled/Wholeheart
+  resolution: 96
+  reweight: true
+  reweight_dim: -1
+  tempature: 1.0
+  tokens: 72
+  tokenwise_normalization: Y_bound
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.001
+    depth: 1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: normal
+  depth: 16
+  embed_dim: 768
+  in_chans: 128
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 72
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 20000
+sample_dir: output/acdc_wholeheart_uncond_fa_moe_greyscale_uvit_mid_4by4_l8r16_minmax/samples
+seed: 1234
+train:
+  batch_size: 512
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_wholeheart_uncond_fa_moe_greyscale_uvit_mid_4by4_l8r16_minmax
+
+2025-11-12 10:35:47,861 - train_greyscale_FA_MoE.py - dataset samples: 25022
+2025-11-12 10:35:47,861 - train_greyscale_FA_MoE.py - Using Y_bound for positional token normalization
+2025-11-12 10:35:56,886 - utils.py - nnet has 163216256 parameters
+2025-11-12 10:35:57,665 - train_greyscale_FA_MoE.py - using [5.287 2.936 3.005 1.94  2.216 1.866 1.186 1.561 1.581 1.169 1.024 1.252
+ 1.071 1.    1.    1.   ] for loss reweighting
+2025-11-12 10:35:57,666 - train_greyscale_FA_MoE.py - Using temperature 1.0 for loss reweighting
+2025-11-12 10:35:58,000 - train_greyscale_FA_MoE.py - Start fitting, step=0, mixed_precision=no
+2025-11-12 10:39:58,532 - train_greyscale_FA_MoE.py - {'step': '100', 'lr': '4e-06', 'total_loss': '0.824446', 'main_loss': '0.819333', 'aux_loss': '5.11276', 'time_per_step': '1.23585'}
+2025-11-12 10:42:24,514 - train_greyscale_FA_MoE.py - ckpt_root: output/acdc_wholeheart_uncond_fa_moe_greyscale_uvit_mid_4by4_l8r16_minmax/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 774.0
+  Y_entropy: !!python/tuple
+  - 5.287
+  - 2.936
+  - 3.005
+  - 1.94
+  - 2.216
+  - 1.866
+  - 1.186
+  - 1.561
+  - 1.581
+  - 1.169
+  - 1.024
+  - 1.252
+  - 1.071
+  - 1.0
+  - 1.0
+  - 1.0
+  Y_max: !!python/tuple
+  - 774.0
+  - 112.375
+  - 125.812
+  - 49.0
+  - 58.5
+  - 46.5
+  - 20.344
+  - 32.906
+  - 33.406
+  - 19.953
+  - 15.953
+  - 22.0
+  - 16.984
+  - 12.812
+  - 11.68
+  - 7.461
+  Y_mean: !!python/tuple
+  - 241.045
+  - -0.725
+  - 0.44
+  - 0.107
+  - 0.009
+  - 0.154
+  - -0.057
+  - 0.0
+  - -0.008
+  - 0.019
+  - 0.009
+  - -0.012
+  - 0.005
+  - 0.002
+  - 0.004
+  - -0.002
+  Y_min: !!python/tuple
+  - 9.5
+  - -119.312
+  - -122.375
+  - -51.25
+  - -58.906
+  - -49.5
+  - -20.688
+  - -32.906
+  - -33.094
+  - -19.891
+  - -15.891
+  - -21.75
+  - -16.969
+  - -12.773
+  - -11.648
+  - -7.492
+  Y_std: !!python/tuple
+  - 182.467
+  - 32.821
+  - 34.996
+  - 14.001
+  - 17.621
+  - 13.189
+  - 5.79
+  - 9.609
+  - 9.805
+  - 5.652
+  - 4.634
+  - 6.502
+  - 4.963
+  - 3.796
+  - 3.44
+  - 2.178
+  block_sz: 4
+  dataset_type: wholeheart
+  frequency_aware_tokens: true
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  num_fa_length: 8
+  num_fa_repeats: 16
+  num_fa_repeats_x: 4
+  num_fa_repeats_y: 4
+  path: data/scratch/datasets/ACDC/Unlabeled/Wholeheart
+  resolution: 96
+  reweight: true
+  reweight_dim: -1
+  tempature: 1.0
+  tokens: 72
+  tokenwise_normalization: minmax
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.0
+    depth: 1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: ecmoe
+  depth: 16
+  embed_dim: 768
+  in_chans: 128
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 72
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 20000
+sample_dir: output/acdc_wholeheart_uncond_fa_moe_greyscale_uvit_mid_4by4_l8r16_minmax/samples
+seed: 1234
+train:
+  batch_size: 512
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_wholeheart_uncond_fa_moe_greyscale_uvit_mid_4by4_l8r16_minmax
+
+2025-11-12 10:42:24,611 - train_greyscale_FA_MoE.py - dataset samples: 25022
+2025-11-12 10:42:24,611 - train_greyscale_FA_MoE.py - Using minmax for positional token normalization
+2025-11-12 10:42:32,191 - utils.py - nnet has 163216256 parameters
+2025-11-12 10:42:32,894 - train_greyscale_FA_MoE.py - using [5.287 2.936 3.005 1.94  2.216 1.866 1.186 1.561 1.581 1.169 1.024 1.252
+ 1.071 1.    1.    1.   ] for loss reweighting
+2025-11-12 10:42:32,895 - train_greyscale_FA_MoE.py - Using temperature 1.0 for loss reweighting
+2025-11-12 10:42:32,919 - train_greyscale_FA_MoE.py - Start fitting, step=0, mixed_precision=no

@@ -1,0 +1,2633 @@
+2025-07-09 18:17:45,303 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-09 18:17:45,423 - train_greyscale.py - dataset samples: 25351
+2025-07-09 18:17:45,423 - train_greyscale.py - Using Opacus for DP training
+2025-07-09 18:17:52,830 - utils.py - nnet has 130110016 parameters
+2025-07-10 14:55:27,844 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-10 14:55:27,974 - train_greyscale.py - dataset samples: 25351
+2025-07-10 14:55:27,974 - train_greyscale.py - Using Opacus for DP training
+2025-07-10 14:55:35,640 - utils.py - nnet has 130110016 parameters
+2025-07-10 14:57:43,052 - utils.py - Parameter pos_embed not found in source model, skipping EMA update.
+2025-07-10 14:57:43,052 - utils.py - Parameter proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,052 - utils.py - Parameter proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.0.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.1.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.1.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.1.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.1.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.1.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,053 - utils.py - Parameter in_blocks.1.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.1.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.1.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.1.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.1.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.1.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.2.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.3.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,054 - utils.py - Parameter in_blocks.3.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.3.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,055 - utils.py - Parameter in_blocks.4.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.4.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.4.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.5.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.6.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.6.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.6.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,056 - utils.py - Parameter in_blocks.6.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.6.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.6.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.6.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.6.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.6.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.6.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.6.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,057 - utils.py - Parameter in_blocks.7.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter in_blocks.7.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter mid_block.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter out_blocks.0.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter out_blocks.0.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter out_blocks.0.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter out_blocks.0.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter out_blocks.0.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,058 - utils.py - Parameter out_blocks.0.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.0.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.0.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.0.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.0.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.0.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.0.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.0.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,059 - utils.py - Parameter out_blocks.1.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.1.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.1.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.2.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.3.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,060 - utils.py - Parameter out_blocks.3.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.3.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.4.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.4.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.4.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.4.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.4.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.4.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,061 - utils.py - Parameter out_blocks.4.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.4.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.4.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.4.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.4.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.4.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.4.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,062 - utils.py - Parameter out_blocks.5.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.5.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.6.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.7.norm1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.7.norm1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.7.attn.qkv.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,063 - utils.py - Parameter out_blocks.7.attn.proj.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.attn.proj.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.norm2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.norm2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.mlp.fc1.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.mlp.fc1.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.mlp.fc2.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.mlp.fc2.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.skip_linear.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter out_blocks.7.skip_linear.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter norm.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter norm.bias not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter decoder_pred.weight not found in source model, skipping EMA update.
+2025-07-10 14:57:43,064 - utils.py - Parameter decoder_pred.bias not found in source model, skipping EMA update.
+2025-07-11 17:12:38,631 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-11 17:12:38,757 - train_greyscale.py - dataset samples: 25351
+2025-07-11 17:12:38,757 - train_greyscale.py - Using Opacus for DP training
+2025-07-11 17:12:46,483 - utils.py - nnet has 130110016 parameters
+2025-07-11 17:18:05,868 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-11 17:18:05,941 - train_greyscale.py - dataset samples: 25351
+2025-07-11 17:18:05,941 - train_greyscale.py - Using Opacus for DP training
+2025-07-11 17:18:11,969 - utils.py - nnet has 130110016 parameters
+2025-07-11 17:20:22,503 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-11 17:23:27,910 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-11 17:23:27,981 - train_greyscale.py - dataset samples: 25351
+2025-07-11 17:23:27,981 - train_greyscale.py - Using Opacus for DP training
+2025-07-11 17:23:34,022 - utils.py - nnet has 130110016 parameters
+2025-07-11 17:25:45,827 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-11 17:25:46,385 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-11 17:25:46,512 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-11 17:37:21,644 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-11 17:37:21,713 - train_greyscale.py - dataset samples: 25351
+2025-07-11 17:37:21,713 - train_greyscale.py - Using Opacus for DP training
+2025-07-11 17:37:27,747 - utils.py - nnet has 130110016 parameters
+2025-07-11 17:39:40,510 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-11 17:39:40,977 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-11 17:39:40,986 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-11 17:45:19,771 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-11 17:45:19,847 - train_greyscale.py - dataset samples: 25351
+2025-07-11 17:45:19,847 - train_greyscale.py - Using Opacus for DP training
+2025-07-11 17:45:25,872 - utils.py - nnet has 130110016 parameters
+2025-07-11 17:47:40,705 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-11 17:47:40,763 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-11 17:47:40,772 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-11 17:57:13,679 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-11 17:57:13,754 - train_greyscale.py - dataset samples: 25351
+2025-07-11 17:57:13,755 - train_greyscale.py - Using Opacus for DP training
+2025-07-11 17:57:19,787 - utils.py - nnet has 130110016 parameters
+2025-07-11 17:59:33,048 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-11 17:59:33,107 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-11 17:59:33,116 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-13 01:52:02,599 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-13 01:52:02,733 - train_greyscale.py - dataset samples: 25351
+2025-07-13 01:52:02,733 - train_greyscale.py - Using Opacus for DP training
+2025-07-13 01:52:10,125 - utils.py - nnet has 130110016 parameters
+2025-07-13 01:54:20,665 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-13 01:54:21,817 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-13 01:54:21,912 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-15 15:17:10,482 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-15 15:17:10,622 - train_greyscale.py - dataset samples: 25351
+2025-07-15 15:17:10,622 - train_greyscale.py - Using Opacus for DP training
+2025-07-15 15:17:18,283 - utils.py - nnet has 130110016 parameters
+2025-07-15 15:19:31,408 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-15 15:19:31,569 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-15 15:19:31,667 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-15 15:35:44,531 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-15 15:35:44,602 - train_greyscale.py - dataset samples: 25351
+2025-07-15 15:35:44,602 - train_greyscale.py - Using Opacus for DP training
+2025-07-15 15:35:50,691 - utils.py - nnet has 130110016 parameters
+2025-07-15 15:37:56,451 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-15 15:37:57,279 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-15 15:37:57,288 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-15 15:43:20,754 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-15 15:43:20,835 - train_greyscale.py - dataset samples: 25351
+2025-07-15 15:43:20,835 - train_greyscale.py - Using Opacus for DP training
+2025-07-15 15:43:26,860 - utils.py - nnet has 130110016 parameters
+2025-07-15 15:45:39,860 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-15 15:45:39,918 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-15 15:45:39,927 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-15 15:56:45,800 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-15 15:56:45,870 - train_greyscale.py - dataset samples: 25351
+2025-07-15 15:56:45,870 - train_greyscale.py - Using Opacus for DP training
+2025-07-15 15:56:51,909 - utils.py - nnet has 130110016 parameters
+2025-07-15 15:59:02,278 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-15 15:59:03,337 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-15 15:59:03,346 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-15 16:14:49,649 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-15 16:14:49,744 - train_greyscale.py - dataset samples: 25351
+2025-07-15 16:14:49,744 - train_greyscale.py - Using Opacus for DP training
+2025-07-15 16:14:55,782 - utils.py - nnet has 130110016 parameters
+2025-07-15 16:17:06,572 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-15 16:17:06,630 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-15 16:17:06,640 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-16 03:15:50,179 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-16 03:15:50,306 - train_greyscale.py - dataset samples: 25351
+2025-07-16 03:15:50,306 - train_greyscale.py - Using Opacus for DP training
+2025-07-16 03:15:57,875 - utils.py - nnet has 130110016 parameters
+2025-07-16 03:18:05,570 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-16 03:18:05,860 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-16 03:18:05,869 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-16 16:33:27,596 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-16 16:33:27,693 - train_greyscale.py - dataset samples: 25351
+2025-07-16 16:33:27,693 - train_greyscale.py - Using Opacus for DP training
+2025-07-16 16:33:33,779 - utils.py - nnet has 130110016 parameters
+2025-07-16 16:35:41,732 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-16 16:35:41,796 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-16 16:35:41,805 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-16 18:20:31,807 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-16 18:20:31,955 - train_greyscale.py - dataset samples: 25351
+2025-07-16 18:20:31,956 - train_greyscale.py - Using Opacus for DP training
+2025-07-16 18:20:39,503 - utils.py - nnet has 130110016 parameters
+2025-07-16 20:20:46,144 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-16 20:20:46,240 - train_greyscale.py - dataset samples: 25351
+2025-07-16 20:20:46,240 - train_greyscale.py - Using Opacus for DP training
+2025-07-16 20:20:52,284 - utils.py - nnet has 130110016 parameters
+2025-07-16 20:23:02,949 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-16 20:23:03,748 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-16 20:23:03,757 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-17 01:57:17,115 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: fp16
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+  use_checkpoint: false
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-17 01:57:17,276 - train_greyscale.py - dataset samples: 25351
+2025-07-17 01:57:17,276 - train_greyscale.py - Using Opacus for DP training
+2025-07-17 01:57:25,021 - utils.py - nnet has 130110016 parameters
+2025-07-17 01:57:25,022 - utils.py - Ignoring module Identity() for DP training
+2025-07-17 01:57:25,039 - utils.py - Ignoring module Parameter containing:
+tensor([[[ 0.0270, -0.0299,  0.0161,  ...,  0.0185,  0.0252, -0.0074],
+         [ 0.0130,  0.0143,  0.0049,  ..., -0.0090,  0.0159, -0.0333],
+         [-0.0221, -0.0129,  0.0184,  ..., -0.0032, -0.0017,  0.0138],
+         ...,
+         [-0.0353, -0.0046, -0.0015,  ...,  0.0070, -0.0365, -0.0137],
+         [-0.0012,  0.0532, -0.0101,  ..., -0.0038,  0.0026, -0.0149],
+         [ 0.0406,  0.0181, -0.0017,  ...,  0.0140, -0.0187,  0.0166]]],
+       requires_grad=True) for DP training
+2025-07-17 01:59:39,243 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-17 01:59:39,413 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-17 01:59:39,513 - train_greyscale.py - Start fitting, step=0, mixed_precision=fp16
+2025-07-17 15:30:58,645 - train_greyscale.py - ckpt_root: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/ckpts
+dataset:
+  Cb_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  Cr_std: !!python/tuple
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  - 1.0e-05
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 502.0
+  Y_std: !!python/tuple
+  - 5.854
+  - 3.48
+  - 2.358
+  - 1.471
+  - 3.493
+  - 2.733
+  - 2.039
+  - 1.269
+  - 2.369
+  - 2.047
+  - 1.485
+  - 0.998
+  - 1.381
+  - 1.166
+  - 0.998
+  - 0.999
+  block_sz: 4
+  greyscale: true
+  low_freqs: 16
+  name: acdc_uncond
+  path: data/scratch/datasets/ACDC/JPGs
+  resolution: 96
+  tokens: 144
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+nnet:
+  depth: 16
+  embed_dim: 768
+  low_freqs: 16
+  mlp_ratio: 4
+  mlp_time_embed: false
+  name: uvit_greyscale
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 144
+  use_checkpoint: false
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  epsilon_first: false
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: true
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+sample_dir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4/samples
+seed: 1234
+train:
+  batch_size: 256
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_dp_uncond_greyscale_uvit_mid_4by4
+
+2025-07-17 15:30:58,779 - train_greyscale.py - dataset samples: 25351
+2025-07-17 15:30:58,779 - train_greyscale.py - Using Opacus for DP training
+2025-07-17 15:31:06,352 - utils.py - nnet has 130110016 parameters
+2025-07-17 15:31:06,353 - utils.py - Ignoring module Identity() for DP training
+2025-07-17 15:31:06,357 - utils.py - Ignoring module Parameter containing:
+tensor([[[ 0.0270, -0.0299,  0.0161,  ...,  0.0185,  0.0252, -0.0074],
+         [ 0.0130,  0.0143,  0.0049,  ..., -0.0090,  0.0159, -0.0333],
+         [-0.0221, -0.0129,  0.0184,  ..., -0.0032, -0.0017,  0.0138],
+         ...,
+         [-0.0353, -0.0046, -0.0015,  ...,  0.0070, -0.0365, -0.0137],
+         [-0.0012,  0.0532, -0.0101,  ..., -0.0038,  0.0026, -0.0149],
+         [ 0.0406,  0.0181, -0.0017,  ...,  0.0140, -0.0187,  0.0166]]],
+       requires_grad=True) for DP training
+2025-07-17 15:33:14,606 - train_greyscale.py - PrivacyEngine added to the model. Setting epsilon=10. Using noise_multiplier=1.917724609375 and max_grad_norm=1.0.
+2025-07-17 15:33:14,836 - train_greyscale.py - using [5.854 3.48  2.358 1.471 3.493 2.733 2.039 1.269 2.369 2.047 1.485 0.998
+ 1.381 1.166 0.998 0.999] for Y_loss reweighting
+2025-07-17 15:33:14,943 - train_greyscale.py - Start fitting, step=0, mixed_precision=no

@@ -1,10 +1,98 @@
 data/*
 assets/*
 jobs/res/*
-output/*
-output_allbest/*
-output_moree/*
-output_shift/*
-output_shift_fa/*
-output_ldm/*
+
+# Ignore checkpoint/weight files everywhere
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Ignore output dirs but allow images and tables
+output/**
+!output/**/
+# !output/**/*.png
+# !output/**/*.jpg
+# !output/**/*.jpeg
+# !output/**/*.gif
+# !output/**/*.svg
+# !output/**/*.pdf
+# !output/**/*.csv
+# !output/**/*.tsv
+# !output/**/*.xlsx
+!output/**/*.log
+!output/evaluation/**
+
+output_allbest/**
+!output_allbest/**/
+# !output_allbest/**/*.png
+# !output_allbest/**/*.jpg
+# !output_allbest/**/*.jpeg
+# !output_allbest/**/*.gif
+# !output_allbest/**/*.svg
+# !output_allbest/**/*.pdf
+# !output_allbest/**/*.csv
+# !output_allbest/**/*.tsv
+# !output_allbest/**/*.xlsx
+!output_allbest/**/*.log
+!output_allbest/evaluation/**
+
+output_moree/**
+!output_moree/**/
+# !output_moree/**/*.png
+# !output_moree/**/*.jpg
+# !output_moree/**/*.jpeg
+# !output_moree/**/*.gif
+# !output_moree/**/*.svg
+# !output_moree/**/*.pdf
+# !output_moree/**/*.csv
+# !output_moree/**/*.tsv
+# !output_moree/**/*.xlsx
+!output_moree/**/*.log
+!output_moree/evaluation/**
+
+output_shift/**
+!output_shift/**/
+# !output_shift/**/*.png
+# !output_shift/**/*.jpg
+# !output_shift/**/*.jpeg
+# !output_shift/**/*.gif
+# !output_shift/**/*.svg
+# !output_shift/**/*.pdf
+# !output_shift/**/*.csv
+# !output_shift/**/*.tsv
+# !output_shift/**/*.xlsx
+!output_shift/**/*.log
+!output_shift/evaluation/**
+
+output_shift_fa/**
+!output_shift_fa/**/
+# !output_shift_fa/**/*.png
+# !output_shift_fa/**/*.jpg
+# !output_shift_fa/**/*.jpeg
+# !output_shift_fa/**/*.gif
+# !output_shift_fa/**/*.svg
+# !output_shift_fa/**/*.pdf
+# !output_shift_fa/**/*.csv
+# !output_shift_fa/**/*.tsv
+# !output_shift_fa/**/*.xlsx
+!output_shift_fa/**/*.log
+!output_shift_fa/evaluation/**
+
+output_ldm/**
+!output_ldm/**/
+# !output_ldm/**/*.png
+# !output_ldm/**/*.jpg
+# !output_ldm/**/*.jpeg
+# !output_ldm/**/*.gif
+# !output_ldm/**/*.svg
+# !output_ldm/**/*.pdf
+# !output_ldm/**/*.csv
+# !output_ldm/**/*.tsv
+# !output_ldm/**/*.xlsx
+!output_ldm/**/*.log
+!output_ldm/evaluation/**
+
 *.pyc
+wandb/

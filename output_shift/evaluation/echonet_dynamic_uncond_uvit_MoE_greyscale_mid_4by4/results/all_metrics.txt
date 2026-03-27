@@ -1,0 +1,1 @@
+Step	FID	IS_mean	IS_std	LPIPS

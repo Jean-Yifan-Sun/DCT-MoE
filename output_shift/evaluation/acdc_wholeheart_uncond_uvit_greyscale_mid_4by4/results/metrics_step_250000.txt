@@ -1,0 +1,5 @@
+Step: 250000
+FID: 468.251633
+IS (mean): inf
+IS (std): nan
+LPIPS: 0.770958

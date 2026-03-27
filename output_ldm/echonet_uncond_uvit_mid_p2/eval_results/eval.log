@@ -1,0 +1,265 @@
+2026-03-01 20:33:21,370 - eval_ldm.py - Found 16 checkpoints to evaluate
+2026-03-01 20:33:22,230 - eval_ldm.py - 
+==================================================
+2026-03-01 20:33:22,230 - eval_ldm.py - Evaluating checkpoint: 100000
+2026-03-01 20:33:22,230 - eval_ldm.py - ==================================================
+2026-03-01 20:33:22,230 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/100000.ckpt
+2026-03-01 20:33:22,230 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/100000.ckpt
+2026-03-01 20:33:22,230 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/100000.ckpt
+2026-03-01 20:33:23,535 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 20:33:23,536 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 20:34:13,313 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 20:34:28,349 - is_lpips.py - LPIPS: 0.5854 ± 0.0497
+2026-03-01 20:34:28,371 - eval_ldm.py - LPIPS: 0.5854
+2026-03-01 20:34:28,371 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 20:54:00,292 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 20:56:30,623 - eval_ldm.py - FID: 269.7521
+2026-03-01 20:56:31,790 - eval_ldm.py - 
+==================================================
+2026-03-01 20:56:31,790 - eval_ldm.py - Evaluating checkpoint: 125000
+2026-03-01 20:56:31,790 - eval_ldm.py - ==================================================
+2026-03-01 20:56:31,790 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/125000.ckpt
+2026-03-01 20:56:31,790 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/125000.ckpt
+2026-03-01 20:56:31,790 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/125000.ckpt
+2026-03-01 20:56:32,508 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 20:56:32,508 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 20:57:21,017 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 20:57:32,382 - is_lpips.py - LPIPS: 0.5876 ± 0.0500
+2026-03-01 20:57:32,404 - eval_ldm.py - LPIPS: 0.5876
+2026-03-01 20:57:32,404 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 21:16:58,866 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 21:19:28,513 - eval_ldm.py - FID: 272.2814
+2026-03-01 21:19:29,721 - eval_ldm.py - 
+==================================================
+2026-03-01 21:19:29,722 - eval_ldm.py - Evaluating checkpoint: 150000
+2026-03-01 21:19:29,722 - eval_ldm.py - ==================================================
+2026-03-01 21:19:29,722 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/150000.ckpt
+2026-03-01 21:19:29,722 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/150000.ckpt
+2026-03-01 21:19:29,723 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/150000.ckpt
+2026-03-01 21:19:30,450 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 21:19:30,450 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 21:20:17,714 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 21:20:28,867 - is_lpips.py - LPIPS: 0.4674 ± 0.0673
+2026-03-01 21:20:28,889 - eval_ldm.py - LPIPS: 0.4674
+2026-03-01 21:20:28,889 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 21:39:23,452 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 21:41:51,337 - eval_ldm.py - FID: 15.3389
+2026-03-01 21:41:52,550 - eval_ldm.py - 
+==================================================
+2026-03-01 21:41:52,550 - eval_ldm.py - Evaluating checkpoint: 175000
+2026-03-01 21:41:52,550 - eval_ldm.py - ==================================================
+2026-03-01 21:41:52,550 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/175000.ckpt
+2026-03-01 21:41:52,556 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/175000.ckpt
+2026-03-01 21:41:52,556 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/175000.ckpt
+2026-03-01 21:41:53,283 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 21:41:53,284 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 21:42:40,381 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 21:42:51,487 - is_lpips.py - LPIPS: 0.4624 ± 0.0677
+2026-03-01 21:42:51,509 - eval_ldm.py - LPIPS: 0.4624
+2026-03-01 21:42:51,509 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 22:01:44,310 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 22:04:12,625 - eval_ldm.py - FID: 10.2294
+2026-03-01 22:04:13,775 - eval_ldm.py - 
+==================================================
+2026-03-01 22:04:13,775 - eval_ldm.py - Evaluating checkpoint: 200000
+2026-03-01 22:04:13,775 - eval_ldm.py - ==================================================
+2026-03-01 22:04:13,775 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/200000.ckpt
+2026-03-01 22:04:13,775 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/200000.ckpt
+2026-03-01 22:04:13,775 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/200000.ckpt
+2026-03-01 22:04:14,505 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 22:04:14,505 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 22:05:01,642 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 22:05:12,721 - is_lpips.py - LPIPS: 0.4668 ± 0.0686
+2026-03-01 22:05:12,743 - eval_ldm.py - LPIPS: 0.4668
+2026-03-01 22:05:12,743 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 22:24:05,706 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 22:26:32,360 - eval_ldm.py - FID: 10.0337
+2026-03-01 22:26:33,533 - eval_ldm.py - 
+==================================================
+2026-03-01 22:26:33,534 - eval_ldm.py - Evaluating checkpoint: 225000
+2026-03-01 22:26:33,534 - eval_ldm.py - ==================================================
+2026-03-01 22:26:33,534 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/225000.ckpt
+2026-03-01 22:26:33,534 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/225000.ckpt
+2026-03-01 22:26:33,534 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/225000.ckpt
+2026-03-01 22:26:34,263 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 22:26:34,264 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 22:27:21,365 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 22:27:32,476 - is_lpips.py - LPIPS: 0.4653 ± 0.0670
+2026-03-01 22:27:32,498 - eval_ldm.py - LPIPS: 0.4653
+2026-03-01 22:27:32,498 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 22:46:25,650 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 22:48:52,478 - eval_ldm.py - FID: 10.2119
+2026-03-01 22:48:53,692 - eval_ldm.py - 
+==================================================
+2026-03-01 22:48:53,693 - eval_ldm.py - Evaluating checkpoint: 250000
+2026-03-01 22:48:53,693 - eval_ldm.py - ==================================================
+2026-03-01 22:48:53,693 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/250000.ckpt
+2026-03-01 22:48:53,693 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/250000.ckpt
+2026-03-01 22:48:53,693 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/250000.ckpt
+2026-03-01 22:48:54,401 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 22:48:54,401 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 22:49:41,559 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 22:49:52,649 - is_lpips.py - LPIPS: 0.4632 ± 0.0675
+2026-03-01 22:49:52,670 - eval_ldm.py - LPIPS: 0.4632
+2026-03-01 22:49:52,671 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 23:08:46,308 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 23:11:13,601 - eval_ldm.py - FID: 10.3190
+2026-03-01 23:11:14,784 - eval_ldm.py - 
+==================================================
+2026-03-01 23:11:14,785 - eval_ldm.py - Evaluating checkpoint: 275000
+2026-03-01 23:11:14,785 - eval_ldm.py - ==================================================
+2026-03-01 23:11:14,785 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/275000.ckpt
+2026-03-01 23:11:14,785 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/275000.ckpt
+2026-03-01 23:11:14,785 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/275000.ckpt
+2026-03-01 23:11:15,499 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 23:11:15,500 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 23:12:02,714 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 23:12:13,783 - is_lpips.py - LPIPS: 0.4629 ± 0.0666
+2026-03-01 23:12:13,806 - eval_ldm.py - LPIPS: 0.4629
+2026-03-01 23:12:13,806 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 23:31:08,027 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 23:33:34,893 - eval_ldm.py - FID: 10.9457
+2026-03-01 23:33:35,966 - eval_ldm.py - 
+==================================================
+2026-03-01 23:33:35,966 - eval_ldm.py - Evaluating checkpoint: 300000
+2026-03-01 23:33:35,966 - eval_ldm.py - ==================================================
+2026-03-01 23:33:35,966 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/300000.ckpt
+2026-03-01 23:33:35,966 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/300000.ckpt
+2026-03-01 23:33:35,966 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/300000.ckpt
+2026-03-01 23:33:36,761 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 23:33:36,762 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 23:34:24,063 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 23:34:35,147 - is_lpips.py - LPIPS: 0.4622 ± 0.0676
+2026-03-01 23:34:35,168 - eval_ldm.py - LPIPS: 0.4622
+2026-03-01 23:34:35,168 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-01 23:53:29,228 - eval_ldm.py - Computing FID on all samples...
+2026-03-01 23:55:56,645 - eval_ldm.py - FID: 11.0573
+2026-03-01 23:55:57,815 - eval_ldm.py - 
+==================================================
+2026-03-01 23:55:57,815 - eval_ldm.py - Evaluating checkpoint: 325000
+2026-03-01 23:55:57,815 - eval_ldm.py - ==================================================
+2026-03-01 23:55:57,815 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/325000.ckpt
+2026-03-01 23:55:57,815 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/325000.ckpt
+2026-03-01 23:55:57,815 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/325000.ckpt
+2026-03-01 23:55:58,555 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-01 23:55:58,556 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-01 23:56:45,854 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-01 23:56:56,898 - is_lpips.py - LPIPS: 0.4642 ± 0.0672
+2026-03-01 23:56:56,920 - eval_ldm.py - LPIPS: 0.4642
+2026-03-01 23:56:56,920 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-02 00:15:51,001 - eval_ldm.py - Computing FID on all samples...
+2026-03-02 00:18:18,253 - eval_ldm.py - FID: 11.4062
+2026-03-02 00:18:19,443 - eval_ldm.py - 
+==================================================
+2026-03-02 00:18:19,444 - eval_ldm.py - Evaluating checkpoint: 350000
+2026-03-02 00:18:19,444 - eval_ldm.py - ==================================================
+2026-03-02 00:18:19,444 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/350000.ckpt
+2026-03-02 00:18:19,444 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/350000.ckpt
+2026-03-02 00:18:19,444 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/350000.ckpt
+2026-03-02 00:18:20,177 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-02 00:18:20,177 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-02 00:19:07,470 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-02 00:19:18,510 - is_lpips.py - LPIPS: 0.4634 ± 0.0682
+2026-03-02 00:19:18,531 - eval_ldm.py - LPIPS: 0.4634
+2026-03-02 00:19:18,532 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-02 00:38:12,548 - eval_ldm.py - Computing FID on all samples...
+2026-03-02 00:40:40,848 - eval_ldm.py - FID: 11.9111
+2026-03-02 00:40:42,091 - eval_ldm.py - 
+==================================================
+2026-03-02 00:40:42,091 - eval_ldm.py - Evaluating checkpoint: 375000
+2026-03-02 00:40:42,091 - eval_ldm.py - ==================================================
+2026-03-02 00:40:42,091 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/375000.ckpt
+2026-03-02 00:40:42,091 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/375000.ckpt
+2026-03-02 00:40:42,091 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/375000.ckpt
+2026-03-02 00:40:42,827 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-02 00:40:42,827 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-02 00:41:30,152 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-02 00:41:41,138 - is_lpips.py - LPIPS: 0.4629 ± 0.0681
+2026-03-02 00:41:41,160 - eval_ldm.py - LPIPS: 0.4629
+2026-03-02 00:41:41,160 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-02 01:00:34,938 - eval_ldm.py - Computing FID on all samples...
+2026-03-02 01:03:02,486 - eval_ldm.py - FID: 11.5592
+2026-03-02 01:03:03,689 - eval_ldm.py - 
+==================================================
+2026-03-02 01:03:03,689 - eval_ldm.py - Evaluating checkpoint: 400000
+2026-03-02 01:03:03,689 - eval_ldm.py - ==================================================
+2026-03-02 01:03:03,689 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/400000.ckpt
+2026-03-02 01:03:03,692 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/400000.ckpt
+2026-03-02 01:03:03,692 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/400000.ckpt
+2026-03-02 01:03:04,398 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-02 01:03:04,398 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-02 01:03:51,684 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-02 01:04:02,752 - is_lpips.py - LPIPS: 0.4660 ± 0.0684
+2026-03-02 01:04:02,774 - eval_ldm.py - LPIPS: 0.4660
+2026-03-02 01:04:02,774 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-02 01:22:56,840 - eval_ldm.py - Computing FID on all samples...
+2026-03-02 01:25:24,005 - eval_ldm.py - FID: 11.8169
+2026-03-02 01:25:25,226 - eval_ldm.py - 
+==================================================
+2026-03-02 01:25:25,226 - eval_ldm.py - Evaluating checkpoint: 425000
+2026-03-02 01:25:25,227 - eval_ldm.py - ==================================================
+2026-03-02 01:25:25,227 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/425000.ckpt
+2026-03-02 01:25:25,227 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/425000.ckpt
+2026-03-02 01:25:25,227 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/425000.ckpt
+2026-03-02 01:25:25,944 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-02 01:25:25,944 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-02 01:26:13,200 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-02 01:26:24,325 - is_lpips.py - LPIPS: 0.4647 ± 0.0688
+2026-03-02 01:26:24,347 - eval_ldm.py - LPIPS: 0.4647
+2026-03-02 01:26:24,347 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-02 01:45:18,733 - eval_ldm.py - Computing FID on all samples...
+2026-03-02 01:47:55,003 - eval_ldm.py - FID: 11.9032
+2026-03-02 01:47:56,211 - eval_ldm.py - 
+==================================================
+2026-03-02 01:47:56,212 - eval_ldm.py - Evaluating checkpoint: 450000
+2026-03-02 01:47:56,212 - eval_ldm.py - ==================================================
+2026-03-02 01:47:56,212 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/450000.ckpt
+2026-03-02 01:47:56,212 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/450000.ckpt
+2026-03-02 01:47:56,212 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/450000.ckpt
+2026-03-02 01:47:56,933 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-02 01:47:56,933 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-02 01:48:44,142 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-02 01:48:55,696 - is_lpips.py - LPIPS: 0.4612 ± 0.0679
+2026-03-02 01:48:55,719 - eval_ldm.py - LPIPS: 0.4612
+2026-03-02 01:48:55,719 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-02 02:07:49,991 - eval_ldm.py - Computing FID on all samples...
+2026-03-02 02:10:23,396 - eval_ldm.py - FID: 11.9485
+2026-03-02 02:10:24,575 - eval_ldm.py - 
+==================================================
+2026-03-02 02:10:24,575 - eval_ldm.py - Evaluating checkpoint: 475000
+2026-03-02 02:10:24,576 - eval_ldm.py - ==================================================
+2026-03-02 02:10:24,576 - eval_ldm.py - Loading checkpoint from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/475000.ckpt
+2026-03-02 02:10:24,576 - utils.py - resume from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/475000.ckpt
+2026-03-02 02:10:24,576 - utils.py - load from output_ldm/echonet_uncond_uvit_mid_p2/ckpts/475000.ckpt
+2026-03-02 02:10:25,327 - eval_ldm.py - Sampling: n_samples=50000, mode=uncond
+2026-03-02 02:10:25,327 - eval_ldm.py - Phase 1: Generating 2000 samples for LPIPS...
+2026-03-02 02:11:12,520 - eval_ldm.py - Computing LPIPS on initial batch...
+2026-03-02 02:11:23,999 - is_lpips.py - LPIPS: 0.4636 ± 0.0677
+2026-03-02 02:11:24,021 - eval_ldm.py - LPIPS: 0.4636
+2026-03-02 02:11:24,021 - eval_ldm.py - Phase 2: Generating 48000 more samples for FID (total: 50000)...
+2026-03-02 02:30:20,126 - eval_ldm.py - Computing FID on all samples...
+2026-03-02 02:32:52,292 - eval_ldm.py - FID: 11.8680
+2026-03-02 02:32:53,329 - eval_ldm.py - 
+All results saved to output_ldm/echonet_uncond_uvit_mid_p2/eval_results/all_metrics.txt
+2026-03-02 02:32:53,329 - eval_ldm.py - 
+==================================================
+2026-03-02 02:32:53,329 - eval_ldm.py - Evaluation Summary
+2026-03-02 02:32:53,330 - eval_ldm.py - ==================================================
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 100000: FID=269.7521, LPIPS=0.5854
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 125000: FID=272.2814, LPIPS=0.5876
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 150000: FID=15.3389, LPIPS=0.4674
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 175000: FID=10.2294, LPIPS=0.4624
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 200000: FID=10.0337, LPIPS=0.4668
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 225000: FID=10.2119, LPIPS=0.4653
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 250000: FID=10.3190, LPIPS=0.4632
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 275000: FID=10.9457, LPIPS=0.4629
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 300000: FID=11.0573, LPIPS=0.4622
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 325000: FID=11.4062, LPIPS=0.4642
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 350000: FID=11.9111, LPIPS=0.4634
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 375000: FID=11.5592, LPIPS=0.4629
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 400000: FID=11.8169, LPIPS=0.4660
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 425000: FID=11.9032, LPIPS=0.4647
+2026-03-02 02:32:53,330 - eval_ldm.py - Step 450000: FID=11.9485, LPIPS=0.4612
+2026-03-02 02:32:53,331 - eval_ldm.py - Step 475000: FID=11.8680, LPIPS=0.4636
+2026-03-02 02:32:53,331 - eval_ldm.py - 
+Best FID: Step 200000 with FID=10.0337

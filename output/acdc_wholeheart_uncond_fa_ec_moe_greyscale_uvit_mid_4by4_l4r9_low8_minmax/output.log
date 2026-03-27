@@ -1,0 +1,946 @@
+2025-11-05 10:05:28,882 - train_greyscale_FA_MoE.py - ckpt_root: output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 774.0
+  Y_entropy: !!python/tuple
+  - 5.287
+  - 2.936
+  - 3.005
+  - 1.94
+  - 2.216
+  - 1.866
+  - 1.186
+  - 1.561
+  - 1.581
+  - 1.169
+  - 1.024
+  - 1.252
+  - 1.071
+  - 1.0
+  - 1.0
+  - 1.0
+  Y_max: !!python/tuple
+  - 774.0
+  - 112.375
+  - 125.812
+  - 49.0
+  - 58.5
+  - 46.5
+  - 20.344
+  - 32.906
+  - 33.406
+  - 19.953
+  - 15.953
+  - 22.0
+  - 16.984
+  - 12.812
+  - 11.68
+  - 7.461
+  Y_mean: !!python/tuple
+  - 241.045
+  - -0.725
+  - 0.44
+  - 0.107
+  - 0.009
+  - 0.154
+  - -0.057
+  - 0.0
+  - -0.008
+  - 0.019
+  - 0.009
+  - -0.012
+  - 0.005
+  - 0.002
+  - 0.004
+  - -0.002
+  Y_min: !!python/tuple
+  - 9.5
+  - -119.312
+  - -122.375
+  - -51.25
+  - -58.906
+  - -49.5
+  - -20.688
+  - -32.906
+  - -33.094
+  - -19.891
+  - -15.891
+  - -21.75
+  - -16.969
+  - -12.773
+  - -11.648
+  - -7.492
+  Y_std: !!python/tuple
+  - 182.467
+  - 32.821
+  - 34.996
+  - 14.001
+  - 17.621
+  - 13.189
+  - 5.79
+  - 9.609
+  - 9.805
+  - 5.652
+  - 4.634
+  - 6.502
+  - 4.963
+  - 3.796
+  - 3.44
+  - 2.178
+  block_sz: 4
+  dataset_type: wholeheart
+  frequency_aware_tokens: true
+  greyscale: true
+  low_freqs: 8
+  name: acdc_uncond
+  num_fa_length: 4
+  num_fa_repeats: 9
+  num_fa_repeats_x: 3
+  num_fa_repeats_y: 3
+  path: data/scratch/datasets/ACDC/Unlabeled/Wholeheart
+  resolution: 96
+  reweight: true
+  reweight_dim: -1
+  tempature: 1.0
+  tokens: 128
+  tokenwise_normalization: minmax
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.0
+    depth: 1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: ecmoe
+  depth: 16
+  embed_dim: 768
+  in_chans: 36
+  low_freqs: 8
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 128
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 20000
+sample_dir: output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples
+seed: 1234
+train:
+  batch_size: 512
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax
+
+2025-11-05 10:05:29,063 - train_greyscale_FA_MoE.py - dataset samples: 25023
+2025-11-05 10:05:29,063 - train_greyscale_FA_MoE.py - Using minmax for positional token normalization
+2025-11-05 10:05:38,194 - utils.py - nnet has 163117860 parameters
+2025-11-05 10:05:38,980 - train_greyscale_FA_MoE.py - using [5.287 2.936 3.005 1.94  2.216 1.866 1.186 1.561 1.581 1.169 1.024 1.252
+ 1.071 1.    1.    1.   ] for loss reweighting
+2025-11-05 10:05:38,981 - train_greyscale_FA_MoE.py - Using temperature 1.0 for loss reweighting
+2025-11-05 10:05:39,308 - train_greyscale_FA_MoE.py - Start fitting, step=0, mixed_precision=no
+2025-11-05 10:11:15,557 - train_greyscale_FA_MoE.py - {'step': '100', 'lr': '4e-06', 'total_loss': '0.616803', 'main_loss': '0.616803', 'time_per_step': '2.23998'}
+2025-11-05 10:15:05,736 - train_greyscale_FA_MoE.py - {'step': '200', 'lr': '8e-06', 'total_loss': '0.378004', 'main_loss': '0.378004', 'time_per_step': '2.22953'}
+2025-11-05 10:18:55,315 - train_greyscale_FA_MoE.py - {'step': '300', 'lr': '1.2e-05', 'total_loss': '0.292884', 'main_loss': '0.292884', 'time_per_step': '2.21996'}
+2025-11-05 10:22:45,301 - train_greyscale_FA_MoE.py - {'step': '400', 'lr': '1.6e-05', 'total_loss': '0.248802', 'main_loss': '0.248802', 'time_per_step': '3.47197'}
+2025-11-05 10:26:34,079 - train_greyscale_FA_MoE.py - {'step': '500', 'lr': '2e-05', 'total_loss': '0.200657', 'main_loss': '0.200657', 'time_per_step': '2.21378'}
+2025-11-05 10:30:24,145 - train_greyscale_FA_MoE.py - {'step': '600', 'lr': '2.4e-05', 'total_loss': '0.181847', 'main_loss': '0.181847', 'time_per_step': '2.22001'}
+2025-11-05 10:34:14,469 - train_greyscale_FA_MoE.py - {'step': '700', 'lr': '2.8e-05', 'total_loss': '0.177819', 'main_loss': '0.177819', 'time_per_step': '2.20879'}
+2025-11-05 10:38:03,305 - train_greyscale_FA_MoE.py - {'step': '800', 'lr': '3.2e-05', 'total_loss': '0.156991', 'main_loss': '0.156991', 'time_per_step': '2.21208'}
+2025-11-05 10:41:52,789 - train_greyscale_FA_MoE.py - {'step': '900', 'lr': '3.6e-05', 'total_loss': '0.159084', 'main_loss': '0.159084', 'time_per_step': '2.22863'}
+2025-11-05 10:45:42,682 - train_greyscale_FA_MoE.py - {'step': '1000', 'lr': '4e-05', 'total_loss': '0.157898', 'main_loss': '0.157898', 'time_per_step': '2.22236'}
+2025-11-05 10:49:32,137 - train_greyscale_FA_MoE.py - {'step': '1100', 'lr': '4.4e-05', 'total_loss': '0.150912', 'main_loss': '0.150912', 'time_per_step': '2.1595'}
+2025-11-05 10:53:21,840 - train_greyscale_FA_MoE.py - {'step': '1200', 'lr': '4.8e-05', 'total_loss': '0.171453', 'main_loss': '0.171453', 'time_per_step': '2.15804'}
+2025-11-05 10:57:11,261 - train_greyscale_FA_MoE.py - {'step': '1300', 'lr': '5.2e-05', 'total_loss': '0.150903', 'main_loss': '0.150903', 'time_per_step': '2.22182'}
+2025-11-05 11:01:00,777 - train_greyscale_FA_MoE.py - {'step': '1400', 'lr': '5.6e-05', 'total_loss': '0.152083', 'main_loss': '0.152083', 'time_per_step': '2.22592'}
+2025-11-05 11:04:50,434 - train_greyscale_FA_MoE.py - {'step': '1500', 'lr': '6e-05', 'total_loss': '0.143762', 'main_loss': '0.143762', 'time_per_step': '2.20595'}
+2025-11-05 11:08:40,003 - train_greyscale_FA_MoE.py - {'step': '1600', 'lr': '6.4e-05', 'total_loss': '0.141021', 'main_loss': '0.141021', 'time_per_step': '2.22541'}
+2025-11-05 11:12:28,834 - train_greyscale_FA_MoE.py - {'step': '1700', 'lr': '6.8e-05', 'total_loss': '0.159786', 'main_loss': '0.159786', 'time_per_step': '2.19978'}
+2025-11-05 11:16:18,828 - train_greyscale_FA_MoE.py - {'step': '1800', 'lr': '7.2e-05', 'total_loss': '0.128077', 'main_loss': '0.128077', 'time_per_step': '2.29058'}
+2025-11-05 11:20:08,994 - train_greyscale_FA_MoE.py - {'step': '1900', 'lr': '7.6e-05', 'total_loss': '0.128375', 'main_loss': '0.128375', 'time_per_step': '2.326'}
+2025-11-05 11:23:58,548 - train_greyscale_FA_MoE.py - {'step': '2000', 'lr': '8e-05', 'total_loss': '0.127461', 'main_loss': '0.127461', 'time_per_step': '2.22623'}
+2025-11-05 11:27:47,529 - train_greyscale_FA_MoE.py - {'step': '2100', 'lr': '8.4e-05', 'total_loss': '0.129077', 'main_loss': '0.129077', 'time_per_step': '2.20693'}
+2025-11-05 11:31:37,144 - train_greyscale_FA_MoE.py - {'step': '2200', 'lr': '8.8e-05', 'total_loss': '0.135312', 'main_loss': '0.135312', 'time_per_step': '2.20367'}
+2025-11-05 11:35:27,022 - train_greyscale_FA_MoE.py - {'step': '2300', 'lr': '9.2e-05', 'total_loss': '0.127903', 'main_loss': '0.127903', 'time_per_step': '2.15106'}
+2025-11-05 11:39:17,337 - train_greyscale_FA_MoE.py - {'step': '2400', 'lr': '9.6e-05', 'total_loss': '0.128865', 'main_loss': '0.128865', 'time_per_step': '2.16047'}
+2025-11-05 11:43:06,632 - train_greyscale_FA_MoE.py - {'step': '2500', 'lr': '0.0001', 'total_loss': '0.125623', 'main_loss': '0.125623', 'time_per_step': '2.23736'}
+2025-11-05 11:46:56,818 - train_greyscale_FA_MoE.py - {'step': '2600', 'lr': '0.000104', 'total_loss': '0.119279', 'main_loss': '0.119279', 'time_per_step': '2.21956'}
+2025-11-05 11:50:45,840 - train_greyscale_FA_MoE.py - {'step': '2700', 'lr': '0.000108', 'total_loss': '0.105387', 'main_loss': '0.105387', 'time_per_step': '2.29587'}
+2025-11-05 11:54:35,712 - train_greyscale_FA_MoE.py - {'step': '2800', 'lr': '0.000112', 'total_loss': '0.120797', 'main_loss': '0.120797', 'time_per_step': '2.22534'}
+2025-11-05 11:58:24,655 - train_greyscale_FA_MoE.py - {'step': '2900', 'lr': '0.000116', 'total_loss': '0.119836', 'main_loss': '0.119836', 'time_per_step': '2.21863'}
+2025-11-05 12:02:13,617 - train_greyscale_FA_MoE.py - {'step': '3000', 'lr': '0.00012', 'total_loss': '0.118402', 'main_loss': '0.118402', 'time_per_step': '2.21069'}
+2025-11-05 12:06:03,294 - train_greyscale_FA_MoE.py - {'step': '3100', 'lr': '0.000124', 'total_loss': '0.114888', 'main_loss': '0.114888', 'time_per_step': '2.21481'}
+2025-11-05 12:09:53,057 - train_greyscale_FA_MoE.py - {'step': '3200', 'lr': '0.000128', 'total_loss': '0.110558', 'main_loss': '0.110558', 'time_per_step': '2.20933'}
+2025-11-05 12:13:41,520 - train_greyscale_FA_MoE.py - {'step': '3300', 'lr': '0.000132', 'total_loss': '0.116936', 'main_loss': '0.116936', 'time_per_step': '2.21214'}
+2025-11-05 12:17:31,123 - train_greyscale_FA_MoE.py - {'step': '3400', 'lr': '0.000136', 'total_loss': '0.101385', 'main_loss': '0.101385', 'time_per_step': '2.21774'}
+2025-11-05 12:21:20,895 - train_greyscale_FA_MoE.py - {'step': '3500', 'lr': '0.00014', 'total_loss': '0.109549', 'main_loss': '0.109549', 'time_per_step': '2.15473'}
+2025-11-05 12:25:10,606 - train_greyscale_FA_MoE.py - {'step': '3600', 'lr': '0.000144', 'total_loss': '0.111009', 'main_loss': '0.111009', 'time_per_step': '2.15535'}
+2025-11-05 12:28:59,765 - train_greyscale_FA_MoE.py - {'step': '3700', 'lr': '0.000148', 'total_loss': '0.0863232', 'main_loss': '0.0863232', 'time_per_step': '2.23623'}
+2025-11-05 12:32:49,148 - train_greyscale_FA_MoE.py - {'step': '3800', 'lr': '0.000152', 'total_loss': '0.107833', 'main_loss': '0.107833', 'time_per_step': '2.27178'}
+2025-11-05 12:36:38,982 - train_greyscale_FA_MoE.py - {'step': '3900', 'lr': '0.000156', 'total_loss': '0.092555', 'main_loss': '0.092555', 'time_per_step': '2.21931'}
+2025-11-05 12:40:30,130 - train_greyscale_FA_MoE.py - {'step': '4000', 'lr': '0.00016', 'total_loss': '0.0908457', 'main_loss': '0.0908457', 'time_per_step': '2.21236'}
+2025-11-05 12:44:19,628 - train_greyscale_FA_MoE.py - {'step': '4100', 'lr': '0.000164', 'total_loss': '0.0971956', 'main_loss': '0.0971956', 'time_per_step': '2.29288'}
+2025-11-05 12:48:09,350 - train_greyscale_FA_MoE.py - {'step': '4200', 'lr': '0.000168', 'total_loss': '0.0878501', 'main_loss': '0.0878501', 'time_per_step': '2.27819'}
+2025-11-05 12:51:59,249 - train_greyscale_FA_MoE.py - {'step': '4300', 'lr': '0.000172', 'total_loss': '0.089387', 'main_loss': '0.089387', 'time_per_step': '2.22084'}
+2025-11-05 12:55:48,901 - train_greyscale_FA_MoE.py - {'step': '4400', 'lr': '0.000176', 'total_loss': '0.0882372', 'main_loss': '0.0882372', 'time_per_step': '2.29405'}
+2025-11-05 12:59:38,133 - train_greyscale_FA_MoE.py - {'step': '4500', 'lr': '0.00018', 'total_loss': '0.0864764', 'main_loss': '0.0864764', 'time_per_step': '2.22764'}
+2025-11-05 13:03:27,908 - train_greyscale_FA_MoE.py - {'step': '4600', 'lr': '0.000184', 'total_loss': '0.0842264', 'main_loss': '0.0842264', 'time_per_step': '2.21509'}
+2025-11-05 13:07:17,570 - train_greyscale_FA_MoE.py - {'step': '4700', 'lr': '0.000188', 'total_loss': '0.0874704', 'main_loss': '0.0874704', 'time_per_step': '2.1501'}
+2025-11-05 13:11:06,434 - train_greyscale_FA_MoE.py - {'step': '4800', 'lr': '0.000192', 'total_loss': '0.0829399', 'main_loss': '0.0829399', 'time_per_step': '2.16334'}
+2025-11-05 13:14:55,865 - train_greyscale_FA_MoE.py - {'step': '4900', 'lr': '0.000196', 'total_loss': '0.0785117', 'main_loss': '0.0785117', 'time_per_step': '2.23262'}
+2025-11-05 13:18:45,582 - train_greyscale_FA_MoE.py - {'step': '5000', 'lr': '0.0002', 'total_loss': '0.0885188', 'main_loss': '0.0885188', 'time_per_step': '2.30738'}
+2025-11-05 13:22:35,650 - train_greyscale_FA_MoE.py - {'step': '5100', 'lr': '0.0002', 'total_loss': '0.0831994', 'main_loss': '0.0831994', 'time_per_step': '2.22296'}
+2025-11-05 13:26:24,944 - train_greyscale_FA_MoE.py - {'step': '5200', 'lr': '0.0002', 'total_loss': '0.0848273', 'main_loss': '0.0848273', 'time_per_step': '2.21738'}
+2025-11-05 13:30:17,266 - train_greyscale_FA_MoE.py - {'step': '5300', 'lr': '0.0002', 'total_loss': '0.0790468', 'main_loss': '0.0790468', 'time_per_step': '2.19323'}
+2025-11-05 13:34:05,362 - train_greyscale_FA_MoE.py - {'step': '5400', 'lr': '0.0002', 'total_loss': '0.0760643', 'main_loss': '0.0760643', 'time_per_step': '2.21463'}
+2025-11-05 13:37:54,559 - train_greyscale_FA_MoE.py - {'step': '5500', 'lr': '0.0002', 'total_loss': '0.0778487', 'main_loss': '0.0778487', 'time_per_step': '2.21034'}
+2025-11-05 13:41:45,582 - train_greyscale_FA_MoE.py - {'step': '5600', 'lr': '0.0002', 'total_loss': '0.0868689', 'main_loss': '0.0868689', 'time_per_step': '2.22036'}
+2025-11-05 13:45:35,802 - train_greyscale_FA_MoE.py - {'step': '5700', 'lr': '0.0002', 'total_loss': '0.0802144', 'main_loss': '0.0802144', 'time_per_step': '2.24178'}
+2025-11-05 13:49:25,095 - train_greyscale_FA_MoE.py - {'step': '5800', 'lr': '0.0002', 'total_loss': '0.0711408', 'main_loss': '0.0711408', 'time_per_step': '2.23022'}
+2025-11-05 13:53:15,953 - train_greyscale_FA_MoE.py - {'step': '5900', 'lr': '0.0002', 'total_loss': '0.0758969', 'main_loss': '0.0758969', 'time_per_step': '2.16363'}
+2025-11-05 13:57:06,693 - train_greyscale_FA_MoE.py - {'step': '6000', 'lr': '0.0002', 'total_loss': '0.0864308', 'main_loss': '0.0864308', 'time_per_step': '2.14563'}
+2025-11-05 14:01:01,299 - train_greyscale_FA_MoE.py - {'step': '6100', 'lr': '0.0002', 'total_loss': '0.0653046', 'main_loss': '0.0653046', 'time_per_step': '2.23064'}
+2025-11-05 14:04:51,176 - train_greyscale_FA_MoE.py - {'step': '6200', 'lr': '0.0002', 'total_loss': '0.0815778', 'main_loss': '0.0815778', 'time_per_step': '2.2337'}
+2025-11-05 14:08:42,534 - train_greyscale_FA_MoE.py - {'step': '6300', 'lr': '0.0002', 'total_loss': '0.0779021', 'main_loss': '0.0779021', 'time_per_step': '2.24526'}
+2025-11-05 14:12:33,278 - train_greyscale_FA_MoE.py - {'step': '6400', 'lr': '0.0002', 'total_loss': '0.0712834', 'main_loss': '0.0712834', 'time_per_step': '2.24038'}
+2025-11-05 14:16:23,639 - train_greyscale_FA_MoE.py - {'step': '6500', 'lr': '0.0002', 'total_loss': '0.0745777', 'main_loss': '0.0745777', 'time_per_step': '2.24015'}
+2025-11-05 14:20:13,990 - train_greyscale_FA_MoE.py - {'step': '6600', 'lr': '0.0002', 'total_loss': '0.0720682', 'main_loss': '0.0720682', 'time_per_step': '2.2483'}
+2025-11-05 14:24:04,259 - train_greyscale_FA_MoE.py - {'step': '6700', 'lr': '0.0002', 'total_loss': '0.0596579', 'main_loss': '0.0596579', 'time_per_step': '2.242'}
+2025-11-05 14:27:55,636 - train_greyscale_FA_MoE.py - {'step': '6800', 'lr': '0.0002', 'total_loss': '0.0761596', 'main_loss': '0.0761596', 'time_per_step': '2.23005'}
+2025-11-05 14:31:49,353 - train_greyscale_FA_MoE.py - {'step': '6900', 'lr': '0.0002', 'total_loss': '0.0707149', 'main_loss': '0.0707149', 'time_per_step': '2.32601'}
+2025-11-05 14:35:39,492 - train_greyscale_FA_MoE.py - {'step': '7000', 'lr': '0.0002', 'total_loss': '0.073007', 'main_loss': '0.073007', 'time_per_step': '2.24965'}
+2025-11-05 14:39:30,594 - train_greyscale_FA_MoE.py - {'step': '7100', 'lr': '0.0002', 'total_loss': '0.0683036', 'main_loss': '0.0683036', 'time_per_step': '2.15488'}
+2025-11-05 14:43:21,306 - train_greyscale_FA_MoE.py - {'step': '7200', 'lr': '0.0002', 'total_loss': '0.0726004', 'main_loss': '0.0726004', 'time_per_step': '2.15727'}
+2025-11-05 14:47:12,831 - train_greyscale_FA_MoE.py - {'step': '7300', 'lr': '0.0002', 'total_loss': '0.0662441', 'main_loss': '0.0662441', 'time_per_step': '2.23478'}
+2025-11-05 14:51:02,785 - train_greyscale_FA_MoE.py - {'step': '7400', 'lr': '0.0002', 'total_loss': '0.0721779', 'main_loss': '0.0721779', 'time_per_step': '2.24973'}
+2025-11-05 14:54:55,382 - train_greyscale_FA_MoE.py - {'step': '7500', 'lr': '0.0002', 'total_loss': '0.0583514', 'main_loss': '0.0583514', 'time_per_step': '2.24192'}
+2025-11-05 14:58:46,206 - train_greyscale_FA_MoE.py - {'step': '7600', 'lr': '0.0002', 'total_loss': '0.0630055', 'main_loss': '0.0630055', 'time_per_step': '2.23732'}
+2025-11-05 15:02:37,381 - train_greyscale_FA_MoE.py - {'step': '7700', 'lr': '0.0002', 'total_loss': '0.0660675', 'main_loss': '0.0660675', 'time_per_step': '2.22699'}
+2025-11-05 15:06:30,227 - train_greyscale_FA_MoE.py - {'step': '7800', 'lr': '0.0002', 'total_loss': '0.0615114', 'main_loss': '0.0615114', 'time_per_step': '2.25089'}
+2025-11-05 15:10:21,091 - train_greyscale_FA_MoE.py - {'step': '7900', 'lr': '0.0002', 'total_loss': '0.0756102', 'main_loss': '0.0756102', 'time_per_step': '2.22924'}
+2025-11-05 15:14:11,626 - train_greyscale_FA_MoE.py - {'step': '8000', 'lr': '0.0002', 'total_loss': '0.0707822', 'main_loss': '0.0707822', 'time_per_step': '2.2438'}
+2025-11-05 15:18:02,769 - train_greyscale_FA_MoE.py - {'step': '8100', 'lr': '0.0002', 'total_loss': '0.0599195', 'main_loss': '0.0599195', 'time_per_step': '2.24052'}
+2025-11-05 15:21:53,239 - train_greyscale_FA_MoE.py - {'step': '8200', 'lr': '0.0002', 'total_loss': '0.0624664', 'main_loss': '0.0624664', 'time_per_step': '2.24289'}
+2025-11-05 15:25:43,490 - train_greyscale_FA_MoE.py - {'step': '8300', 'lr': '0.0002', 'total_loss': '0.0730432', 'main_loss': '0.0730432', 'time_per_step': '2.15216'}
+2025-11-05 15:29:34,201 - train_greyscale_FA_MoE.py - {'step': '8400', 'lr': '0.0002', 'total_loss': '0.0698056', 'main_loss': '0.0698056', 'time_per_step': '2.15871'}
+2025-11-05 15:33:25,487 - train_greyscale_FA_MoE.py - {'step': '8500', 'lr': '0.0002', 'total_loss': '0.0680441', 'main_loss': '0.0680441', 'time_per_step': '2.23584'}
+2025-11-05 15:37:16,854 - train_greyscale_FA_MoE.py - {'step': '8600', 'lr': '0.0002', 'total_loss': '0.0662257', 'main_loss': '0.0662257', 'time_per_step': '2.23341'}
+2025-11-05 15:41:07,124 - train_greyscale_FA_MoE.py - {'step': '8700', 'lr': '0.0002', 'total_loss': '0.0679596', 'main_loss': '0.0679596', 'time_per_step': '2.26043'}
+2025-11-05 15:44:59,347 - train_greyscale_FA_MoE.py - {'step': '8800', 'lr': '0.0002', 'total_loss': '0.0689365', 'main_loss': '0.0689365', 'time_per_step': '2.2416'}
+2025-11-05 15:48:50,714 - train_greyscale_FA_MoE.py - {'step': '8900', 'lr': '0.0002', 'total_loss': '0.0579572', 'main_loss': '0.0579572', 'time_per_step': '2.23398'}
+2025-11-05 15:52:42,188 - train_greyscale_FA_MoE.py - {'step': '9000', 'lr': '0.0002', 'total_loss': '0.0489997', 'main_loss': '0.0489997', 'time_per_step': '2.24147'}
+2025-11-05 15:56:32,185 - train_greyscale_FA_MoE.py - {'step': '9100', 'lr': '0.0002', 'total_loss': '0.0600791', 'main_loss': '0.0600791', 'time_per_step': '2.2334'}
+2025-11-05 16:00:23,198 - train_greyscale_FA_MoE.py - {'step': '9200', 'lr': '0.0002', 'total_loss': '0.0746781', 'main_loss': '0.0746781', 'time_per_step': '2.23234'}
+2025-11-05 16:04:14,284 - train_greyscale_FA_MoE.py - {'step': '9300', 'lr': '0.0002', 'total_loss': '0.0659923', 'main_loss': '0.0659923', 'time_per_step': '2.23849'}
+2025-11-05 16:08:05,494 - train_greyscale_FA_MoE.py - {'step': '9400', 'lr': '0.0002', 'total_loss': '0.0557232', 'main_loss': '0.0557232', 'time_per_step': '2.25422'}
+2025-11-05 16:11:55,367 - train_greyscale_FA_MoE.py - {'step': '9500', 'lr': '0.0002', 'total_loss': '0.0683651', 'main_loss': '0.0683651', 'time_per_step': '2.17869'}
+2025-11-05 16:15:45,910 - train_greyscale_FA_MoE.py - {'step': '9600', 'lr': '0.0002', 'total_loss': '0.0636822', 'main_loss': '0.0636822', 'time_per_step': '2.16596'}
+2025-11-05 16:19:37,513 - train_greyscale_FA_MoE.py - {'step': '9700', 'lr': '0.0002', 'total_loss': '0.0711588', 'main_loss': '0.0711588', 'time_per_step': '2.25176'}
+2025-11-05 16:23:28,927 - train_greyscale_FA_MoE.py - {'step': '9800', 'lr': '0.0002', 'total_loss': '0.0531927', 'main_loss': '0.0531927', 'time_per_step': '2.24551'}
+2025-11-05 16:27:18,926 - train_greyscale_FA_MoE.py - {'step': '9900', 'lr': '0.0002', 'total_loss': '0.0590676', 'main_loss': '0.0590676', 'time_per_step': '2.29005'}
+2025-11-05 16:31:09,403 - train_greyscale_FA_MoE.py - {'step': '10000', 'lr': '0.0002', 'total_loss': '0.0502126', 'main_loss': '0.0502126', 'time_per_step': '2.26579'}
+2025-11-05 16:35:00,131 - train_greyscale_FA_MoE.py - {'step': '10100', 'lr': '0.0002', 'total_loss': '0.0666364', 'main_loss': '0.0666364', 'time_per_step': '2.2426'}
+2025-11-05 16:38:50,712 - train_greyscale_FA_MoE.py - {'step': '10200', 'lr': '0.0002', 'total_loss': '0.0647874', 'main_loss': '0.0647874', 'time_per_step': '2.23263'}
+2025-11-05 16:42:41,782 - train_greyscale_FA_MoE.py - {'step': '10300', 'lr': '0.0002', 'total_loss': '0.0515304', 'main_loss': '0.0515304', 'time_per_step': '2.25625'}
+2025-11-05 16:46:32,782 - train_greyscale_FA_MoE.py - {'step': '10400', 'lr': '0.0002', 'total_loss': '0.0650273', 'main_loss': '0.0650273', 'time_per_step': '2.23739'}
+2025-11-05 16:50:23,491 - train_greyscale_FA_MoE.py - {'step': '10500', 'lr': '0.0002', 'total_loss': '0.0545065', 'main_loss': '0.0545065', 'time_per_step': '2.25238'}
+2025-11-05 16:54:13,889 - train_greyscale_FA_MoE.py - {'step': '10600', 'lr': '0.0002', 'total_loss': '0.0605471', 'main_loss': '0.0605471', 'time_per_step': '2.26659'}
+2025-11-05 16:58:04,101 - train_greyscale_FA_MoE.py - {'step': '10700', 'lr': '0.0002', 'total_loss': '0.0620147', 'main_loss': '0.0620147', 'time_per_step': '2.14769'}
+2025-11-05 17:01:54,564 - train_greyscale_FA_MoE.py - {'step': '10800', 'lr': '0.0002', 'total_loss': '0.0637961', 'main_loss': '0.0637961', 'time_per_step': '2.15352'}
+2025-11-05 17:05:46,726 - train_greyscale_FA_MoE.py - {'step': '10900', 'lr': '0.0002', 'total_loss': '0.0626783', 'main_loss': '0.0626783', 'time_per_step': '2.24748'}
+2025-11-05 17:09:37,242 - train_greyscale_FA_MoE.py - {'step': '11000', 'lr': '0.0002', 'total_loss': '0.0733753', 'main_loss': '0.0733753', 'time_per_step': '2.24534'}
+2025-11-05 17:13:28,600 - train_greyscale_FA_MoE.py - {'step': '11100', 'lr': '0.0002', 'total_loss': '0.0539702', 'main_loss': '0.0539702', 'time_per_step': '2.23733'}
+2025-11-05 17:17:18,545 - train_greyscale_FA_MoE.py - {'step': '11200', 'lr': '0.0002', 'total_loss': '0.0592409', 'main_loss': '0.0592409', 'time_per_step': '2.30685'}
+2025-11-05 17:21:09,562 - train_greyscale_FA_MoE.py - {'step': '11300', 'lr': '0.0002', 'total_loss': '0.0552734', 'main_loss': '0.0552734', 'time_per_step': '2.23664'}
+2025-11-05 17:25:00,668 - train_greyscale_FA_MoE.py - {'step': '11400', 'lr': '0.0002', 'total_loss': '0.0631856', 'main_loss': '0.0631856', 'time_per_step': '2.23168'}
+2025-11-05 17:28:53,583 - train_greyscale_FA_MoE.py - {'step': '11500', 'lr': '0.0002', 'total_loss': '0.0677415', 'main_loss': '0.0677415', 'time_per_step': '2.2418'}
+2025-11-05 17:32:44,192 - train_greyscale_FA_MoE.py - {'step': '11600', 'lr': '0.0002', 'total_loss': '0.0610481', 'main_loss': '0.0610481', 'time_per_step': '2.25682'}
+2025-11-05 17:36:34,986 - train_greyscale_FA_MoE.py - {'step': '11700', 'lr': '0.0002', 'total_loss': '0.0577191', 'main_loss': '0.0577191', 'time_per_step': '2.24559'}
+2025-11-05 17:40:27,695 - train_greyscale_FA_MoE.py - {'step': '11800', 'lr': '0.0002', 'total_loss': '0.0612968', 'main_loss': '0.0612968', 'time_per_step': '2.23867'}
+2025-11-05 17:44:19,459 - train_greyscale_FA_MoE.py - {'step': '11900', 'lr': '0.0002', 'total_loss': '0.0570431', 'main_loss': '0.0570431', 'time_per_step': '2.19923'}
+2025-11-05 17:48:09,195 - train_greyscale_FA_MoE.py - {'step': '12000', 'lr': '0.0002', 'total_loss': '0.0613591', 'main_loss': '0.0613591', 'time_per_step': '2.43904'}
+2025-11-05 17:52:00,475 - train_greyscale_FA_MoE.py - {'step': '12100', 'lr': '0.0002', 'total_loss': '0.0466618', 'main_loss': '0.0466618', 'time_per_step': '2.23485'}
+2025-11-05 17:55:51,109 - train_greyscale_FA_MoE.py - {'step': '12200', 'lr': '0.0002', 'total_loss': '0.0618879', 'main_loss': '0.0618879', 'time_per_step': '2.23878'}
+2025-11-05 17:59:42,382 - train_greyscale_FA_MoE.py - {'step': '12300', 'lr': '0.0002', 'total_loss': '0.0555454', 'main_loss': '0.0555454', 'time_per_step': '2.24241'}
+2025-11-05 18:03:32,333 - train_greyscale_FA_MoE.py - {'step': '12400', 'lr': '0.0002', 'total_loss': '0.0540981', 'main_loss': '0.0540981', 'time_per_step': '2.26571'}
+2025-11-05 18:07:23,550 - train_greyscale_FA_MoE.py - {'step': '12500', 'lr': '0.0002', 'total_loss': '0.0641299', 'main_loss': '0.0641299', 'time_per_step': '2.24141'}
+2025-11-05 18:11:14,333 - train_greyscale_FA_MoE.py - {'step': '12600', 'lr': '0.0002', 'total_loss': '0.0620973', 'main_loss': '0.0620973', 'time_per_step': '2.24975'}
+2025-11-05 18:15:05,957 - train_greyscale_FA_MoE.py - {'step': '12700', 'lr': '0.0002', 'total_loss': '0.050855', 'main_loss': '0.050855', 'time_per_step': '2.23911'}
+2025-11-05 18:18:56,106 - train_greyscale_FA_MoE.py - {'step': '12800', 'lr': '0.0002', 'total_loss': '0.0517841', 'main_loss': '0.0517841', 'time_per_step': '2.26312'}
+2025-11-05 18:22:46,447 - train_greyscale_FA_MoE.py - {'step': '12900', 'lr': '0.0002', 'total_loss': '0.0523169', 'main_loss': '0.0523169', 'time_per_step': '2.23665'}
+2025-11-05 18:26:37,000 - train_greyscale_FA_MoE.py - {'step': '13000', 'lr': '0.0002', 'total_loss': '0.0563786', 'main_loss': '0.0563786', 'time_per_step': '2.23766'}
+2025-11-05 18:30:28,337 - train_greyscale_FA_MoE.py - {'step': '13100', 'lr': '0.0002', 'total_loss': '0.0533065', 'main_loss': '0.0533065', 'time_per_step': '2.15148'}
+2025-11-05 18:34:18,245 - train_greyscale_FA_MoE.py - {'step': '13200', 'lr': '0.0002', 'total_loss': '0.0549731', 'main_loss': '0.0549731', 'time_per_step': '2.2174'}
+2025-11-05 18:38:09,850 - train_greyscale_FA_MoE.py - {'step': '13300', 'lr': '0.0002', 'total_loss': '0.0475548', 'main_loss': '0.0475548', 'time_per_step': '2.23718'}
+2025-11-05 18:42:02,568 - train_greyscale_FA_MoE.py - {'step': '13400', 'lr': '0.0002', 'total_loss': '0.0445384', 'main_loss': '0.0445384', 'time_per_step': '2.23705'}
+2025-11-05 18:45:53,784 - train_greyscale_FA_MoE.py - {'step': '13500', 'lr': '0.0002', 'total_loss': '0.0582013', 'main_loss': '0.0582013', 'time_per_step': '2.23011'}
+2025-11-05 18:49:45,444 - train_greyscale_FA_MoE.py - {'step': '13600', 'lr': '0.0002', 'total_loss': '0.0461883', 'main_loss': '0.0461883', 'time_per_step': '2.24351'}
+2025-11-05 18:53:36,227 - train_greyscale_FA_MoE.py - {'step': '13700', 'lr': '0.0002', 'total_loss': '0.0575082', 'main_loss': '0.0575082', 'time_per_step': '2.23814'}
+2025-11-05 18:57:27,072 - train_greyscale_FA_MoE.py - {'step': '13800', 'lr': '0.0002', 'total_loss': '0.0507379', 'main_loss': '0.0507379', 'time_per_step': '2.28505'}
+2025-11-05 19:01:18,702 - train_greyscale_FA_MoE.py - {'step': '13900', 'lr': '0.0002', 'total_loss': '0.0488522', 'main_loss': '0.0488522', 'time_per_step': '2.2937'}
+2025-11-05 19:05:09,397 - train_greyscale_FA_MoE.py - {'step': '14000', 'lr': '0.0002', 'total_loss': '0.0535358', 'main_loss': '0.0535358', 'time_per_step': '2.31467'}
+2025-11-05 19:08:59,808 - train_greyscale_FA_MoE.py - {'step': '14100', 'lr': '0.0002', 'total_loss': '0.0546101', 'main_loss': '0.0546101', 'time_per_step': '2.23484'}
+2025-11-05 19:12:51,118 - train_greyscale_FA_MoE.py - {'step': '14200', 'lr': '0.0002', 'total_loss': '0.0435701', 'main_loss': '0.0435701', 'time_per_step': '2.24502'}
+2025-11-05 19:16:42,672 - train_greyscale_FA_MoE.py - {'step': '14300', 'lr': '0.0002', 'total_loss': '0.051204', 'main_loss': '0.051204', 'time_per_step': '2.15069'}
+2025-11-05 19:20:33,935 - train_greyscale_FA_MoE.py - {'step': '14400', 'lr': '0.0002', 'total_loss': '0.0662946', 'main_loss': '0.0662946', 'time_per_step': '2.15005'}
+2025-11-05 19:24:25,353 - train_greyscale_FA_MoE.py - {'step': '14500', 'lr': '0.0002', 'total_loss': '0.0596739', 'main_loss': '0.0596739', 'time_per_step': '2.24227'}
+2025-11-05 19:28:16,606 - train_greyscale_FA_MoE.py - {'step': '14600', 'lr': '0.0002', 'total_loss': '0.0519124', 'main_loss': '0.0519124', 'time_per_step': '2.23608'}
+2025-11-05 19:32:08,299 - train_greyscale_FA_MoE.py - {'step': '14700', 'lr': '0.0002', 'total_loss': '0.0595478', 'main_loss': '0.0595478', 'time_per_step': '2.27423'}
+2025-11-05 19:35:59,589 - train_greyscale_FA_MoE.py - {'step': '14800', 'lr': '0.0002', 'total_loss': '0.0489806', 'main_loss': '0.0489806', 'time_per_step': '2.23834'}
+2025-11-05 19:39:50,749 - train_greyscale_FA_MoE.py - {'step': '14900', 'lr': '0.0002', 'total_loss': '0.045543', 'main_loss': '0.045543', 'time_per_step': '2.23256'}
+2025-11-05 19:43:41,777 - train_greyscale_FA_MoE.py - {'step': '15000', 'lr': '0.0002', 'total_loss': '0.0482516', 'main_loss': '0.0482516', 'time_per_step': '2.23836'}
+2025-11-05 19:47:32,604 - train_greyscale_FA_MoE.py - {'step': '15100', 'lr': '0.0002', 'total_loss': '0.0491172', 'main_loss': '0.0491172', 'time_per_step': '2.23976'}
+2025-11-05 19:51:24,089 - train_greyscale_FA_MoE.py - {'step': '15200', 'lr': '0.0002', 'total_loss': '0.0528882', 'main_loss': '0.0528882', 'time_per_step': '2.24268'}
+2025-11-05 19:55:14,335 - train_greyscale_FA_MoE.py - {'step': '15300', 'lr': '0.0002', 'total_loss': '0.0492281', 'main_loss': '0.0492281', 'time_per_step': '2.26262'}
+2025-11-05 19:59:05,729 - train_greyscale_FA_MoE.py - {'step': '15400', 'lr': '0.0002', 'total_loss': '0.0425191', 'main_loss': '0.0425191', 'time_per_step': '2.27953'}
+2025-11-05 20:02:55,858 - train_greyscale_FA_MoE.py - {'step': '15500', 'lr': '0.0002', 'total_loss': '0.048483', 'main_loss': '0.048483', 'time_per_step': '2.1524'}
+2025-11-05 20:06:46,029 - train_greyscale_FA_MoE.py - {'step': '15600', 'lr': '0.0002', 'total_loss': '0.0550676', 'main_loss': '0.0550676', 'time_per_step': '2.14736'}
+2025-11-05 20:10:37,019 - train_greyscale_FA_MoE.py - {'step': '15700', 'lr': '0.0002', 'total_loss': '0.0442652', 'main_loss': '0.0442652', 'time_per_step': '2.23859'}
+2025-11-05 20:14:28,623 - train_greyscale_FA_MoE.py - {'step': '15800', 'lr': '0.0002', 'total_loss': '0.0517898', 'main_loss': '0.0517898', 'time_per_step': '2.23512'}
+2025-11-05 20:18:20,425 - train_greyscale_FA_MoE.py - {'step': '15900', 'lr': '0.0002', 'total_loss': '0.0459504', 'main_loss': '0.0459504', 'time_per_step': '2.2387'}
+2025-11-05 20:22:11,502 - train_greyscale_FA_MoE.py - {'step': '16000', 'lr': '0.0002', 'total_loss': '0.0505374', 'main_loss': '0.0505374', 'time_per_step': '2.25513'}
+2025-11-05 20:26:02,878 - train_greyscale_FA_MoE.py - {'step': '16100', 'lr': '0.0002', 'total_loss': '0.0519531', 'main_loss': '0.0519531', 'time_per_step': '2.23355'}
+2025-11-05 20:29:52,995 - train_greyscale_FA_MoE.py - {'step': '16200', 'lr': '0.0002', 'total_loss': '0.0504022', 'main_loss': '0.0504022', 'time_per_step': '2.2373'}
+2025-11-05 20:33:44,148 - train_greyscale_FA_MoE.py - {'step': '16300', 'lr': '0.0002', 'total_loss': '0.0474892', 'main_loss': '0.0474892', 'time_per_step': '2.24986'}
+2025-11-05 20:37:34,975 - train_greyscale_FA_MoE.py - {'step': '16400', 'lr': '0.0002', 'total_loss': '0.0500173', 'main_loss': '0.0500173', 'time_per_step': '2.24471'}
+2025-11-05 20:41:26,966 - train_greyscale_FA_MoE.py - {'step': '16500', 'lr': '0.0002', 'total_loss': '0.0420081', 'main_loss': '0.0420081', 'time_per_step': '2.25406'}
+2025-11-05 20:45:16,900 - train_greyscale_FA_MoE.py - {'step': '16600', 'lr': '0.0002', 'total_loss': '0.0421029', 'main_loss': '0.0421029', 'time_per_step': '2.2371'}
+2025-11-05 20:49:07,537 - train_greyscale_FA_MoE.py - {'step': '16700', 'lr': '0.0002', 'total_loss': '0.0423919', 'main_loss': '0.0423919', 'time_per_step': '2.15352'}
+2025-11-05 20:52:57,571 - train_greyscale_FA_MoE.py - {'step': '16800', 'lr': '0.0002', 'total_loss': '0.0518143', 'main_loss': '0.0518143', 'time_per_step': '2.1585'}
+2025-11-05 20:56:50,161 - train_greyscale_FA_MoE.py - {'step': '16900', 'lr': '0.0002', 'total_loss': '0.0466459', 'main_loss': '0.0466459', 'time_per_step': '2.31662'}
+2025-11-05 21:00:40,501 - train_greyscale_FA_MoE.py - {'step': '17000', 'lr': '0.0002', 'total_loss': '0.0421492', 'main_loss': '0.0421492', 'time_per_step': '2.23331'}
+2025-11-05 21:04:31,227 - train_greyscale_FA_MoE.py - {'step': '17100', 'lr': '0.0002', 'total_loss': '0.0450291', 'main_loss': '0.0450291', 'time_per_step': '2.24226'}
+2025-11-05 21:08:21,640 - train_greyscale_FA_MoE.py - {'step': '17200', 'lr': '0.0002', 'total_loss': '0.0474226', 'main_loss': '0.0474226', 'time_per_step': '2.23719'}
+2025-11-05 21:12:12,971 - train_greyscale_FA_MoE.py - {'step': '17300', 'lr': '0.0002', 'total_loss': '0.0479157', 'main_loss': '0.0479157', 'time_per_step': '2.2426'}
+2025-11-05 21:16:03,077 - train_greyscale_FA_MoE.py - {'step': '17400', 'lr': '0.0002', 'total_loss': '0.0429724', 'main_loss': '0.0429724', 'time_per_step': '2.23699'}
+2025-11-05 21:19:55,064 - train_greyscale_FA_MoE.py - {'step': '17500', 'lr': '0.0002', 'total_loss': '0.0477336', 'main_loss': '0.0477336', 'time_per_step': '2.24316'}
+2025-11-05 21:23:46,637 - train_greyscale_FA_MoE.py - {'step': '17600', 'lr': '0.0002', 'total_loss': '0.0397688', 'main_loss': '0.0397688', 'time_per_step': '2.23859'}
+2025-11-05 21:27:38,803 - train_greyscale_FA_MoE.py - {'step': '17700', 'lr': '0.0002', 'total_loss': '0.0460758', 'main_loss': '0.0460758', 'time_per_step': '2.24162'}
+2025-11-05 21:31:29,819 - train_greyscale_FA_MoE.py - {'step': '17800', 'lr': '0.0002', 'total_loss': '0.0449632', 'main_loss': '0.0449632', 'time_per_step': '2.23311'}
+2025-11-05 21:35:20,896 - train_greyscale_FA_MoE.py - {'step': '17900', 'lr': '0.0002', 'total_loss': '0.0492263', 'main_loss': '0.0492263', 'time_per_step': '2.14927'}
+2025-11-05 21:39:11,771 - train_greyscale_FA_MoE.py - {'step': '18000', 'lr': '0.0002', 'total_loss': '0.047322', 'main_loss': '0.047322', 'time_per_step': '2.15702'}
+2025-11-05 21:43:03,089 - train_greyscale_FA_MoE.py - {'step': '18100', 'lr': '0.0002', 'total_loss': '0.0433901', 'main_loss': '0.0433901', 'time_per_step': '2.24438'}
+2025-11-05 21:46:53,539 - train_greyscale_FA_MoE.py - {'step': '18200', 'lr': '0.0002', 'total_loss': '0.052063', 'main_loss': '0.052063', 'time_per_step': '2.2402'}
+2025-11-05 21:50:45,127 - train_greyscale_FA_MoE.py - {'step': '18300', 'lr': '0.0002', 'total_loss': '0.0506296', 'main_loss': '0.0506296', 'time_per_step': '2.23782'}
+2025-11-05 21:54:35,643 - train_greyscale_FA_MoE.py - {'step': '18400', 'lr': '0.0002', 'total_loss': '0.0480358', 'main_loss': '0.0480358', 'time_per_step': '2.23424'}
+2025-11-05 21:58:25,952 - train_greyscale_FA_MoE.py - {'step': '18500', 'lr': '0.0002', 'total_loss': '0.0545991', 'main_loss': '0.0545991', 'time_per_step': '2.23626'}
+2025-11-05 22:02:17,278 - train_greyscale_FA_MoE.py - {'step': '18600', 'lr': '0.0002', 'total_loss': '0.0512916', 'main_loss': '0.0512916', 'time_per_step': '2.23409'}
+2025-11-05 22:06:07,151 - train_greyscale_FA_MoE.py - {'step': '18700', 'lr': '0.0002', 'total_loss': '0.0518486', 'main_loss': '0.0518486', 'time_per_step': '2.2399'}
+2025-11-05 22:09:58,812 - train_greyscale_FA_MoE.py - {'step': '18800', 'lr': '0.0002', 'total_loss': '0.0449235', 'main_loss': '0.0449235', 'time_per_step': '2.23702'}
+2025-11-05 22:13:49,345 - train_greyscale_FA_MoE.py - {'step': '18900', 'lr': '0.0002', 'total_loss': '0.0491472', 'main_loss': '0.0491472', 'time_per_step': '2.29041'}
+2025-11-05 22:17:39,705 - train_greyscale_FA_MoE.py - {'step': '19000', 'lr': '0.0002', 'total_loss': '0.0432536', 'main_loss': '0.0432536', 'time_per_step': '2.24083'}
+2025-11-05 22:21:29,946 - train_greyscale_FA_MoE.py - {'step': '19100', 'lr': '0.0002', 'total_loss': '0.0420623', 'main_loss': '0.0420623', 'time_per_step': '2.16207'}
+2025-11-05 22:25:20,784 - train_greyscale_FA_MoE.py - {'step': '19200', 'lr': '0.0002', 'total_loss': '0.0500858', 'main_loss': '0.0500858', 'time_per_step': '2.1483'}
+2025-11-05 22:29:12,499 - train_greyscale_FA_MoE.py - {'step': '19300', 'lr': '0.0002', 'total_loss': '0.0482474', 'main_loss': '0.0482474', 'time_per_step': '2.23824'}
+2025-11-05 22:33:03,363 - train_greyscale_FA_MoE.py - {'step': '19400', 'lr': '0.0002', 'total_loss': '0.0489695', 'main_loss': '0.0489695', 'time_per_step': '2.23851'}
+2025-11-05 22:36:53,467 - train_greyscale_FA_MoE.py - {'step': '19500', 'lr': '0.0002', 'total_loss': '0.0366416', 'main_loss': '0.0366416', 'time_per_step': '2.21717'}
+2025-11-05 22:40:46,137 - train_greyscale_FA_MoE.py - {'step': '19600', 'lr': '0.0002', 'total_loss': '0.0366715', 'main_loss': '0.0366715', 'time_per_step': '2.23941'}
+2025-11-05 22:44:37,282 - train_greyscale_FA_MoE.py - {'step': '19700', 'lr': '0.0002', 'total_loss': '0.0381758', 'main_loss': '0.0381758', 'time_per_step': '2.24223'}
+2025-11-05 22:48:28,994 - train_greyscale_FA_MoE.py - {'step': '19800', 'lr': '0.0002', 'total_loss': '0.0465198', 'main_loss': '0.0465198', 'time_per_step': '2.23542'}
+2025-11-05 22:52:18,872 - train_greyscale_FA_MoE.py - {'step': '19900', 'lr': '0.0002', 'total_loss': '0.0434125', 'main_loss': '0.0434125', 'time_per_step': '2.29172'}
+2025-11-05 22:56:09,335 - train_greyscale_FA_MoE.py - {'step': '20000', 'lr': '0.0002', 'total_loss': '0.0444752', 'main_loss': '0.0444752', 'time_per_step': '2.27458'}
+2025-11-05 23:00:00,268 - train_greyscale_FA_MoE.py - {'step': '20100', 'lr': '0.0002', 'total_loss': '0.0542935', 'main_loss': '0.0542935', 'time_per_step': '2.24017'}
+2025-11-05 23:03:52,140 - train_greyscale_FA_MoE.py - {'step': '20200', 'lr': '0.0002', 'total_loss': '0.0478529', 'main_loss': '0.0478529', 'time_per_step': '2.23736'}
+2025-11-05 23:07:42,219 - train_greyscale_FA_MoE.py - {'step': '20300', 'lr': '0.0002', 'total_loss': '0.0460412', 'main_loss': '0.0460412', 'time_per_step': '2.14766'}
+2025-11-05 23:11:33,913 - train_greyscale_FA_MoE.py - {'step': '20400', 'lr': '0.0002', 'total_loss': '0.0523076', 'main_loss': '0.0523076', 'time_per_step': '2.148'}
+2025-11-05 23:15:26,009 - train_greyscale_FA_MoE.py - {'step': '20500', 'lr': '0.0002', 'total_loss': '0.0443279', 'main_loss': '0.0443279', 'time_per_step': '2.2472'}
+2025-11-05 23:19:16,875 - train_greyscale_FA_MoE.py - {'step': '20600', 'lr': '0.0002', 'total_loss': '0.0433765', 'main_loss': '0.0433765', 'time_per_step': '2.23688'}
+2025-11-05 23:23:07,159 - train_greyscale_FA_MoE.py - {'step': '20700', 'lr': '0.0002', 'total_loss': '0.0453862', 'main_loss': '0.0453862', 'time_per_step': '2.24056'}
+2025-11-05 23:26:58,686 - train_greyscale_FA_MoE.py - {'step': '20800', 'lr': '0.0002', 'total_loss': '0.0479561', 'main_loss': '0.0479561', 'time_per_step': '2.25161'}
+2025-11-05 23:30:50,428 - train_greyscale_FA_MoE.py - {'step': '20900', 'lr': '0.0002', 'total_loss': '0.0414572', 'main_loss': '0.0414572', 'time_per_step': '2.23534'}
+2025-11-05 23:34:41,500 - train_greyscale_FA_MoE.py - {'step': '21000', 'lr': '0.0002', 'total_loss': '0.0442854', 'main_loss': '0.0442854', 'time_per_step': '2.2434'}
+2025-11-05 23:38:33,620 - train_greyscale_FA_MoE.py - {'step': '21100', 'lr': '0.0002', 'total_loss': '0.0410585', 'main_loss': '0.0410585', 'time_per_step': '2.23925'}
+2025-11-05 23:42:24,205 - train_greyscale_FA_MoE.py - {'step': '21200', 'lr': '0.0002', 'total_loss': '0.043489', 'main_loss': '0.043489', 'time_per_step': '2.23787'}
+2025-11-05 23:46:14,243 - train_greyscale_FA_MoE.py - {'step': '21300', 'lr': '0.0002', 'total_loss': '0.0444339', 'main_loss': '0.0444339', 'time_per_step': '2.24779'}
+2025-11-05 23:50:04,788 - train_greyscale_FA_MoE.py - {'step': '21400', 'lr': '0.0002', 'total_loss': '0.0491312', 'main_loss': '0.0491312', 'time_per_step': '2.23574'}
+2025-11-05 23:53:56,337 - train_greyscale_FA_MoE.py - {'step': '21500', 'lr': '0.0002', 'total_loss': '0.0470474', 'main_loss': '0.0470474', 'time_per_step': '2.17575'}
+2025-11-05 23:57:46,016 - train_greyscale_FA_MoE.py - {'step': '21600', 'lr': '0.0002', 'total_loss': '0.0502317', 'main_loss': '0.0502317', 'time_per_step': '2.14794'}
+2025-11-06 00:01:38,225 - train_greyscale_FA_MoE.py - {'step': '21700', 'lr': '0.0002', 'total_loss': '0.046327', 'main_loss': '0.046327', 'time_per_step': '2.23462'}
+2025-11-06 00:05:28,434 - train_greyscale_FA_MoE.py - {'step': '21800', 'lr': '0.0002', 'total_loss': '0.0430986', 'main_loss': '0.0430986', 'time_per_step': '2.24521'}
+2025-11-06 00:09:18,951 - train_greyscale_FA_MoE.py - {'step': '21900', 'lr': '0.0002', 'total_loss': '0.0406985', 'main_loss': '0.0406985', 'time_per_step': '2.30361'}
+2025-11-06 00:13:09,370 - train_greyscale_FA_MoE.py - {'step': '22000', 'lr': '0.0002', 'total_loss': '0.0476731', 'main_loss': '0.0476731', 'time_per_step': '2.3458'}
+2025-11-06 00:17:00,063 - train_greyscale_FA_MoE.py - {'step': '22100', 'lr': '0.0002', 'total_loss': '0.0462723', 'main_loss': '0.0462723', 'time_per_step': '2.24608'}
+2025-11-06 00:20:51,257 - train_greyscale_FA_MoE.py - {'step': '22200', 'lr': '0.0002', 'total_loss': '0.0474877', 'main_loss': '0.0474877', 'time_per_step': '2.23467'}
+2025-11-06 00:24:42,142 - train_greyscale_FA_MoE.py - {'step': '22300', 'lr': '0.0002', 'total_loss': '0.0508918', 'main_loss': '0.0508918', 'time_per_step': '2.21829'}
+2025-11-06 00:28:32,355 - train_greyscale_FA_MoE.py - {'step': '22400', 'lr': '0.0002', 'total_loss': '0.0432099', 'main_loss': '0.0432099', 'time_per_step': '2.2408'}
+2025-11-06 00:32:23,532 - train_greyscale_FA_MoE.py - {'step': '22500', 'lr': '0.0002', 'total_loss': '0.0488007', 'main_loss': '0.0488007', 'time_per_step': '2.23611'}
+2025-11-06 00:36:14,716 - train_greyscale_FA_MoE.py - {'step': '22600', 'lr': '0.0002', 'total_loss': '0.0460359', 'main_loss': '0.0460359', 'time_per_step': '2.23265'}
+2025-11-06 00:40:06,605 - train_greyscale_FA_MoE.py - {'step': '22700', 'lr': '0.0002', 'total_loss': '0.0522217', 'main_loss': '0.0522217', 'time_per_step': '2.15322'}
+2025-11-06 00:43:56,956 - train_greyscale_FA_MoE.py - {'step': '22800', 'lr': '0.0002', 'total_loss': '0.0410617', 'main_loss': '0.0410617', 'time_per_step': '2.18465'}
+2025-11-06 00:47:48,277 - train_greyscale_FA_MoE.py - {'step': '22900', 'lr': '0.0002', 'total_loss': '0.0360093', 'main_loss': '0.0360093', 'time_per_step': '2.29336'}
+2025-11-06 00:51:39,223 - train_greyscale_FA_MoE.py - {'step': '23000', 'lr': '0.0002', 'total_loss': '0.0435137', 'main_loss': '0.0435137', 'time_per_step': '2.233'}
+2025-11-06 00:55:31,074 - train_greyscale_FA_MoE.py - {'step': '23100', 'lr': '0.0002', 'total_loss': '0.0393897', 'main_loss': '0.0393897', 'time_per_step': '2.23793'}
+2025-11-06 00:59:20,905 - train_greyscale_FA_MoE.py - {'step': '23200', 'lr': '0.0002', 'total_loss': '0.047201', 'main_loss': '0.047201', 'time_per_step': '2.23145'}
+2025-11-06 01:03:11,979 - train_greyscale_FA_MoE.py - {'step': '23300', 'lr': '0.0002', 'total_loss': '0.0482395', 'main_loss': '0.0482395', 'time_per_step': '2.23746'}
+2025-11-06 01:07:02,280 - train_greyscale_FA_MoE.py - {'step': '23400', 'lr': '0.0002', 'total_loss': '0.0467885', 'main_loss': '0.0467885', 'time_per_step': '2.2338'}
+2025-11-06 01:10:54,224 - train_greyscale_FA_MoE.py - {'step': '23500', 'lr': '0.0002', 'total_loss': '0.0578535', 'main_loss': '0.0578535', 'time_per_step': '2.23534'}
+2025-11-06 01:14:44,067 - train_greyscale_FA_MoE.py - {'step': '23600', 'lr': '0.0002', 'total_loss': '0.0362505', 'main_loss': '0.0362505', 'time_per_step': '2.2445'}
+2025-11-06 01:18:34,882 - train_greyscale_FA_MoE.py - {'step': '23700', 'lr': '0.0002', 'total_loss': '0.0404951', 'main_loss': '0.0404951', 'time_per_step': '2.23382'}
+2025-11-06 01:22:25,555 - train_greyscale_FA_MoE.py - {'step': '23800', 'lr': '0.0002', 'total_loss': '0.0421126', 'main_loss': '0.0421126', 'time_per_step': '2.24096'}
+2025-11-06 01:26:16,023 - train_greyscale_FA_MoE.py - {'step': '23900', 'lr': '0.0002', 'total_loss': '0.0376584', 'main_loss': '0.0376584', 'time_per_step': '2.14979'}
+2025-11-06 01:30:07,366 - train_greyscale_FA_MoE.py - {'step': '24000', 'lr': '0.0002', 'total_loss': '0.042684', 'main_loss': '0.042684', 'time_per_step': '2.1583'}
+2025-11-06 01:33:57,779 - train_greyscale_FA_MoE.py - {'step': '24100', 'lr': '0.0002', 'total_loss': '0.0516195', 'main_loss': '0.0516195', 'time_per_step': '2.23172'}
+2025-11-06 01:37:48,889 - train_greyscale_FA_MoE.py - {'step': '24200', 'lr': '0.0002', 'total_loss': '0.0475125', 'main_loss': '0.0475125', 'time_per_step': '2.31318'}
+2025-11-06 01:41:41,297 - train_greyscale_FA_MoE.py - {'step': '24300', 'lr': '0.0002', 'total_loss': '0.0379778', 'main_loss': '0.0379778', 'time_per_step': '2.25281'}
+2025-11-06 01:45:33,220 - train_greyscale_FA_MoE.py - {'step': '24400', 'lr': '0.0002', 'total_loss': '0.0450274', 'main_loss': '0.0450274', 'time_per_step': '2.23871'}
+2025-11-06 01:49:23,305 - train_greyscale_FA_MoE.py - {'step': '24500', 'lr': '0.0002', 'total_loss': '0.04387', 'main_loss': '0.04387', 'time_per_step': '2.24055'}
+2025-11-06 01:53:14,354 - train_greyscale_FA_MoE.py - {'step': '24600', 'lr': '0.0002', 'total_loss': '0.0409669', 'main_loss': '0.0409669', 'time_per_step': '2.25734'}
+2025-11-06 01:57:05,481 - train_greyscale_FA_MoE.py - {'step': '24700', 'lr': '0.0002', 'total_loss': '0.0399073', 'main_loss': '0.0399073', 'time_per_step': '2.23929'}
+2025-11-06 02:00:56,485 - train_greyscale_FA_MoE.py - {'step': '24800', 'lr': '0.0002', 'total_loss': '0.0483046', 'main_loss': '0.0483046', 'time_per_step': '2.29763'}
+2025-11-06 02:04:46,080 - train_greyscale_FA_MoE.py - {'step': '24900', 'lr': '0.0002', 'total_loss': '0.0387866', 'main_loss': '0.0387866', 'time_per_step': '2.238'}
+2025-11-06 02:08:36,926 - train_greyscale_FA_MoE.py - {'step': '25000', 'lr': '0.0002', 'total_loss': '0.0323502', 'main_loss': '0.0323502', 'time_per_step': '2.24147'}
+2025-11-06 02:08:36,993 - train_greyscale_FA_MoE.py - Saved expert distribution of layer in_block_0 to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/expert_distribution_in_block_0_step25000.npy
+2025-11-06 02:08:38,921 - train_greyscale_FA_MoE.py - Saved expert distribution of layer out_block_7 to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/expert_distribution_out_block_7_step25000.npy
+2025-11-06 02:08:40,362 - train_greyscale_FA_MoE.py - Save a grid of 16 samples into output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/25000.png by DPM-Solver
+2025-11-06 02:08:46,307 - train_greyscale_FA_MoE.py - Finished saving sample grid to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/25000.png by DPM-Solver.
+2025-11-06 02:08:46,669 - train_greyscale_FA_MoE.py - Save and eval checkpoint 25000...
+2025-11-06 02:08:49,122 - train_greyscale_FA_MoE.py - eval_step: n_samples=50000, sample_steps=50, algorithm=dpm_solver, mini_batch_size=500, samples save into output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_25000_dpm
+2025-11-06 03:00:21,810 - train_greyscale_FA_MoE.py - step=25000 fid50000=526.9809776747031
+2025-11-06 03:05:47,787 - train_greyscale_FA_MoE.py - {'step': '25100', 'lr': '0.0002', 'total_loss': '0.0359527', 'main_loss': '0.0359527', 'time_per_step': '2.15092'}
+2025-11-06 03:09:39,101 - train_greyscale_FA_MoE.py - {'step': '25200', 'lr': '0.0002', 'total_loss': '0.0370998', 'main_loss': '0.0370998', 'time_per_step': '2.15183'}
+2025-11-06 03:13:31,295 - train_greyscale_FA_MoE.py - {'step': '25300', 'lr': '0.0002', 'total_loss': '0.0400168', 'main_loss': '0.0400168', 'time_per_step': '2.24332'}
+2025-11-06 03:17:23,531 - train_greyscale_FA_MoE.py - {'step': '25400', 'lr': '0.0002', 'total_loss': '0.0400518', 'main_loss': '0.0400518', 'time_per_step': '2.30649'}
+2025-11-06 03:21:14,643 - train_greyscale_FA_MoE.py - {'step': '25500', 'lr': '0.0002', 'total_loss': '0.0434271', 'main_loss': '0.0434271', 'time_per_step': '2.24964'}
+2025-11-06 03:25:06,735 - train_greyscale_FA_MoE.py - {'step': '25600', 'lr': '0.0002', 'total_loss': '0.0420424', 'main_loss': '0.0420424', 'time_per_step': '2.27126'}
+2025-11-06 03:28:58,603 - train_greyscale_FA_MoE.py - {'step': '25700', 'lr': '0.0002', 'total_loss': '0.0460413', 'main_loss': '0.0460413', 'time_per_step': '2.20252'}
+2025-11-06 03:32:50,884 - train_greyscale_FA_MoE.py - {'step': '25800', 'lr': '0.0002', 'total_loss': '0.0482663', 'main_loss': '0.0482663', 'time_per_step': '2.25397'}
+2025-11-06 03:36:43,012 - train_greyscale_FA_MoE.py - {'step': '25900', 'lr': '0.0002', 'total_loss': '0.0386222', 'main_loss': '0.0386222', 'time_per_step': '3.44776'}
+2025-11-06 03:40:34,711 - train_greyscale_FA_MoE.py - {'step': '26000', 'lr': '0.0002', 'total_loss': '0.0434773', 'main_loss': '0.0434773', 'time_per_step': '2.25312'}
+2025-11-06 03:44:26,831 - train_greyscale_FA_MoE.py - {'step': '26100', 'lr': '0.0002', 'total_loss': '0.040654', 'main_loss': '0.040654', 'time_per_step': '2.23194'}
+2025-11-06 03:48:18,920 - train_greyscale_FA_MoE.py - {'step': '26200', 'lr': '0.0002', 'total_loss': '0.0368617', 'main_loss': '0.0368617', 'time_per_step': '2.28574'}
+2025-11-06 03:52:10,706 - train_greyscale_FA_MoE.py - {'step': '26300', 'lr': '0.0002', 'total_loss': '0.0413912', 'main_loss': '0.0413912', 'time_per_step': '2.16787'}
+2025-11-06 03:56:01,393 - train_greyscale_FA_MoE.py - {'step': '26400', 'lr': '0.0002', 'total_loss': '0.0450643', 'main_loss': '0.0450643', 'time_per_step': '2.14903'}
+2025-11-06 03:59:53,894 - train_greyscale_FA_MoE.py - {'step': '26500', 'lr': '0.0002', 'total_loss': '0.0401937', 'main_loss': '0.0401937', 'time_per_step': '2.21751'}
+2025-11-06 04:03:45,681 - train_greyscale_FA_MoE.py - {'step': '26600', 'lr': '0.0002', 'total_loss': '0.0477985', 'main_loss': '0.0477985', 'time_per_step': '2.24631'}
+2025-11-06 04:07:38,179 - train_greyscale_FA_MoE.py - {'step': '26700', 'lr': '0.0002', 'total_loss': '0.0418896', 'main_loss': '0.0418896', 'time_per_step': '2.24965'}
+2025-11-06 04:11:28,523 - train_greyscale_FA_MoE.py - {'step': '26800', 'lr': '0.0002', 'total_loss': '0.0364641', 'main_loss': '0.0364641', 'time_per_step': '2.21873'}
+2025-11-06 04:15:21,264 - train_greyscale_FA_MoE.py - {'step': '26900', 'lr': '0.0002', 'total_loss': '0.0407864', 'main_loss': '0.0407864', 'time_per_step': '2.25548'}
+2025-11-06 04:19:12,360 - train_greyscale_FA_MoE.py - {'step': '27000', 'lr': '0.0002', 'total_loss': '0.0416217', 'main_loss': '0.0416217', 'time_per_step': '2.28154'}
+2025-11-06 04:23:04,270 - train_greyscale_FA_MoE.py - {'step': '27100', 'lr': '0.0002', 'total_loss': '0.0444208', 'main_loss': '0.0444208', 'time_per_step': '2.25878'}
+2025-11-06 04:26:55,798 - train_greyscale_FA_MoE.py - {'step': '27200', 'lr': '0.0002', 'total_loss': '0.0422806', 'main_loss': '0.0422806', 'time_per_step': '2.23719'}
+2025-11-06 04:30:48,417 - train_greyscale_FA_MoE.py - {'step': '27300', 'lr': '0.0002', 'total_loss': '0.0371502', 'main_loss': '0.0371502', 'time_per_step': '2.31396'}
+2025-11-06 04:34:40,341 - train_greyscale_FA_MoE.py - {'step': '27400', 'lr': '0.0002', 'total_loss': '0.0455041', 'main_loss': '0.0455041', 'time_per_step': '2.25808'}
+2025-11-06 04:38:32,184 - train_greyscale_FA_MoE.py - {'step': '27500', 'lr': '0.0002', 'total_loss': '0.0369859', 'main_loss': '0.0369859', 'time_per_step': '2.14101'}
+2025-11-06 04:42:23,031 - train_greyscale_FA_MoE.py - {'step': '27600', 'lr': '0.0002', 'total_loss': '0.0469583', 'main_loss': '0.0469583', 'time_per_step': '2.14669'}
+2025-11-06 04:46:16,225 - train_greyscale_FA_MoE.py - {'step': '27700', 'lr': '0.0002', 'total_loss': '0.0318058', 'main_loss': '0.0318058', 'time_per_step': '2.26164'}
+2025-11-06 04:50:07,936 - train_greyscale_FA_MoE.py - {'step': '27800', 'lr': '0.0002', 'total_loss': '0.0390769', 'main_loss': '0.0390769', 'time_per_step': '2.24383'}
+2025-11-06 04:53:58,811 - train_greyscale_FA_MoE.py - {'step': '27900', 'lr': '0.0002', 'total_loss': '0.0443203', 'main_loss': '0.0443203', 'time_per_step': '2.27143'}
+2025-11-06 04:57:50,694 - train_greyscale_FA_MoE.py - {'step': '28000', 'lr': '0.0002', 'total_loss': '0.0382222', 'main_loss': '0.0382222', 'time_per_step': '2.25929'}
+2025-11-06 05:01:41,950 - train_greyscale_FA_MoE.py - {'step': '28100', 'lr': '0.0002', 'total_loss': '0.0370196', 'main_loss': '0.0370196', 'time_per_step': '2.26933'}
+2025-11-06 05:05:34,117 - train_greyscale_FA_MoE.py - {'step': '28200', 'lr': '0.0002', 'total_loss': '0.040795', 'main_loss': '0.040795', 'time_per_step': '2.21149'}
+2025-11-06 05:09:26,331 - train_greyscale_FA_MoE.py - {'step': '28300', 'lr': '0.0002', 'total_loss': '0.0392688', 'main_loss': '0.0392688', 'time_per_step': '2.24567'}
+2025-11-06 05:13:18,301 - train_greyscale_FA_MoE.py - {'step': '28400', 'lr': '0.0002', 'total_loss': '0.0421262', 'main_loss': '0.0421262', 'time_per_step': '2.31371'}
+2025-11-06 05:17:09,189 - train_greyscale_FA_MoE.py - {'step': '28500', 'lr': '0.0002', 'total_loss': '0.0452086', 'main_loss': '0.0452086', 'time_per_step': '2.41419'}
+2025-11-06 05:21:00,655 - train_greyscale_FA_MoE.py - {'step': '28600', 'lr': '0.0002', 'total_loss': '0.0371756', 'main_loss': '0.0371756', 'time_per_step': '2.26803'}
+2025-11-06 05:24:51,708 - train_greyscale_FA_MoE.py - {'step': '28700', 'lr': '0.0002', 'total_loss': '0.0418431', 'main_loss': '0.0418431', 'time_per_step': '2.14884'}
+2025-11-06 05:28:43,161 - train_greyscale_FA_MoE.py - {'step': '28800', 'lr': '0.0002', 'total_loss': '0.0470345', 'main_loss': '0.0470345', 'time_per_step': '2.14943'}
+2025-11-06 05:32:34,863 - train_greyscale_FA_MoE.py - {'step': '28900', 'lr': '0.0002', 'total_loss': '0.0381167', 'main_loss': '0.0381167', 'time_per_step': '2.26479'}
+2025-11-06 05:36:26,711 - train_greyscale_FA_MoE.py - {'step': '29000', 'lr': '0.0002', 'total_loss': '0.0391906', 'main_loss': '0.0391906', 'time_per_step': '2.24451'}
+2025-11-06 05:40:19,003 - train_greyscale_FA_MoE.py - {'step': '29100', 'lr': '0.0002', 'total_loss': '0.0481963', 'main_loss': '0.0481963', 'time_per_step': '2.32039'}
+2025-11-06 05:44:11,273 - train_greyscale_FA_MoE.py - {'step': '29200', 'lr': '0.0002', 'total_loss': '0.0439899', 'main_loss': '0.0439899', 'time_per_step': '2.23573'}
+2025-11-06 05:48:02,698 - train_greyscale_FA_MoE.py - {'step': '29300', 'lr': '0.0002', 'total_loss': '0.0558193', 'main_loss': '0.0558193', 'time_per_step': '2.29531'}
+2025-11-06 05:51:54,721 - train_greyscale_FA_MoE.py - {'step': '29400', 'lr': '0.0002', 'total_loss': '0.0378633', 'main_loss': '0.0378633', 'time_per_step': '2.24784'}
+2025-11-06 05:55:46,610 - train_greyscale_FA_MoE.py - {'step': '29500', 'lr': '0.0002', 'total_loss': '0.0418911', 'main_loss': '0.0418911', 'time_per_step': '2.27216'}
+2025-11-06 05:59:38,760 - train_greyscale_FA_MoE.py - {'step': '29600', 'lr': '0.0002', 'total_loss': '0.0340653', 'main_loss': '0.0340653', 'time_per_step': '2.24044'}
+2025-11-06 06:03:30,013 - train_greyscale_FA_MoE.py - {'step': '29700', 'lr': '0.0002', 'total_loss': '0.0429789', 'main_loss': '0.0429789', 'time_per_step': '2.2577'}
+2025-11-06 06:07:21,510 - train_greyscale_FA_MoE.py - {'step': '29800', 'lr': '0.0002', 'total_loss': '0.0364495', 'main_loss': '0.0364495', 'time_per_step': '2.27958'}
+2025-11-06 06:11:13,547 - train_greyscale_FA_MoE.py - {'step': '29900', 'lr': '0.0002', 'total_loss': '0.0419604', 'main_loss': '0.0419604', 'time_per_step': '2.14628'}
+2025-11-06 06:15:05,380 - train_greyscale_FA_MoE.py - {'step': '30000', 'lr': '0.0002', 'total_loss': '0.0448561', 'main_loss': '0.0448561', 'time_per_step': '2.1566'}
+2025-11-06 06:18:57,711 - train_greyscale_FA_MoE.py - {'step': '30100', 'lr': '0.0002', 'total_loss': '0.0347237', 'main_loss': '0.0347237', 'time_per_step': '2.2396'}
+2025-11-06 06:22:48,991 - train_greyscale_FA_MoE.py - {'step': '30200', 'lr': '0.0002', 'total_loss': '0.0417517', 'main_loss': '0.0417517', 'time_per_step': '2.30165'}
+2025-11-06 06:26:41,439 - train_greyscale_FA_MoE.py - {'step': '30300', 'lr': '0.0002', 'total_loss': '0.0390004', 'main_loss': '0.0390004', 'time_per_step': '2.27229'}
+2025-11-06 06:30:33,668 - train_greyscale_FA_MoE.py - {'step': '30400', 'lr': '0.0002', 'total_loss': '0.0420602', 'main_loss': '0.0420602', 'time_per_step': '2.22654'}
+2025-11-06 06:34:26,163 - train_greyscale_FA_MoE.py - {'step': '30500', 'lr': '0.0002', 'total_loss': '0.0438915', 'main_loss': '0.0438915', 'time_per_step': '2.26174'}
+2025-11-06 06:38:16,638 - train_greyscale_FA_MoE.py - {'step': '30600', 'lr': '0.0002', 'total_loss': '0.0395034', 'main_loss': '0.0395034', 'time_per_step': '2.25192'}
+2025-11-06 06:42:09,217 - train_greyscale_FA_MoE.py - {'step': '30700', 'lr': '0.0002', 'total_loss': '0.0437136', 'main_loss': '0.0437136', 'time_per_step': '2.45094'}
+2025-11-06 06:46:01,386 - train_greyscale_FA_MoE.py - {'step': '30800', 'lr': '0.0002', 'total_loss': '0.0400702', 'main_loss': '0.0400702', 'time_per_step': '2.29092'}
+2025-11-06 06:49:52,990 - train_greyscale_FA_MoE.py - {'step': '30900', 'lr': '0.0002', 'total_loss': '0.0435665', 'main_loss': '0.0435665', 'time_per_step': '2.2751'}
+2025-11-06 06:53:44,255 - train_greyscale_FA_MoE.py - {'step': '31000', 'lr': '0.0002', 'total_loss': '0.0452762', 'main_loss': '0.0452762', 'time_per_step': '2.25516'}
+2025-11-06 06:57:35,060 - train_greyscale_FA_MoE.py - {'step': '31100', 'lr': '0.0002', 'total_loss': '0.040895', 'main_loss': '0.040895', 'time_per_step': '2.15626'}
+2025-11-06 07:01:27,188 - train_greyscale_FA_MoE.py - {'step': '31200', 'lr': '0.0002', 'total_loss': '0.0426971', 'main_loss': '0.0426971', 'time_per_step': '2.17414'}
+2025-11-06 07:05:20,098 - train_greyscale_FA_MoE.py - {'step': '31300', 'lr': '0.0002', 'total_loss': '0.0379127', 'main_loss': '0.0379127', 'time_per_step': '2.27255'}
+2025-11-06 07:09:11,628 - train_greyscale_FA_MoE.py - {'step': '31400', 'lr': '0.0002', 'total_loss': '0.0350614', 'main_loss': '0.0350614', 'time_per_step': '2.24984'}
+2025-11-06 07:13:02,500 - train_greyscale_FA_MoE.py - {'step': '31500', 'lr': '0.0002', 'total_loss': '0.0399915', 'main_loss': '0.0399915', 'time_per_step': '2.241'}
+2025-11-06 07:16:53,632 - train_greyscale_FA_MoE.py - {'step': '31600', 'lr': '0.0002', 'total_loss': '0.0325773', 'main_loss': '0.0325773', 'time_per_step': '2.22401'}
+2025-11-06 07:20:44,656 - train_greyscale_FA_MoE.py - {'step': '31700', 'lr': '0.0002', 'total_loss': '0.0312352', 'main_loss': '0.0312352', 'time_per_step': '2.24504'}
+2025-11-06 07:24:34,555 - train_greyscale_FA_MoE.py - {'step': '31800', 'lr': '0.0002', 'total_loss': '0.0424151', 'main_loss': '0.0424151', 'time_per_step': '2.24342'}
+2025-11-06 07:28:26,062 - train_greyscale_FA_MoE.py - {'step': '31900', 'lr': '0.0002', 'total_loss': '0.0393863', 'main_loss': '0.0393863', 'time_per_step': '2.20895'}
+2025-11-06 07:32:16,309 - train_greyscale_FA_MoE.py - {'step': '32000', 'lr': '0.0002', 'total_loss': '0.043096', 'main_loss': '0.043096', 'time_per_step': '2.26393'}
+2025-11-06 07:36:10,058 - train_greyscale_FA_MoE.py - {'step': '32100', 'lr': '0.0002', 'total_loss': '0.0369901', 'main_loss': '0.0369901', 'time_per_step': '2.25961'}
+2025-11-06 07:40:04,166 - train_greyscale_FA_MoE.py - {'step': '32200', 'lr': '0.0002', 'total_loss': '0.0404101', 'main_loss': '0.0404101', 'time_per_step': '2.25555'}
+2025-11-06 07:43:54,957 - train_greyscale_FA_MoE.py - {'step': '32300', 'lr': '0.0002', 'total_loss': '0.0404415', 'main_loss': '0.0404415', 'time_per_step': '2.14336'}
+2025-11-06 07:47:45,821 - train_greyscale_FA_MoE.py - {'step': '32400', 'lr': '0.0002', 'total_loss': '0.0365699', 'main_loss': '0.0365699', 'time_per_step': '2.14248'}
+2025-11-06 07:51:37,227 - train_greyscale_FA_MoE.py - {'step': '32500', 'lr': '0.0002', 'total_loss': '0.0364194', 'main_loss': '0.0364194', 'time_per_step': '2.25526'}
+2025-11-06 07:55:28,204 - train_greyscale_FA_MoE.py - {'step': '32600', 'lr': '0.0002', 'total_loss': '0.0390571', 'main_loss': '0.0390571', 'time_per_step': '2.21863'}
+2025-11-06 07:59:18,601 - train_greyscale_FA_MoE.py - {'step': '32700', 'lr': '0.0002', 'total_loss': '0.0401418', 'main_loss': '0.0401418', 'time_per_step': '2.29397'}
+2025-11-06 08:03:09,662 - train_greyscale_FA_MoE.py - {'step': '32800', 'lr': '0.0002', 'total_loss': '0.0483693', 'main_loss': '0.0483693', 'time_per_step': '2.22713'}
+2025-11-06 08:07:00,711 - train_greyscale_FA_MoE.py - {'step': '32900', 'lr': '0.0002', 'total_loss': '0.0380188', 'main_loss': '0.0380188', 'time_per_step': '2.26922'}
+2025-11-06 08:10:49,910 - train_greyscale_FA_MoE.py - {'step': '33000', 'lr': '0.0002', 'total_loss': '0.0372256', 'main_loss': '0.0372256', 'time_per_step': '2.29727'}
+2025-11-06 08:14:38,322 - train_greyscale_FA_MoE.py - {'step': '33100', 'lr': '0.0002', 'total_loss': '0.0382685', 'main_loss': '0.0382685', 'time_per_step': '2.18159'}
+2025-11-06 08:18:27,697 - train_greyscale_FA_MoE.py - {'step': '33200', 'lr': '0.0002', 'total_loss': '0.0407342', 'main_loss': '0.0407342', 'time_per_step': '2.19715'}
+2025-11-06 08:22:18,649 - train_greyscale_FA_MoE.py - {'step': '33300', 'lr': '0.0002', 'total_loss': '0.0384669', 'main_loss': '0.0384669', 'time_per_step': '2.28896'}
+2025-11-06 08:26:09,817 - train_greyscale_FA_MoE.py - {'step': '33400', 'lr': '0.0002', 'total_loss': '0.0375897', 'main_loss': '0.0375897', 'time_per_step': '2.24189'}
+2025-11-06 08:30:00,102 - train_greyscale_FA_MoE.py - {'step': '33500', 'lr': '0.0002', 'total_loss': '0.0392559', 'main_loss': '0.0392559', 'time_per_step': '2.14309'}
+2025-11-06 08:33:51,011 - train_greyscale_FA_MoE.py - {'step': '33600', 'lr': '0.0002', 'total_loss': '0.0487406', 'main_loss': '0.0487406', 'time_per_step': '2.14352'}
+2025-11-06 08:37:42,221 - train_greyscale_FA_MoE.py - {'step': '33700', 'lr': '0.0002', 'total_loss': '0.0449056', 'main_loss': '0.0449056', 'time_per_step': '2.24448'}
+2025-11-06 08:41:35,384 - train_greyscale_FA_MoE.py - {'step': '33800', 'lr': '0.0002', 'total_loss': '0.0424049', 'main_loss': '0.0424049', 'time_per_step': '2.24318'}
+2025-11-06 08:45:25,406 - train_greyscale_FA_MoE.py - {'step': '33900', 'lr': '0.0002', 'total_loss': '0.0409955', 'main_loss': '0.0409955', 'time_per_step': '2.23256'}
+2025-11-06 08:49:16,529 - train_greyscale_FA_MoE.py - {'step': '34000', 'lr': '0.0002', 'total_loss': '0.0372117', 'main_loss': '0.0372117', 'time_per_step': '2.24325'}
+2025-11-06 08:53:08,733 - train_greyscale_FA_MoE.py - {'step': '34100', 'lr': '0.0002', 'total_loss': '0.0354822', 'main_loss': '0.0354822', 'time_per_step': '2.3639'}
+2025-11-06 08:57:01,094 - train_greyscale_FA_MoE.py - {'step': '34200', 'lr': '0.0002', 'total_loss': '0.040432', 'main_loss': '0.040432', 'time_per_step': '2.25322'}
+2025-11-06 09:00:51,037 - train_greyscale_FA_MoE.py - {'step': '34300', 'lr': '0.0002', 'total_loss': '0.0418163', 'main_loss': '0.0418163', 'time_per_step': '2.24457'}
+2025-11-06 09:04:41,925 - train_greyscale_FA_MoE.py - {'step': '34400', 'lr': '0.0002', 'total_loss': '0.0401664', 'main_loss': '0.0401664', 'time_per_step': '2.23928'}
+2025-11-06 09:08:32,522 - train_greyscale_FA_MoE.py - {'step': '34500', 'lr': '0.0002', 'total_loss': '0.0394135', 'main_loss': '0.0394135', 'time_per_step': '2.25827'}
+2025-11-06 09:12:23,845 - train_greyscale_FA_MoE.py - {'step': '34600', 'lr': '0.0002', 'total_loss': '0.0455285', 'main_loss': '0.0455285', 'time_per_step': '2.25043'}
+2025-11-06 09:16:14,052 - train_greyscale_FA_MoE.py - {'step': '34700', 'lr': '0.0002', 'total_loss': '0.0361028', 'main_loss': '0.0361028', 'time_per_step': '2.14515'}
+2025-11-06 09:20:04,846 - train_greyscale_FA_MoE.py - {'step': '34800', 'lr': '0.0002', 'total_loss': '0.035639', 'main_loss': '0.035639', 'time_per_step': '2.14409'}
+2025-11-06 09:23:55,894 - train_greyscale_FA_MoE.py - {'step': '34900', 'lr': '0.0002', 'total_loss': '0.0387766', 'main_loss': '0.0387766', 'time_per_step': '2.24555'}
+2025-11-06 09:27:46,792 - train_greyscale_FA_MoE.py - {'step': '35000', 'lr': '0.0002', 'total_loss': '0.0447102', 'main_loss': '0.0447102', 'time_per_step': '2.25785'}
+2025-11-06 09:31:38,380 - train_greyscale_FA_MoE.py - {'step': '35100', 'lr': '0.0002', 'total_loss': '0.044654', 'main_loss': '0.044654', 'time_per_step': '2.25763'}
+2025-11-06 09:35:28,612 - train_greyscale_FA_MoE.py - {'step': '35200', 'lr': '0.0002', 'total_loss': '0.0464453', 'main_loss': '0.0464453', 'time_per_step': '2.24306'}
+2025-11-06 09:39:20,454 - train_greyscale_FA_MoE.py - {'step': '35300', 'lr': '0.0002', 'total_loss': '0.0376968', 'main_loss': '0.0376968', 'time_per_step': '2.24739'}
+2025-11-06 09:43:12,005 - train_greyscale_FA_MoE.py - {'step': '35400', 'lr': '0.0002', 'total_loss': '0.0359301', 'main_loss': '0.0359301', 'time_per_step': '2.24491'}
+2025-11-06 09:47:02,447 - train_greyscale_FA_MoE.py - {'step': '35500', 'lr': '0.0002', 'total_loss': '0.0300372', 'main_loss': '0.0300372', 'time_per_step': '2.254'}
+2025-11-06 09:50:53,039 - train_greyscale_FA_MoE.py - {'step': '35600', 'lr': '0.0002', 'total_loss': '0.0364499', 'main_loss': '0.0364499', 'time_per_step': '2.25377'}
+2025-11-06 09:54:44,473 - train_greyscale_FA_MoE.py - {'step': '35700', 'lr': '0.0002', 'total_loss': '0.0372371', 'main_loss': '0.0372371', 'time_per_step': '2.25282'}
+2025-11-06 09:58:35,484 - train_greyscale_FA_MoE.py - {'step': '35800', 'lr': '0.0002', 'total_loss': '0.0415816', 'main_loss': '0.0415816', 'time_per_step': '2.23541'}
+2025-11-06 10:02:25,694 - train_greyscale_FA_MoE.py - {'step': '35900', 'lr': '0.0002', 'total_loss': '0.0415301', 'main_loss': '0.0415301', 'time_per_step': '2.14193'}
+2025-11-06 10:06:16,131 - train_greyscale_FA_MoE.py - {'step': '36000', 'lr': '0.0002', 'total_loss': '0.0410797', 'main_loss': '0.0410797', 'time_per_step': '2.14285'}
+2025-11-06 10:10:07,720 - train_greyscale_FA_MoE.py - {'step': '36100', 'lr': '0.0002', 'total_loss': '0.0390671', 'main_loss': '0.0390671', 'time_per_step': '2.23073'}
+2025-11-06 10:13:59,039 - train_greyscale_FA_MoE.py - {'step': '36200', 'lr': '0.0002', 'total_loss': '0.0395957', 'main_loss': '0.0395957', 'time_per_step': '2.23387'}
+2025-11-06 10:17:49,563 - train_greyscale_FA_MoE.py - {'step': '36300', 'lr': '0.0002', 'total_loss': '0.0370761', 'main_loss': '0.0370761', 'time_per_step': '2.286'}
+2025-11-06 10:21:39,565 - train_greyscale_FA_MoE.py - {'step': '36400', 'lr': '0.0002', 'total_loss': '0.0385249', 'main_loss': '0.0385249', 'time_per_step': '2.23296'}
+2025-11-06 10:25:30,287 - train_greyscale_FA_MoE.py - {'step': '36500', 'lr': '0.0002', 'total_loss': '0.0381299', 'main_loss': '0.0381299', 'time_per_step': '2.21511'}
+2025-11-06 10:29:21,172 - train_greyscale_FA_MoE.py - {'step': '36600', 'lr': '0.0002', 'total_loss': '0.0332885', 'main_loss': '0.0332885', 'time_per_step': '2.24034'}
+2025-11-06 10:33:12,439 - train_greyscale_FA_MoE.py - {'step': '36700', 'lr': '0.0002', 'total_loss': '0.0356435', 'main_loss': '0.0356435', 'time_per_step': '2.23327'}
+2025-11-06 10:37:02,428 - train_greyscale_FA_MoE.py - {'step': '36800', 'lr': '0.0002', 'total_loss': '0.0398851', 'main_loss': '0.0398851', 'time_per_step': '2.25577'}
+2025-11-06 10:40:54,080 - train_greyscale_FA_MoE.py - {'step': '36900', 'lr': '0.0002', 'total_loss': '0.0373598', 'main_loss': '0.0373598', 'time_per_step': '2.22668'}
+2025-11-06 10:44:45,297 - train_greyscale_FA_MoE.py - {'step': '37000', 'lr': '0.0002', 'total_loss': '0.0396232', 'main_loss': '0.0396232', 'time_per_step': '2.2569'}
+2025-11-06 10:48:37,149 - train_greyscale_FA_MoE.py - {'step': '37100', 'lr': '0.0002', 'total_loss': '0.0270766', 'main_loss': '0.0270766', 'time_per_step': '2.14813'}
+2025-11-06 10:52:27,112 - train_greyscale_FA_MoE.py - {'step': '37200', 'lr': '0.0002', 'total_loss': '0.0395578', 'main_loss': '0.0395578', 'time_per_step': '2.13805'}
+2025-11-06 10:56:18,425 - train_greyscale_FA_MoE.py - {'step': '37300', 'lr': '0.0002', 'total_loss': '0.0321935', 'main_loss': '0.0321935', 'time_per_step': '2.30511'}
+2025-11-06 11:00:09,550 - train_greyscale_FA_MoE.py - {'step': '37400', 'lr': '0.0002', 'total_loss': '0.0417831', 'main_loss': '0.0417831', 'time_per_step': '2.20716'}
+2025-11-06 11:04:00,730 - train_greyscale_FA_MoE.py - {'step': '37500', 'lr': '0.0002', 'total_loss': '0.0435768', 'main_loss': '0.0435768', 'time_per_step': '2.23512'}
+2025-11-06 11:07:51,925 - train_greyscale_FA_MoE.py - {'step': '37600', 'lr': '0.0002', 'total_loss': '0.0377387', 'main_loss': '0.0377387', 'time_per_step': '2.2548'}
+2025-11-06 11:11:42,163 - train_greyscale_FA_MoE.py - {'step': '37700', 'lr': '0.0002', 'total_loss': '0.0361896', 'main_loss': '0.0361896', 'time_per_step': '2.24139'}
+2025-11-06 11:15:32,870 - train_greyscale_FA_MoE.py - {'step': '37800', 'lr': '0.0002', 'total_loss': '0.0368683', 'main_loss': '0.0368683', 'time_per_step': '2.22293'}
+2025-11-06 11:19:24,023 - train_greyscale_FA_MoE.py - {'step': '37900', 'lr': '0.0002', 'total_loss': '0.0423131', 'main_loss': '0.0423131', 'time_per_step': '2.22541'}
+2025-11-06 11:23:15,849 - train_greyscale_FA_MoE.py - {'step': '38000', 'lr': '0.0002', 'total_loss': '0.0406934', 'main_loss': '0.0406934', 'time_per_step': '2.23859'}
+2025-11-06 11:27:06,488 - train_greyscale_FA_MoE.py - {'step': '38100', 'lr': '0.0002', 'total_loss': '0.0398746', 'main_loss': '0.0398746', 'time_per_step': '2.26007'}
+2025-11-06 11:30:57,200 - train_greyscale_FA_MoE.py - {'step': '38200', 'lr': '0.0002', 'total_loss': '0.0357535', 'main_loss': '0.0357535', 'time_per_step': '2.22336'}
+2025-11-06 11:34:47,893 - train_greyscale_FA_MoE.py - {'step': '38300', 'lr': '0.0002', 'total_loss': '0.0329915', 'main_loss': '0.0329915', 'time_per_step': '2.14705'}
+2025-11-06 11:38:38,436 - train_greyscale_FA_MoE.py - {'step': '38400', 'lr': '0.0002', 'total_loss': '0.0352613', 'main_loss': '0.0352613', 'time_per_step': '2.1488'}
+2025-11-06 11:42:30,012 - train_greyscale_FA_MoE.py - {'step': '38500', 'lr': '0.0002', 'total_loss': '0.0408124', 'main_loss': '0.0408124', 'time_per_step': '2.25736'}
+2025-11-06 11:46:20,837 - train_greyscale_FA_MoE.py - {'step': '38600', 'lr': '0.0002', 'total_loss': '0.048595', 'main_loss': '0.048595', 'time_per_step': '2.24857'}
+2025-11-06 11:50:11,402 - train_greyscale_FA_MoE.py - {'step': '38700', 'lr': '0.0002', 'total_loss': '0.0406796', 'main_loss': '0.0406796', 'time_per_step': '2.23765'}
+2025-11-06 11:54:01,933 - train_greyscale_FA_MoE.py - {'step': '38800', 'lr': '0.0002', 'total_loss': '0.0413405', 'main_loss': '0.0413405', 'time_per_step': '2.24863'}
+2025-11-06 11:57:52,051 - train_greyscale_FA_MoE.py - {'step': '38900', 'lr': '0.0002', 'total_loss': '0.0370181', 'main_loss': '0.0370181', 'time_per_step': '2.2534'}
+2025-11-06 12:01:43,351 - train_greyscale_FA_MoE.py - {'step': '39000', 'lr': '0.0002', 'total_loss': '0.0371498', 'main_loss': '0.0371498', 'time_per_step': '2.18861'}
+2025-11-06 12:05:34,145 - train_greyscale_FA_MoE.py - {'step': '39100', 'lr': '0.0002', 'total_loss': '0.0389222', 'main_loss': '0.0389222', 'time_per_step': '2.26546'}
+2025-11-06 12:09:24,377 - train_greyscale_FA_MoE.py - {'step': '39200', 'lr': '0.0002', 'total_loss': '0.0405799', 'main_loss': '0.0405799', 'time_per_step': '2.24024'}
+2025-11-06 12:13:14,425 - train_greyscale_FA_MoE.py - {'step': '39300', 'lr': '0.0002', 'total_loss': '0.0435569', 'main_loss': '0.0435569', 'time_per_step': '2.25557'}
+2025-11-06 12:17:05,566 - train_greyscale_FA_MoE.py - {'step': '39400', 'lr': '0.0002', 'total_loss': '0.0316975', 'main_loss': '0.0316975', 'time_per_step': '2.24402'}
+2025-11-06 12:20:56,296 - train_greyscale_FA_MoE.py - {'step': '39500', 'lr': '0.0002', 'total_loss': '0.03773', 'main_loss': '0.03773', 'time_per_step': '2.1447'}
+2025-11-06 12:24:46,719 - train_greyscale_FA_MoE.py - {'step': '39600', 'lr': '0.0002', 'total_loss': '0.0384542', 'main_loss': '0.0384542', 'time_per_step': '2.13798'}
+2025-11-06 12:28:36,888 - train_greyscale_FA_MoE.py - {'step': '39700', 'lr': '0.0002', 'total_loss': '0.0344897', 'main_loss': '0.0344897', 'time_per_step': '2.24122'}
+2025-11-06 12:32:27,653 - train_greyscale_FA_MoE.py - {'step': '39800', 'lr': '0.0002', 'total_loss': '0.0321272', 'main_loss': '0.0321272', 'time_per_step': '2.23704'}
+2025-11-06 12:36:18,630 - train_greyscale_FA_MoE.py - {'step': '39900', 'lr': '0.0002', 'total_loss': '0.0407946', 'main_loss': '0.0407946', 'time_per_step': '2.32447'}
+2025-11-06 12:40:09,537 - train_greyscale_FA_MoE.py - {'step': '40000', 'lr': '0.0002', 'total_loss': '0.0345886', 'main_loss': '0.0345886', 'time_per_step': '2.24943'}
+2025-11-06 12:43:59,962 - train_greyscale_FA_MoE.py - {'step': '40100', 'lr': '0.0002', 'total_loss': '0.0332865', 'main_loss': '0.0332865', 'time_per_step': '2.2305'}
+2025-11-06 12:47:50,723 - train_greyscale_FA_MoE.py - {'step': '40200', 'lr': '0.0002', 'total_loss': '0.0388828', 'main_loss': '0.0388828', 'time_per_step': '2.24403'}
+2025-11-06 12:51:41,983 - train_greyscale_FA_MoE.py - {'step': '40300', 'lr': '0.0002', 'total_loss': '0.0315381', 'main_loss': '0.0315381', 'time_per_step': '2.20455'}
+2025-11-06 12:55:33,083 - train_greyscale_FA_MoE.py - {'step': '40400', 'lr': '0.0002', 'total_loss': '0.0424725', 'main_loss': '0.0424725', 'time_per_step': '2.24507'}
+2025-11-06 12:59:24,240 - train_greyscale_FA_MoE.py - {'step': '40500', 'lr': '0.0002', 'total_loss': '0.0351627', 'main_loss': '0.0351627', 'time_per_step': '2.23087'}
+2025-11-06 13:03:13,959 - train_greyscale_FA_MoE.py - {'step': '40600', 'lr': '0.0002', 'total_loss': '0.0377375', 'main_loss': '0.0377375', 'time_per_step': '2.28177'}
+2025-11-06 13:07:04,666 - train_greyscale_FA_MoE.py - {'step': '40700', 'lr': '0.0002', 'total_loss': '0.0383985', 'main_loss': '0.0383985', 'time_per_step': '2.14195'}
+2025-11-06 13:10:55,463 - train_greyscale_FA_MoE.py - {'step': '40800', 'lr': '0.0002', 'total_loss': '0.0394894', 'main_loss': '0.0394894', 'time_per_step': '2.14429'}
+2025-11-06 13:14:46,731 - train_greyscale_FA_MoE.py - {'step': '40900', 'lr': '0.0002', 'total_loss': '0.03159', 'main_loss': '0.03159', 'time_per_step': '2.24707'}
+2025-11-06 13:18:36,594 - train_greyscale_FA_MoE.py - {'step': '41000', 'lr': '0.0002', 'total_loss': '0.0376686', 'main_loss': '0.0376686', 'time_per_step': '2.24784'}
+2025-11-06 13:22:27,817 - train_greyscale_FA_MoE.py - {'step': '41100', 'lr': '0.0002', 'total_loss': '0.0395735', 'main_loss': '0.0395735', 'time_per_step': '2.27021'}
+2025-11-06 13:26:18,616 - train_greyscale_FA_MoE.py - {'step': '41200', 'lr': '0.0002', 'total_loss': '0.0382696', 'main_loss': '0.0382696', 'time_per_step': '2.26585'}
+2025-11-06 13:30:09,011 - train_greyscale_FA_MoE.py - {'step': '41300', 'lr': '0.0002', 'total_loss': '0.0321909', 'main_loss': '0.0321909', 'time_per_step': '2.3322'}
+2025-11-06 13:33:59,410 - train_greyscale_FA_MoE.py - {'step': '41400', 'lr': '0.0002', 'total_loss': '0.0461543', 'main_loss': '0.0461543', 'time_per_step': '2.2626'}
+2025-11-06 13:37:50,501 - train_greyscale_FA_MoE.py - {'step': '41500', 'lr': '0.0002', 'total_loss': '0.0376183', 'main_loss': '0.0376183', 'time_per_step': '2.23045'}
+2025-11-06 13:41:41,682 - train_greyscale_FA_MoE.py - {'step': '41600', 'lr': '0.0002', 'total_loss': '0.0369333', 'main_loss': '0.0369333', 'time_per_step': '2.26734'}
+2025-11-06 13:45:32,307 - train_greyscale_FA_MoE.py - {'step': '41700', 'lr': '0.0002', 'total_loss': '0.0328662', 'main_loss': '0.0328662', 'time_per_step': '2.19591'}
+2025-11-06 13:49:22,672 - train_greyscale_FA_MoE.py - {'step': '41800', 'lr': '0.0002', 'total_loss': '0.0437858', 'main_loss': '0.0437858', 'time_per_step': '2.27424'}
+2025-11-06 13:53:13,876 - train_greyscale_FA_MoE.py - {'step': '41900', 'lr': '0.0002', 'total_loss': '0.0371222', 'main_loss': '0.0371222', 'time_per_step': '2.15222'}
+2025-11-06 13:57:04,293 - train_greyscale_FA_MoE.py - {'step': '42000', 'lr': '0.0002', 'total_loss': '0.0390937', 'main_loss': '0.0390937', 'time_per_step': '2.12788'}
+2025-11-06 14:00:55,984 - train_greyscale_FA_MoE.py - {'step': '42100', 'lr': '0.0002', 'total_loss': '0.0443421', 'main_loss': '0.0443421', 'time_per_step': '2.22752'}
+2025-11-06 14:04:46,429 - train_greyscale_FA_MoE.py - {'step': '42200', 'lr': '0.0002', 'total_loss': '0.0419658', 'main_loss': '0.0419658', 'time_per_step': '2.25748'}
+2025-11-06 14:08:37,296 - train_greyscale_FA_MoE.py - {'step': '42300', 'lr': '0.0002', 'total_loss': '0.0412446', 'main_loss': '0.0412446', 'time_per_step': '2.25021'}
+2025-11-06 14:12:27,984 - train_greyscale_FA_MoE.py - {'step': '42400', 'lr': '0.0002', 'total_loss': '0.03898', 'main_loss': '0.03898', 'time_per_step': '2.23204'}
+2025-11-06 14:16:18,505 - train_greyscale_FA_MoE.py - {'step': '42500', 'lr': '0.0002', 'total_loss': '0.0336254', 'main_loss': '0.0336254', 'time_per_step': '2.30558'}
+2025-11-06 14:20:08,894 - train_greyscale_FA_MoE.py - {'step': '42600', 'lr': '0.0002', 'total_loss': '0.0351403', 'main_loss': '0.0351403', 'time_per_step': '2.41436'}
+2025-11-06 14:23:59,805 - train_greyscale_FA_MoE.py - {'step': '42700', 'lr': '0.0002', 'total_loss': '0.0362395', 'main_loss': '0.0362395', 'time_per_step': '2.23048'}
+2025-11-06 14:27:50,764 - train_greyscale_FA_MoE.py - {'step': '42800', 'lr': '0.0002', 'total_loss': '0.0347136', 'main_loss': '0.0347136', 'time_per_step': '2.2439'}
+2025-11-06 14:31:42,205 - train_greyscale_FA_MoE.py - {'step': '42900', 'lr': '0.0002', 'total_loss': '0.0373014', 'main_loss': '0.0373014', 'time_per_step': '2.20744'}
+2025-11-06 14:35:32,273 - train_greyscale_FA_MoE.py - {'step': '43000', 'lr': '0.0002', 'total_loss': '0.0389009', 'main_loss': '0.0389009', 'time_per_step': '2.21408'}
+2025-11-06 14:39:24,102 - train_greyscale_FA_MoE.py - {'step': '43100', 'lr': '0.0002', 'total_loss': '0.0421322', 'main_loss': '0.0421322', 'time_per_step': '2.13939'}
+2025-11-06 14:43:15,046 - train_greyscale_FA_MoE.py - {'step': '43200', 'lr': '0.0002', 'total_loss': '0.0356171', 'main_loss': '0.0356171', 'time_per_step': '2.14641'}
+2025-11-06 14:47:06,308 - train_greyscale_FA_MoE.py - {'step': '43300', 'lr': '0.0002', 'total_loss': '0.0361393', 'main_loss': '0.0361393', 'time_per_step': '2.27453'}
+2025-11-06 14:50:58,254 - train_greyscale_FA_MoE.py - {'step': '43400', 'lr': '0.0002', 'total_loss': '0.0394807', 'main_loss': '0.0394807', 'time_per_step': '2.24284'}
+2025-11-06 14:54:48,448 - train_greyscale_FA_MoE.py - {'step': '43500', 'lr': '0.0002', 'total_loss': '0.037781', 'main_loss': '0.037781', 'time_per_step': '2.29531'}
+2025-11-06 14:58:39,214 - train_greyscale_FA_MoE.py - {'step': '43600', 'lr': '0.0002', 'total_loss': '0.0370061', 'main_loss': '0.0370061', 'time_per_step': '2.27285'}
+2025-11-06 15:02:29,986 - train_greyscale_FA_MoE.py - {'step': '43700', 'lr': '0.0002', 'total_loss': '0.0355977', 'main_loss': '0.0355977', 'time_per_step': '2.24497'}
+2025-11-06 15:06:21,668 - train_greyscale_FA_MoE.py - {'step': '43800', 'lr': '0.0002', 'total_loss': '0.0373065', 'main_loss': '0.0373065', 'time_per_step': '2.25417'}
+2025-11-06 15:10:11,591 - train_greyscale_FA_MoE.py - {'step': '43900', 'lr': '0.0002', 'total_loss': '0.0349576', 'main_loss': '0.0349576', 'time_per_step': '2.23092'}
+2025-11-06 15:14:02,548 - train_greyscale_FA_MoE.py - {'step': '44000', 'lr': '0.0002', 'total_loss': '0.0375978', 'main_loss': '0.0375978', 'time_per_step': '2.23883'}
+2025-11-06 15:17:53,201 - train_greyscale_FA_MoE.py - {'step': '44100', 'lr': '0.0002', 'total_loss': '0.0326704', 'main_loss': '0.0326704', 'time_per_step': '2.25282'}
+2025-11-06 15:21:43,589 - train_greyscale_FA_MoE.py - {'step': '44200', 'lr': '0.0002', 'total_loss': '0.0397386', 'main_loss': '0.0397386', 'time_per_step': '2.24676'}
+2025-11-06 15:25:34,183 - train_greyscale_FA_MoE.py - {'step': '44300', 'lr': '0.0002', 'total_loss': '0.0294837', 'main_loss': '0.0294837', 'time_per_step': '2.12093'}
+2025-11-06 15:29:24,918 - train_greyscale_FA_MoE.py - {'step': '44400', 'lr': '0.0002', 'total_loss': '0.0309152', 'main_loss': '0.0309152', 'time_per_step': '2.13253'}
+2025-11-06 15:33:16,408 - train_greyscale_FA_MoE.py - {'step': '44500', 'lr': '0.0002', 'total_loss': '0.040272', 'main_loss': '0.040272', 'time_per_step': '2.19925'}
+2025-11-06 15:37:07,238 - train_greyscale_FA_MoE.py - {'step': '44600', 'lr': '0.0002', 'total_loss': '0.0360296', 'main_loss': '0.0360296', 'time_per_step': '2.22429'}
+2025-11-06 15:40:58,066 - train_greyscale_FA_MoE.py - {'step': '44700', 'lr': '0.0002', 'total_loss': '0.0376597', 'main_loss': '0.0376597', 'time_per_step': '2.26144'}
+2025-11-06 15:44:48,826 - train_greyscale_FA_MoE.py - {'step': '44800', 'lr': '0.0002', 'total_loss': '0.0363951', 'main_loss': '0.0363951', 'time_per_step': '2.26703'}
+2025-11-06 15:48:39,927 - train_greyscale_FA_MoE.py - {'step': '44900', 'lr': '0.0002', 'total_loss': '0.0264493', 'main_loss': '0.0264493', 'time_per_step': '2.24253'}
+2025-11-06 15:52:30,841 - train_greyscale_FA_MoE.py - {'step': '45000', 'lr': '0.0002', 'total_loss': '0.038022', 'main_loss': '0.038022', 'time_per_step': '2.26015'}
+2025-11-06 15:56:21,236 - train_greyscale_FA_MoE.py - {'step': '45100', 'lr': '0.0002', 'total_loss': '0.0340629', 'main_loss': '0.0340629', 'time_per_step': '2.25866'}
+2025-11-06 16:00:12,122 - train_greyscale_FA_MoE.py - {'step': '45200', 'lr': '0.0002', 'total_loss': '0.0349447', 'main_loss': '0.0349447', 'time_per_step': '2.25662'}
+2025-11-06 16:04:03,121 - train_greyscale_FA_MoE.py - {'step': '45300', 'lr': '0.0002', 'total_loss': '0.0315821', 'main_loss': '0.0315821', 'time_per_step': '2.24003'}
+2025-11-06 16:07:53,887 - train_greyscale_FA_MoE.py - {'step': '45400', 'lr': '0.0002', 'total_loss': '0.0368514', 'main_loss': '0.0368514', 'time_per_step': '2.27261'}
+2025-11-06 16:11:43,714 - train_greyscale_FA_MoE.py - {'step': '45500', 'lr': '0.0002', 'total_loss': '0.0364446', 'main_loss': '0.0364446', 'time_per_step': '2.14635'}
+2025-11-06 16:15:34,469 - train_greyscale_FA_MoE.py - {'step': '45600', 'lr': '0.0002', 'total_loss': '0.0368801', 'main_loss': '0.0368801', 'time_per_step': '2.13891'}
+2025-11-06 16:19:26,006 - train_greyscale_FA_MoE.py - {'step': '45700', 'lr': '0.0002', 'total_loss': '0.0356394', 'main_loss': '0.0356394', 'time_per_step': '2.24134'}
+2025-11-06 16:23:17,304 - train_greyscale_FA_MoE.py - {'step': '45800', 'lr': '0.0002', 'total_loss': '0.0341315', 'main_loss': '0.0341315', 'time_per_step': '2.24824'}
+2025-11-06 16:27:07,877 - train_greyscale_FA_MoE.py - {'step': '45900', 'lr': '0.0002', 'total_loss': '0.0363629', 'main_loss': '0.0363629', 'time_per_step': '2.24916'}
+2025-11-06 16:30:57,864 - train_greyscale_FA_MoE.py - {'step': '46000', 'lr': '0.0002', 'total_loss': '0.0360709', 'main_loss': '0.0360709', 'time_per_step': '2.23617'}
+2025-11-06 16:34:48,612 - train_greyscale_FA_MoE.py - {'step': '46100', 'lr': '0.0002', 'total_loss': '0.0360921', 'main_loss': '0.0360921', 'time_per_step': '2.2826'}
+2025-11-06 16:38:39,579 - train_greyscale_FA_MoE.py - {'step': '46200', 'lr': '0.0002', 'total_loss': '0.0362905', 'main_loss': '0.0362905', 'time_per_step': '2.25413'}
+2025-11-06 16:42:31,295 - train_greyscale_FA_MoE.py - {'step': '46300', 'lr': '0.0002', 'total_loss': '0.0337743', 'main_loss': '0.0337743', 'time_per_step': '2.23026'}
+2025-11-06 16:46:21,265 - train_greyscale_FA_MoE.py - {'step': '46400', 'lr': '0.0002', 'total_loss': '0.0359215', 'main_loss': '0.0359215', 'time_per_step': '2.2392'}
+2025-11-06 16:50:11,945 - train_greyscale_FA_MoE.py - {'step': '46500', 'lr': '0.0002', 'total_loss': '0.0326617', 'main_loss': '0.0326617', 'time_per_step': '2.26577'}
+2025-11-06 16:54:03,056 - train_greyscale_FA_MoE.py - {'step': '46600', 'lr': '0.0002', 'total_loss': '0.0359618', 'main_loss': '0.0359618', 'time_per_step': '2.24143'}
+2025-11-06 16:57:53,507 - train_greyscale_FA_MoE.py - {'step': '46700', 'lr': '0.0002', 'total_loss': '0.0343863', 'main_loss': '0.0343863', 'time_per_step': '2.14516'}
+2025-11-06 17:01:43,126 - train_greyscale_FA_MoE.py - {'step': '46800', 'lr': '0.0002', 'total_loss': '0.0369224', 'main_loss': '0.0369224', 'time_per_step': '2.14222'}
+2025-11-06 17:05:34,326 - train_greyscale_FA_MoE.py - {'step': '46900', 'lr': '0.0002', 'total_loss': '0.0390243', 'main_loss': '0.0390243', 'time_per_step': '2.24156'}
+2025-11-06 17:09:25,323 - train_greyscale_FA_MoE.py - {'step': '47000', 'lr': '0.0002', 'total_loss': '0.0439069', 'main_loss': '0.0439069', 'time_per_step': '2.24103'}
+2025-11-06 17:13:16,751 - train_greyscale_FA_MoE.py - {'step': '47100', 'lr': '0.0002', 'total_loss': '0.0352531', 'main_loss': '0.0352531', 'time_per_step': '2.25895'}
+2025-11-06 17:17:07,019 - train_greyscale_FA_MoE.py - {'step': '47200', 'lr': '0.0002', 'total_loss': '0.0408496', 'main_loss': '0.0408496', 'time_per_step': '2.2465'}
+2025-11-06 17:20:57,614 - train_greyscale_FA_MoE.py - {'step': '47300', 'lr': '0.0002', 'total_loss': '0.0328842', 'main_loss': '0.0328842', 'time_per_step': '2.23592'}
+2025-11-06 17:24:48,253 - train_greyscale_FA_MoE.py - {'step': '47400', 'lr': '0.0002', 'total_loss': '0.0292012', 'main_loss': '0.0292012', 'time_per_step': '2.30459'}
+2025-11-06 17:28:38,235 - train_greyscale_FA_MoE.py - {'step': '47500', 'lr': '0.0002', 'total_loss': '0.0312303', 'main_loss': '0.0312303', 'time_per_step': '2.26799'}
+2025-11-06 17:32:28,256 - train_greyscale_FA_MoE.py - {'step': '47600', 'lr': '0.0002', 'total_loss': '0.0354723', 'main_loss': '0.0354723', 'time_per_step': '2.24902'}
+2025-11-06 17:36:18,993 - train_greyscale_FA_MoE.py - {'step': '47700', 'lr': '0.0002', 'total_loss': '0.0348271', 'main_loss': '0.0348271', 'time_per_step': '2.34676'}
+2025-11-06 17:40:09,565 - train_greyscale_FA_MoE.py - {'step': '47800', 'lr': '0.0002', 'total_loss': '0.0353023', 'main_loss': '0.0353023', 'time_per_step': '2.25575'}
+2025-11-06 17:43:59,516 - train_greyscale_FA_MoE.py - {'step': '47900', 'lr': '0.0002', 'total_loss': '0.041312', 'main_loss': '0.041312', 'time_per_step': '2.13703'}
+2025-11-06 17:47:49,528 - train_greyscale_FA_MoE.py - {'step': '48000', 'lr': '0.0002', 'total_loss': '0.0404947', 'main_loss': '0.0404947', 'time_per_step': '2.18886'}
+2025-11-06 17:51:41,235 - train_greyscale_FA_MoE.py - {'step': '48100', 'lr': '0.0002', 'total_loss': '0.0394811', 'main_loss': '0.0394811', 'time_per_step': '2.25011'}
+2025-11-06 17:55:31,761 - train_greyscale_FA_MoE.py - {'step': '48200', 'lr': '0.0002', 'total_loss': '0.0398758', 'main_loss': '0.0398758', 'time_per_step': '2.24566'}
+2025-11-06 17:59:21,864 - train_greyscale_FA_MoE.py - {'step': '48300', 'lr': '0.0002', 'total_loss': '0.0357038', 'main_loss': '0.0357038', 'time_per_step': '2.2431'}
+2025-11-06 18:03:11,902 - train_greyscale_FA_MoE.py - {'step': '48400', 'lr': '0.0002', 'total_loss': '0.043899', 'main_loss': '0.043899', 'time_per_step': '2.20259'}
+2025-11-06 18:07:02,361 - train_greyscale_FA_MoE.py - {'step': '48500', 'lr': '0.0002', 'total_loss': '0.029489', 'main_loss': '0.029489', 'time_per_step': '2.25259'}
+2025-11-06 18:10:53,140 - train_greyscale_FA_MoE.py - {'step': '48600', 'lr': '0.0002', 'total_loss': '0.0383181', 'main_loss': '0.0383181', 'time_per_step': '2.25192'}
+2025-11-06 18:14:44,423 - train_greyscale_FA_MoE.py - {'step': '48700', 'lr': '0.0002', 'total_loss': '0.0328729', 'main_loss': '0.0328729', 'time_per_step': '2.23999'}
+2025-11-06 18:18:35,468 - train_greyscale_FA_MoE.py - {'step': '48800', 'lr': '0.0002', 'total_loss': '0.0299405', 'main_loss': '0.0299405', 'time_per_step': '2.26584'}
+2025-11-06 18:22:25,632 - train_greyscale_FA_MoE.py - {'step': '48900', 'lr': '0.0002', 'total_loss': '0.037446', 'main_loss': '0.037446', 'time_per_step': '2.23991'}
+2025-11-06 18:26:16,033 - train_greyscale_FA_MoE.py - {'step': '49000', 'lr': '0.0002', 'total_loss': '0.037422', 'main_loss': '0.037422', 'time_per_step': '2.24249'}
+2025-11-06 18:30:06,992 - train_greyscale_FA_MoE.py - {'step': '49100', 'lr': '0.0002', 'total_loss': '0.046681', 'main_loss': '0.046681', 'time_per_step': '2.13329'}
+2025-11-06 18:33:58,001 - train_greyscale_FA_MoE.py - {'step': '49200', 'lr': '0.0002', 'total_loss': '0.0342588', 'main_loss': '0.0342588', 'time_per_step': '2.13358'}
+2025-11-06 18:37:48,234 - train_greyscale_FA_MoE.py - {'step': '49300', 'lr': '0.0002', 'total_loss': '0.0350662', 'main_loss': '0.0350662', 'time_per_step': '2.2912'}
+2025-11-06 18:41:39,816 - train_greyscale_FA_MoE.py - {'step': '49400', 'lr': '0.0002', 'total_loss': '0.0377382', 'main_loss': '0.0377382', 'time_per_step': '2.23418'}
+2025-11-06 18:45:29,941 - train_greyscale_FA_MoE.py - {'step': '49500', 'lr': '0.0002', 'total_loss': '0.0336311', 'main_loss': '0.0336311', 'time_per_step': '2.2302'}
+2025-11-06 18:49:20,958 - train_greyscale_FA_MoE.py - {'step': '49600', 'lr': '0.0002', 'total_loss': '0.0319032', 'main_loss': '0.0319032', 'time_per_step': '2.23685'}
+2025-11-06 18:53:11,394 - train_greyscale_FA_MoE.py - {'step': '49700', 'lr': '0.0002', 'total_loss': '0.0309785', 'main_loss': '0.0309785', 'time_per_step': '2.23525'}
+2025-11-06 18:57:02,162 - train_greyscale_FA_MoE.py - {'step': '49800', 'lr': '0.0002', 'total_loss': '0.0276582', 'main_loss': '0.0276582', 'time_per_step': '2.20706'}
+2025-11-06 19:00:53,327 - train_greyscale_FA_MoE.py - {'step': '49900', 'lr': '0.0002', 'total_loss': '0.0381827', 'main_loss': '0.0381827', 'time_per_step': '2.24265'}
+2025-11-06 19:04:43,704 - train_greyscale_FA_MoE.py - {'step': '50000', 'lr': '0.0002', 'total_loss': '0.0288884', 'main_loss': '0.0288884', 'time_per_step': '2.18779'}
+2025-11-06 19:04:43,733 - train_greyscale_FA_MoE.py - Saved expert distribution of layer in_block_0 to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/expert_distribution_in_block_0_step50000.npy
+2025-11-06 19:04:45,123 - train_greyscale_FA_MoE.py - Saved expert distribution of layer out_block_7 to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/expert_distribution_out_block_7_step50000.npy
+2025-11-06 19:04:46,674 - train_greyscale_FA_MoE.py - Save a grid of 16 samples into output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/50000.png by DPM-Solver
+2025-11-06 19:04:52,235 - train_greyscale_FA_MoE.py - Finished saving sample grid to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/50000.png by DPM-Solver.
+2025-11-06 19:04:52,278 - train_greyscale_FA_MoE.py - Save and eval checkpoint 50000...
+2025-11-06 19:04:54,719 - train_greyscale_FA_MoE.py - eval_step: n_samples=50000, sample_steps=50, algorithm=dpm_solver, mini_batch_size=500, samples save into output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_50000_dpm
+2025-11-06 19:56:27,943 - train_greyscale_FA_MoE.py - step=50000 fid50000=87.83629418590613
+2025-11-06 20:01:48,577 - train_greyscale_FA_MoE.py - {'step': '50100', 'lr': '0.0002', 'total_loss': '0.033719', 'main_loss': '0.033719', 'time_per_step': '2.27408'}
+2025-11-06 20:05:39,639 - train_greyscale_FA_MoE.py - {'step': '50200', 'lr': '0.0002', 'total_loss': '0.0392503', 'main_loss': '0.0392503', 'time_per_step': '2.25045'}
+2025-11-06 20:09:29,608 - train_greyscale_FA_MoE.py - {'step': '50300', 'lr': '0.0002', 'total_loss': '0.033544', 'main_loss': '0.033544', 'time_per_step': '2.16304'}
+2025-11-06 20:13:20,272 - train_greyscale_FA_MoE.py - {'step': '50400', 'lr': '0.0002', 'total_loss': '0.033287', 'main_loss': '0.033287', 'time_per_step': '2.15354'}
+2025-11-06 20:17:11,196 - train_greyscale_FA_MoE.py - {'step': '50500', 'lr': '0.0002', 'total_loss': '0.0399071', 'main_loss': '0.0399071', 'time_per_step': '2.20945'}
+2025-11-06 20:21:01,994 - train_greyscale_FA_MoE.py - {'step': '50600', 'lr': '0.0002', 'total_loss': '0.0360999', 'main_loss': '0.0360999', 'time_per_step': '2.25326'}
+2025-11-06 20:24:52,745 - train_greyscale_FA_MoE.py - {'step': '50700', 'lr': '0.0002', 'total_loss': '0.0381814', 'main_loss': '0.0381814', 'time_per_step': '2.23241'}
+2025-11-06 20:28:44,012 - train_greyscale_FA_MoE.py - {'step': '50800', 'lr': '0.0002', 'total_loss': '0.0330608', 'main_loss': '0.0330608', 'time_per_step': '2.244'}
+2025-11-06 20:32:35,018 - train_greyscale_FA_MoE.py - {'step': '50900', 'lr': '0.0002', 'total_loss': '0.0321698', 'main_loss': '0.0321698', 'time_per_step': '2.2689'}
+2025-11-06 20:36:25,675 - train_greyscale_FA_MoE.py - {'step': '51000', 'lr': '0.0002', 'total_loss': '0.0298703', 'main_loss': '0.0298703', 'time_per_step': '2.23588'}
+2025-11-06 20:40:16,559 - train_greyscale_FA_MoE.py - {'step': '51100', 'lr': '0.0002', 'total_loss': '0.0350045', 'main_loss': '0.0350045', 'time_per_step': '2.238'}
+2025-11-06 20:44:07,447 - train_greyscale_FA_MoE.py - {'step': '51200', 'lr': '0.0002', 'total_loss': '0.0365084', 'main_loss': '0.0365084', 'time_per_step': '2.24724'}
+2025-11-06 20:47:58,439 - train_greyscale_FA_MoE.py - {'step': '51300', 'lr': '0.0002', 'total_loss': '0.0307358', 'main_loss': '0.0307358', 'time_per_step': '2.25519'}
+2025-11-06 20:51:48,751 - train_greyscale_FA_MoE.py - {'step': '51400', 'lr': '0.0002', 'total_loss': '0.0327321', 'main_loss': '0.0327321', 'time_per_step': '2.25943'}
+2025-11-06 20:55:39,131 - train_greyscale_FA_MoE.py - {'step': '51500', 'lr': '0.0002', 'total_loss': '0.02891', 'main_loss': '0.02891', 'time_per_step': '2.1464'}
+2025-11-06 20:59:30,320 - train_greyscale_FA_MoE.py - {'step': '51600', 'lr': '0.0002', 'total_loss': '0.0405068', 'main_loss': '0.0405068', 'time_per_step': '2.14919'}
+2025-11-06 21:03:20,809 - train_greyscale_FA_MoE.py - {'step': '51700', 'lr': '0.0002', 'total_loss': '0.027515', 'main_loss': '0.027515', 'time_per_step': '2.24206'}
+2025-11-06 21:07:11,531 - train_greyscale_FA_MoE.py - {'step': '51800', 'lr': '0.0002', 'total_loss': '0.0331489', 'main_loss': '0.0331489', 'time_per_step': '2.24722'}
+2025-11-06 21:11:01,585 - train_greyscale_FA_MoE.py - {'step': '51900', 'lr': '0.0002', 'total_loss': '0.0373657', 'main_loss': '0.0373657', 'time_per_step': '2.24475'}
+2025-11-06 21:14:52,427 - train_greyscale_FA_MoE.py - {'step': '52000', 'lr': '0.0002', 'total_loss': '0.0402201', 'main_loss': '0.0402201', 'time_per_step': '2.23338'}
+2025-11-06 21:18:43,628 - train_greyscale_FA_MoE.py - {'step': '52100', 'lr': '0.0002', 'total_loss': '0.032853', 'main_loss': '0.032853', 'time_per_step': '2.22977'}
+2025-11-06 21:22:34,850 - train_greyscale_FA_MoE.py - {'step': '52200', 'lr': '0.0002', 'total_loss': '0.0260691', 'main_loss': '0.0260691', 'time_per_step': '2.25429'}
+2025-11-06 21:26:25,256 - train_greyscale_FA_MoE.py - {'step': '52300', 'lr': '0.0002', 'total_loss': '0.0299708', 'main_loss': '0.0299708', 'time_per_step': '2.23071'}
+2025-11-06 21:30:15,912 - train_greyscale_FA_MoE.py - {'step': '52400', 'lr': '0.0002', 'total_loss': '0.0404215', 'main_loss': '0.0404215', 'time_per_step': '2.23968'}
+2025-11-06 21:34:07,393 - train_greyscale_FA_MoE.py - {'step': '52500', 'lr': '0.0002', 'total_loss': '0.0372379', 'main_loss': '0.0372379', 'time_per_step': '2.25543'}
+2025-11-06 21:37:58,122 - train_greyscale_FA_MoE.py - {'step': '52600', 'lr': '0.0002', 'total_loss': '0.0419024', 'main_loss': '0.0419024', 'time_per_step': '2.26831'}
+2025-11-06 21:41:50,300 - train_greyscale_FA_MoE.py - {'step': '52700', 'lr': '0.0002', 'total_loss': '0.0366944', 'main_loss': '0.0366944', 'time_per_step': '2.14143'}
+2025-11-06 21:45:40,152 - train_greyscale_FA_MoE.py - {'step': '52800', 'lr': '0.0002', 'total_loss': '0.0356611', 'main_loss': '0.0356611', 'time_per_step': '2.15231'}
+2025-11-06 21:49:31,327 - train_greyscale_FA_MoE.py - {'step': '52900', 'lr': '0.0002', 'total_loss': '0.040825', 'main_loss': '0.040825', 'time_per_step': '2.30262'}
+2025-11-06 21:53:21,801 - train_greyscale_FA_MoE.py - {'step': '53000', 'lr': '0.0002', 'total_loss': '0.0386613', 'main_loss': '0.0386613', 'time_per_step': '2.24071'}
+2025-11-06 21:57:12,213 - train_greyscale_FA_MoE.py - {'step': '53100', 'lr': '0.0002', 'total_loss': '0.03545', 'main_loss': '0.03545', 'time_per_step': '2.24788'}
+2025-11-06 22:01:02,729 - train_greyscale_FA_MoE.py - {'step': '53200', 'lr': '0.0002', 'total_loss': '0.0434323', 'main_loss': '0.0434323', 'time_per_step': '2.22926'}
+2025-11-06 22:04:53,976 - train_greyscale_FA_MoE.py - {'step': '53300', 'lr': '0.0002', 'total_loss': '0.0288334', 'main_loss': '0.0288334', 'time_per_step': '2.23681'}
+2025-11-06 22:08:44,579 - train_greyscale_FA_MoE.py - {'step': '53400', 'lr': '0.0002', 'total_loss': '0.0325387', 'main_loss': '0.0325387', 'time_per_step': '2.2485'}
+2025-11-06 22:12:35,459 - train_greyscale_FA_MoE.py - {'step': '53500', 'lr': '0.0002', 'total_loss': '0.031324', 'main_loss': '0.031324', 'time_per_step': '2.28265'}
+2025-11-06 22:16:25,762 - train_greyscale_FA_MoE.py - {'step': '53600', 'lr': '0.0002', 'total_loss': '0.0308931', 'main_loss': '0.0308931', 'time_per_step': '2.25012'}
+2025-11-06 22:20:16,539 - train_greyscale_FA_MoE.py - {'step': '53700', 'lr': '0.0002', 'total_loss': '0.0350071', 'main_loss': '0.0350071', 'time_per_step': '2.24459'}
+2025-11-06 22:24:07,237 - train_greyscale_FA_MoE.py - {'step': '53800', 'lr': '0.0002', 'total_loss': '0.0336928', 'main_loss': '0.0336928', 'time_per_step': '2.27732'}
+2025-11-06 22:27:57,851 - train_greyscale_FA_MoE.py - {'step': '53900', 'lr': '0.0002', 'total_loss': '0.0286839', 'main_loss': '0.0286839', 'time_per_step': '2.14263'}
+2025-11-06 22:31:47,581 - train_greyscale_FA_MoE.py - {'step': '54000', 'lr': '0.0002', 'total_loss': '0.0334982', 'main_loss': '0.0334982', 'time_per_step': '2.15209'}
+2025-11-06 22:35:39,495 - train_greyscale_FA_MoE.py - {'step': '54100', 'lr': '0.0002', 'total_loss': '0.0373622', 'main_loss': '0.0373622', 'time_per_step': '2.25853'}
+2025-11-06 22:39:31,327 - train_greyscale_FA_MoE.py - {'step': '54200', 'lr': '0.0002', 'total_loss': '0.0337387', 'main_loss': '0.0337387', 'time_per_step': '2.24179'}
+2025-11-06 22:43:22,272 - train_greyscale_FA_MoE.py - {'step': '54300', 'lr': '0.0002', 'total_loss': '0.0309186', 'main_loss': '0.0309186', 'time_per_step': '2.24367'}
+2025-11-06 22:47:12,592 - train_greyscale_FA_MoE.py - {'step': '54400', 'lr': '0.0002', 'total_loss': '0.0345703', 'main_loss': '0.0345703', 'time_per_step': '2.24894'}
+2025-11-06 22:51:02,612 - train_greyscale_FA_MoE.py - {'step': '54500', 'lr': '0.0002', 'total_loss': '0.0400511', 'main_loss': '0.0400511', 'time_per_step': '2.23069'}
+2025-11-06 22:54:53,317 - train_greyscale_FA_MoE.py - {'step': '54600', 'lr': '0.0002', 'total_loss': '0.0382502', 'main_loss': '0.0382502', 'time_per_step': '2.25187'}
+2025-11-06 22:58:44,670 - train_greyscale_FA_MoE.py - {'step': '54700', 'lr': '0.0002', 'total_loss': '0.0401869', 'main_loss': '0.0401869', 'time_per_step': '2.24003'}
+2025-11-06 23:02:35,644 - train_greyscale_FA_MoE.py - {'step': '54800', 'lr': '0.0002', 'total_loss': '0.03417', 'main_loss': '0.03417', 'time_per_step': '2.24299'}
+2025-11-06 23:06:25,703 - train_greyscale_FA_MoE.py - {'step': '54900', 'lr': '0.0002', 'total_loss': '0.0326472', 'main_loss': '0.0326472', 'time_per_step': '2.25057'}
+2025-11-06 23:10:16,415 - train_greyscale_FA_MoE.py - {'step': '55000', 'lr': '0.0002', 'total_loss': '0.0291813', 'main_loss': '0.0291813', 'time_per_step': '2.22786'}
+2025-11-06 23:14:06,756 - train_greyscale_FA_MoE.py - {'step': '55100', 'lr': '0.0002', 'total_loss': '0.0360091', 'main_loss': '0.0360091', 'time_per_step': '2.13456'}
+2025-11-06 23:17:56,939 - train_greyscale_FA_MoE.py - {'step': '55200', 'lr': '0.0002', 'total_loss': '0.0308392', 'main_loss': '0.0308392', 'time_per_step': '2.13413'}
+2025-11-06 23:21:47,799 - train_greyscale_FA_MoE.py - {'step': '55300', 'lr': '0.0002', 'total_loss': '0.0316391', 'main_loss': '0.0316391', 'time_per_step': '2.26137'}
+2025-11-06 23:25:38,004 - train_greyscale_FA_MoE.py - {'step': '55400', 'lr': '0.0002', 'total_loss': '0.0305653', 'main_loss': '0.0305653', 'time_per_step': '2.24822'}
+2025-11-06 23:29:29,215 - train_greyscale_FA_MoE.py - {'step': '55500', 'lr': '0.0002', 'total_loss': '0.0362343', 'main_loss': '0.0362343', 'time_per_step': '2.25837'}
+2025-11-06 23:33:20,549 - train_greyscale_FA_MoE.py - {'step': '55600', 'lr': '0.0002', 'total_loss': '0.029398', 'main_loss': '0.029398', 'time_per_step': '2.21475'}
+2025-11-06 23:37:11,302 - train_greyscale_FA_MoE.py - {'step': '55700', 'lr': '0.0002', 'total_loss': '0.031341', 'main_loss': '0.031341', 'time_per_step': '2.3319'}
+2025-11-06 23:41:03,543 - train_greyscale_FA_MoE.py - {'step': '55800', 'lr': '0.0002', 'total_loss': '0.0309938', 'main_loss': '0.0309938', 'time_per_step': '2.2326'}
+2025-11-06 23:44:54,039 - train_greyscale_FA_MoE.py - {'step': '55900', 'lr': '0.0002', 'total_loss': '0.0329415', 'main_loss': '0.0329415', 'time_per_step': '2.25092'}
+2025-11-06 23:48:44,471 - train_greyscale_FA_MoE.py - {'step': '56000', 'lr': '0.0002', 'total_loss': '0.0291895', 'main_loss': '0.0291895', 'time_per_step': '2.21603'}
+2025-11-06 23:52:34,933 - train_greyscale_FA_MoE.py - {'step': '56100', 'lr': '0.0002', 'total_loss': '0.0353691', 'main_loss': '0.0353691', 'time_per_step': '2.22018'}
+2025-11-06 23:56:25,442 - train_greyscale_FA_MoE.py - {'step': '56200', 'lr': '0.0002', 'total_loss': '0.0322628', 'main_loss': '0.0322628', 'time_per_step': '2.277'}
+2025-11-07 00:00:16,398 - train_greyscale_FA_MoE.py - {'step': '56300', 'lr': '0.0002', 'total_loss': '0.0362239', 'main_loss': '0.0362239', 'time_per_step': '2.13932'}
+2025-11-07 00:04:07,447 - train_greyscale_FA_MoE.py - {'step': '56400', 'lr': '0.0002', 'total_loss': '0.0357831', 'main_loss': '0.0357831', 'time_per_step': '2.15027'}
+2025-11-07 00:07:58,006 - train_greyscale_FA_MoE.py - {'step': '56500', 'lr': '0.0002', 'total_loss': '0.0396888', 'main_loss': '0.0396888', 'time_per_step': '2.21165'}
+2025-11-07 00:11:48,335 - train_greyscale_FA_MoE.py - {'step': '56600', 'lr': '0.0002', 'total_loss': '0.0332144', 'main_loss': '0.0332144', 'time_per_step': '2.26069'}
+2025-11-07 00:15:39,394 - train_greyscale_FA_MoE.py - {'step': '56700', 'lr': '0.0002', 'total_loss': '0.0289954', 'main_loss': '0.0289954', 'time_per_step': '2.26585'}
+2025-11-07 00:19:31,025 - train_greyscale_FA_MoE.py - {'step': '56800', 'lr': '0.0002', 'total_loss': '0.032785', 'main_loss': '0.032785', 'time_per_step': '2.24874'}
+2025-11-07 00:23:21,071 - train_greyscale_FA_MoE.py - {'step': '56900', 'lr': '0.0002', 'total_loss': '0.0322427', 'main_loss': '0.0322427', 'time_per_step': '2.2008'}
+2025-11-07 00:27:11,916 - train_greyscale_FA_MoE.py - {'step': '57000', 'lr': '0.0002', 'total_loss': '0.0336178', 'main_loss': '0.0336178', 'time_per_step': '2.24343'}
+2025-11-07 00:31:02,594 - train_greyscale_FA_MoE.py - {'step': '57100', 'lr': '0.0002', 'total_loss': '0.0364501', 'main_loss': '0.0364501', 'time_per_step': '2.24786'}
+2025-11-07 00:34:54,208 - train_greyscale_FA_MoE.py - {'step': '57200', 'lr': '0.0002', 'total_loss': '0.0320915', 'main_loss': '0.0320915', 'time_per_step': '2.23504'}
+2025-11-07 00:38:45,083 - train_greyscale_FA_MoE.py - {'step': '57300', 'lr': '0.0002', 'total_loss': '0.0343183', 'main_loss': '0.0343183', 'time_per_step': '2.24009'}
+2025-11-07 00:42:36,547 - train_greyscale_FA_MoE.py - {'step': '57400', 'lr': '0.0002', 'total_loss': '0.0258787', 'main_loss': '0.0258787', 'time_per_step': '2.23507'}
+2025-11-07 00:46:28,085 - train_greyscale_FA_MoE.py - {'step': '57500', 'lr': '0.0002', 'total_loss': '0.0373697', 'main_loss': '0.0373697', 'time_per_step': '2.13698'}
+2025-11-07 00:50:18,717 - train_greyscale_FA_MoE.py - {'step': '57600', 'lr': '0.0002', 'total_loss': '0.0306173', 'main_loss': '0.0306173', 'time_per_step': '2.21198'}
+2025-11-07 00:54:10,361 - train_greyscale_FA_MoE.py - {'step': '57700', 'lr': '0.0002', 'total_loss': '0.0326331', 'main_loss': '0.0326331', 'time_per_step': '2.24969'}
+2025-11-07 00:58:00,353 - train_greyscale_FA_MoE.py - {'step': '57800', 'lr': '0.0002', 'total_loss': '0.0300532', 'main_loss': '0.0300532', 'time_per_step': '2.2064'}
+2025-11-07 01:01:51,349 - train_greyscale_FA_MoE.py - {'step': '57900', 'lr': '0.0002', 'total_loss': '0.0342999', 'main_loss': '0.0342999', 'time_per_step': '2.24567'}
+2025-11-07 01:05:41,857 - train_greyscale_FA_MoE.py - {'step': '58000', 'lr': '0.0002', 'total_loss': '0.0309369', 'main_loss': '0.0309369', 'time_per_step': '2.23519'}
+2025-11-07 01:09:33,299 - train_greyscale_FA_MoE.py - {'step': '58100', 'lr': '0.0002', 'total_loss': '0.0270311', 'main_loss': '0.0270311', 'time_per_step': '2.25441'}
+2025-11-07 01:13:23,442 - train_greyscale_FA_MoE.py - {'step': '58200', 'lr': '0.0002', 'total_loss': '0.03354', 'main_loss': '0.03354', 'time_per_step': '2.23051'}
+2025-11-07 01:17:14,236 - train_greyscale_FA_MoE.py - {'step': '58300', 'lr': '0.0002', 'total_loss': '0.0313437', 'main_loss': '0.0313437', 'time_per_step': '2.2089'}
+2025-11-07 01:21:05,191 - train_greyscale_FA_MoE.py - {'step': '58400', 'lr': '0.0002', 'total_loss': '0.0357674', 'main_loss': '0.0357674', 'time_per_step': '2.25301'}
+2025-11-07 01:24:55,581 - train_greyscale_FA_MoE.py - {'step': '58500', 'lr': '0.0002', 'total_loss': '0.0342348', 'main_loss': '0.0342348', 'time_per_step': '2.24369'}
+2025-11-07 01:28:45,732 - train_greyscale_FA_MoE.py - {'step': '58600', 'lr': '0.0002', 'total_loss': '0.0365372', 'main_loss': '0.0365372', 'time_per_step': '2.24249'}
+2025-11-07 01:32:35,805 - train_greyscale_FA_MoE.py - {'step': '58700', 'lr': '0.0002', 'total_loss': '0.0420332', 'main_loss': '0.0420332', 'time_per_step': '2.14627'}
+2025-11-07 01:36:25,527 - train_greyscale_FA_MoE.py - {'step': '58800', 'lr': '0.0002', 'total_loss': '0.0272831', 'main_loss': '0.0272831', 'time_per_step': '2.13878'}
+2025-11-07 01:40:16,944 - train_greyscale_FA_MoE.py - {'step': '58900', 'lr': '0.0002', 'total_loss': '0.0262209', 'main_loss': '0.0262209', 'time_per_step': '2.23657'}
+2025-11-07 01:44:07,009 - train_greyscale_FA_MoE.py - {'step': '59000', 'lr': '0.0002', 'total_loss': '0.0301014', 'main_loss': '0.0301014', 'time_per_step': '2.28071'}
+2025-11-07 01:47:57,691 - train_greyscale_FA_MoE.py - {'step': '59100', 'lr': '0.0002', 'total_loss': '0.0342488', 'main_loss': '0.0342488', 'time_per_step': '2.27308'}
+2025-11-07 01:51:48,908 - train_greyscale_FA_MoE.py - {'step': '59200', 'lr': '0.0002', 'total_loss': '0.0369938', 'main_loss': '0.0369938', 'time_per_step': '2.3025'}
+2025-11-07 01:55:40,116 - train_greyscale_FA_MoE.py - {'step': '59300', 'lr': '0.0002', 'total_loss': '0.0297142', 'main_loss': '0.0297142', 'time_per_step': '2.24652'}
+2025-11-07 01:59:30,271 - train_greyscale_FA_MoE.py - {'step': '59400', 'lr': '0.0002', 'total_loss': '0.0321088', 'main_loss': '0.0321088', 'time_per_step': '2.26997'}
+2025-11-07 02:03:21,435 - train_greyscale_FA_MoE.py - {'step': '59500', 'lr': '0.0002', 'total_loss': '0.0326883', 'main_loss': '0.0326883', 'time_per_step': '2.25558'}
+2025-11-07 02:07:12,160 - train_greyscale_FA_MoE.py - {'step': '59600', 'lr': '0.0002', 'total_loss': '0.0367426', 'main_loss': '0.0367426', 'time_per_step': '2.23594'}
+2025-11-07 02:11:02,529 - train_greyscale_FA_MoE.py - {'step': '59700', 'lr': '0.0002', 'total_loss': '0.04122', 'main_loss': '0.04122', 'time_per_step': '2.26685'}
+2025-11-07 02:14:53,035 - train_greyscale_FA_MoE.py - {'step': '59800', 'lr': '0.0002', 'total_loss': '0.0305253', 'main_loss': '0.0305253', 'time_per_step': '2.23222'}
+2025-11-07 02:18:43,499 - train_greyscale_FA_MoE.py - {'step': '59900', 'lr': '0.0002', 'total_loss': '0.0360715', 'main_loss': '0.0360715', 'time_per_step': '2.1408'}
+2025-11-07 02:22:34,134 - train_greyscale_FA_MoE.py - {'step': '60000', 'lr': '0.0002', 'total_loss': '0.0337537', 'main_loss': '0.0337537', 'time_per_step': '2.17021'}
+2025-11-07 02:26:25,822 - train_greyscale_FA_MoE.py - {'step': '60100', 'lr': '0.0002', 'total_loss': '0.03332', 'main_loss': '0.03332', 'time_per_step': '2.24339'}
+2025-11-07 02:30:16,553 - train_greyscale_FA_MoE.py - {'step': '60200', 'lr': '0.0002', 'total_loss': '0.0293095', 'main_loss': '0.0293095', 'time_per_step': '2.24567'}
+2025-11-07 02:34:07,254 - train_greyscale_FA_MoE.py - {'step': '60300', 'lr': '0.0002', 'total_loss': '0.0349552', 'main_loss': '0.0349552', 'time_per_step': '2.25141'}
+2025-11-07 02:37:58,037 - train_greyscale_FA_MoE.py - {'step': '60400', 'lr': '0.0002', 'total_loss': '0.0330167', 'main_loss': '0.0330167', 'time_per_step': '2.23568'}
+2025-11-07 02:41:49,798 - train_greyscale_FA_MoE.py - {'step': '60500', 'lr': '0.0002', 'total_loss': '0.0355823', 'main_loss': '0.0355823', 'time_per_step': '2.28536'}
+2025-11-07 02:45:39,992 - train_greyscale_FA_MoE.py - {'step': '60600', 'lr': '0.0002', 'total_loss': '0.0311524', 'main_loss': '0.0311524', 'time_per_step': '2.25005'}
+2025-11-07 02:49:29,971 - train_greyscale_FA_MoE.py - {'step': '60700', 'lr': '0.0002', 'total_loss': '0.0363641', 'main_loss': '0.0363641', 'time_per_step': '2.23665'}
+2025-11-07 02:53:20,749 - train_greyscale_FA_MoE.py - {'step': '60800', 'lr': '0.0002', 'total_loss': '0.0352219', 'main_loss': '0.0352219', 'time_per_step': '2.24686'}
+2025-11-07 02:57:11,555 - train_greyscale_FA_MoE.py - {'step': '60900', 'lr': '0.0002', 'total_loss': '0.0341086', 'main_loss': '0.0341086', 'time_per_step': '2.24324'}
+2025-11-07 03:01:03,030 - train_greyscale_FA_MoE.py - {'step': '61000', 'lr': '0.0002', 'total_loss': '0.0297594', 'main_loss': '0.0297594', 'time_per_step': '2.2552'}
+2025-11-07 03:04:53,343 - train_greyscale_FA_MoE.py - {'step': '61100', 'lr': '0.0002', 'total_loss': '0.0370875', 'main_loss': '0.0370875', 'time_per_step': '2.14402'}
+2025-11-07 03:08:43,395 - train_greyscale_FA_MoE.py - {'step': '61200', 'lr': '0.0002', 'total_loss': '0.0271381', 'main_loss': '0.0271381', 'time_per_step': '2.1267'}
+2025-11-07 03:12:35,272 - train_greyscale_FA_MoE.py - {'step': '61300', 'lr': '0.0002', 'total_loss': '0.0357964', 'main_loss': '0.0357964', 'time_per_step': '2.23335'}
+2025-11-07 03:16:25,985 - train_greyscale_FA_MoE.py - {'step': '61400', 'lr': '0.0002', 'total_loss': '0.0342089', 'main_loss': '0.0342089', 'time_per_step': '2.2743'}
+2025-11-07 03:20:16,164 - train_greyscale_FA_MoE.py - {'step': '61500', 'lr': '0.0002', 'total_loss': '0.0331484', 'main_loss': '0.0331484', 'time_per_step': '2.2267'}
+2025-11-07 03:24:07,074 - train_greyscale_FA_MoE.py - {'step': '61600', 'lr': '0.0002', 'total_loss': '0.0383469', 'main_loss': '0.0383469', 'time_per_step': '2.2303'}
+2025-11-07 03:27:57,933 - train_greyscale_FA_MoE.py - {'step': '61700', 'lr': '0.0002', 'total_loss': '0.0356246', 'main_loss': '0.0356246', 'time_per_step': '2.20829'}
+2025-11-07 03:31:48,220 - train_greyscale_FA_MoE.py - {'step': '61800', 'lr': '0.0002', 'total_loss': '0.0298269', 'main_loss': '0.0298269', 'time_per_step': '2.31938'}
+2025-11-07 03:35:38,651 - train_greyscale_FA_MoE.py - {'step': '61900', 'lr': '0.0002', 'total_loss': '0.0275854', 'main_loss': '0.0275854', 'time_per_step': '2.26715'}
+2025-11-07 03:39:30,035 - train_greyscale_FA_MoE.py - {'step': '62000', 'lr': '0.0002', 'total_loss': '0.0314118', 'main_loss': '0.0314118', 'time_per_step': '2.24735'}
+2025-11-07 03:43:21,091 - train_greyscale_FA_MoE.py - {'step': '62100', 'lr': '0.0002', 'total_loss': '0.0323909', 'main_loss': '0.0323909', 'time_per_step': '2.2439'}
+2025-11-07 03:47:12,124 - train_greyscale_FA_MoE.py - {'step': '62200', 'lr': '0.0002', 'total_loss': '0.0334739', 'main_loss': '0.0334739', 'time_per_step': '2.23787'}
+2025-11-07 03:51:02,003 - train_greyscale_FA_MoE.py - {'step': '62300', 'lr': '0.0002', 'total_loss': '0.0302281', 'main_loss': '0.0302281', 'time_per_step': '2.13945'}
+2025-11-07 03:54:52,603 - train_greyscale_FA_MoE.py - {'step': '62400', 'lr': '0.0002', 'total_loss': '0.0317842', 'main_loss': '0.0317842', 'time_per_step': '2.13626'}
+2025-11-07 03:58:44,142 - train_greyscale_FA_MoE.py - {'step': '62500', 'lr': '0.0002', 'total_loss': '0.0302614', 'main_loss': '0.0302614', 'time_per_step': '2.21241'}
+2025-11-07 04:02:35,117 - train_greyscale_FA_MoE.py - {'step': '62600', 'lr': '0.0002', 'total_loss': '0.0286319', 'main_loss': '0.0286319', 'time_per_step': '2.26048'}
+2025-11-07 04:06:25,618 - train_greyscale_FA_MoE.py - {'step': '62700', 'lr': '0.0002', 'total_loss': '0.0295553', 'main_loss': '0.0295553', 'time_per_step': '2.27147'}
+2025-11-07 04:10:15,990 - train_greyscale_FA_MoE.py - {'step': '62800', 'lr': '0.0002', 'total_loss': '0.034999', 'main_loss': '0.034999', 'time_per_step': '2.25481'}
+2025-11-07 04:14:06,378 - train_greyscale_FA_MoE.py - {'step': '62900', 'lr': '0.0002', 'total_loss': '0.0315207', 'main_loss': '0.0315207', 'time_per_step': '2.23751'}
+2025-11-07 04:17:57,509 - train_greyscale_FA_MoE.py - {'step': '63000', 'lr': '0.0002', 'total_loss': '0.0368475', 'main_loss': '0.0368475', 'time_per_step': '2.25682'}
+2025-11-07 04:21:47,717 - train_greyscale_FA_MoE.py - {'step': '63100', 'lr': '0.0002', 'total_loss': '0.0323271', 'main_loss': '0.0323271', 'time_per_step': '2.25443'}
+2025-11-07 04:25:37,906 - train_greyscale_FA_MoE.py - {'step': '63200', 'lr': '0.0002', 'total_loss': '0.0323253', 'main_loss': '0.0323253', 'time_per_step': '2.2524'}
+2025-11-07 04:29:27,588 - train_greyscale_FA_MoE.py - {'step': '63300', 'lr': '0.0002', 'total_loss': '0.0300587', 'main_loss': '0.0300587', 'time_per_step': '2.23717'}
+2025-11-07 04:33:18,870 - train_greyscale_FA_MoE.py - {'step': '63400', 'lr': '0.0002', 'total_loss': '0.0268888', 'main_loss': '0.0268888', 'time_per_step': '2.29193'}
+2025-11-07 04:37:09,251 - train_greyscale_FA_MoE.py - {'step': '63500', 'lr': '0.0002', 'total_loss': '0.0375605', 'main_loss': '0.0375605', 'time_per_step': '2.27718'}
+2025-11-07 04:40:59,360 - train_greyscale_FA_MoE.py - {'step': '63600', 'lr': '0.0002', 'total_loss': '0.0297293', 'main_loss': '0.0297293', 'time_per_step': '2.15294'}
+2025-11-07 04:44:50,854 - train_greyscale_FA_MoE.py - {'step': '63700', 'lr': '0.0002', 'total_loss': '0.0309329', 'main_loss': '0.0309329', 'time_per_step': '2.2523'}
+2025-11-07 04:48:41,742 - train_greyscale_FA_MoE.py - {'step': '63800', 'lr': '0.0002', 'total_loss': '0.0334313', 'main_loss': '0.0334313', 'time_per_step': '2.2485'}
+2025-11-07 04:52:32,631 - train_greyscale_FA_MoE.py - {'step': '63900', 'lr': '0.0002', 'total_loss': '0.0321802', 'main_loss': '0.0321802', 'time_per_step': '2.23751'}
+2025-11-07 04:56:22,784 - train_greyscale_FA_MoE.py - {'step': '64000', 'lr': '0.0002', 'total_loss': '0.0327846', 'main_loss': '0.0327846', 'time_per_step': '2.22844'}
+2025-11-07 05:00:15,839 - train_greyscale_FA_MoE.py - {'step': '64100', 'lr': '0.0002', 'total_loss': '0.0343499', 'main_loss': '0.0343499', 'time_per_step': '2.26555'}
+2025-11-07 05:04:07,753 - train_greyscale_FA_MoE.py - {'step': '64200', 'lr': '0.0002', 'total_loss': '0.0286198', 'main_loss': '0.0286198', 'time_per_step': '2.25125'}
+2025-11-07 05:07:58,415 - train_greyscale_FA_MoE.py - {'step': '64300', 'lr': '0.0002', 'total_loss': '0.0388683', 'main_loss': '0.0388683', 'time_per_step': '2.2445'}
+2025-11-07 05:11:48,324 - train_greyscale_FA_MoE.py - {'step': '64400', 'lr': '0.0002', 'total_loss': '0.038768', 'main_loss': '0.038768', 'time_per_step': '2.30812'}
+2025-11-07 05:15:39,366 - train_greyscale_FA_MoE.py - {'step': '64500', 'lr': '0.0002', 'total_loss': '0.0295605', 'main_loss': '0.0295605', 'time_per_step': '2.24933'}
+2025-11-07 05:19:30,711 - train_greyscale_FA_MoE.py - {'step': '64600', 'lr': '0.0002', 'total_loss': '0.0369148', 'main_loss': '0.0369148', 'time_per_step': '2.21375'}
+2025-11-07 05:23:21,251 - train_greyscale_FA_MoE.py - {'step': '64700', 'lr': '0.0002', 'total_loss': '0.0296184', 'main_loss': '0.0296184', 'time_per_step': '2.13856'}
+2025-11-07 05:27:10,829 - train_greyscale_FA_MoE.py - {'step': '64800', 'lr': '0.0002', 'total_loss': '0.0245223', 'main_loss': '0.0245223', 'time_per_step': '2.13717'}
+2025-11-07 05:31:02,210 - train_greyscale_FA_MoE.py - {'step': '64900', 'lr': '0.0002', 'total_loss': '0.0277475', 'main_loss': '0.0277475', 'time_per_step': '2.23949'}
+2025-11-07 05:34:53,884 - train_greyscale_FA_MoE.py - {'step': '65000', 'lr': '0.0002', 'total_loss': '0.0357424', 'main_loss': '0.0357424', 'time_per_step': '2.25713'}
+2025-11-07 05:38:44,308 - train_greyscale_FA_MoE.py - {'step': '65100', 'lr': '0.0002', 'total_loss': '0.0354318', 'main_loss': '0.0354318', 'time_per_step': '2.24706'}
+2025-11-07 05:42:35,289 - train_greyscale_FA_MoE.py - {'step': '65200', 'lr': '0.0002', 'total_loss': '0.0256983', 'main_loss': '0.0256983', 'time_per_step': '2.25382'}
+2025-11-07 05:46:26,392 - train_greyscale_FA_MoE.py - {'step': '65300', 'lr': '0.0002', 'total_loss': '0.0328143', 'main_loss': '0.0328143', 'time_per_step': '2.23517'}
+2025-11-07 05:50:16,532 - train_greyscale_FA_MoE.py - {'step': '65400', 'lr': '0.0002', 'total_loss': '0.0312949', 'main_loss': '0.0312949', 'time_per_step': '2.2593'}
+2025-11-07 05:54:07,203 - train_greyscale_FA_MoE.py - {'step': '65500', 'lr': '0.0002', 'total_loss': '0.0391759', 'main_loss': '0.0391759', 'time_per_step': '2.20766'}
+2025-11-07 05:57:58,000 - train_greyscale_FA_MoE.py - {'step': '65600', 'lr': '0.0002', 'total_loss': '0.0292652', 'main_loss': '0.0292652', 'time_per_step': '2.24284'}
+2025-11-07 06:01:48,105 - train_greyscale_FA_MoE.py - {'step': '65700', 'lr': '0.0002', 'total_loss': '0.0324892', 'main_loss': '0.0324892', 'time_per_step': '2.31505'}
+2025-11-07 06:05:38,589 - train_greyscale_FA_MoE.py - {'step': '65800', 'lr': '0.0002', 'total_loss': '0.0325337', 'main_loss': '0.0325337', 'time_per_step': '2.23653'}
+2025-11-07 06:09:29,032 - train_greyscale_FA_MoE.py - {'step': '65900', 'lr': '0.0002', 'total_loss': '0.0297957', 'main_loss': '0.0297957', 'time_per_step': '2.14727'}
+2025-11-07 06:13:19,913 - train_greyscale_FA_MoE.py - {'step': '66000', 'lr': '0.0002', 'total_loss': '0.0321826', 'main_loss': '0.0321826', 'time_per_step': '2.19338'}
+2025-11-07 06:17:11,186 - train_greyscale_FA_MoE.py - {'step': '66100', 'lr': '0.0002', 'total_loss': '0.0330315', 'main_loss': '0.0330315', 'time_per_step': '2.27064'}
+2025-11-07 06:21:02,543 - train_greyscale_FA_MoE.py - {'step': '66200', 'lr': '0.0002', 'total_loss': '0.0301129', 'main_loss': '0.0301129', 'time_per_step': '2.24369'}
+2025-11-07 06:24:54,800 - train_greyscale_FA_MoE.py - {'step': '66300', 'lr': '0.0002', 'total_loss': '0.0249042', 'main_loss': '0.0249042', 'time_per_step': '2.28731'}
+2025-11-07 06:28:45,224 - train_greyscale_FA_MoE.py - {'step': '66400', 'lr': '0.0002', 'total_loss': '0.0297456', 'main_loss': '0.0297456', 'time_per_step': '2.2095'}
+2025-11-07 06:32:36,105 - train_greyscale_FA_MoE.py - {'step': '66500', 'lr': '0.0002', 'total_loss': '0.0308226', 'main_loss': '0.0308226', 'time_per_step': '2.22789'}
+2025-11-07 06:36:27,028 - train_greyscale_FA_MoE.py - {'step': '66600', 'lr': '0.0002', 'total_loss': '0.0309315', 'main_loss': '0.0309315', 'time_per_step': '2.24908'}
+2025-11-07 06:40:18,638 - train_greyscale_FA_MoE.py - {'step': '66700', 'lr': '0.0002', 'total_loss': '0.0347644', 'main_loss': '0.0347644', 'time_per_step': '2.34655'}
+2025-11-07 06:44:08,882 - train_greyscale_FA_MoE.py - {'step': '66800', 'lr': '0.0002', 'total_loss': '0.0278222', 'main_loss': '0.0278222', 'time_per_step': '2.41314'}
+2025-11-07 06:47:58,600 - train_greyscale_FA_MoE.py - {'step': '66900', 'lr': '0.0002', 'total_loss': '0.0361856', 'main_loss': '0.0361856', 'time_per_step': '2.20504'}
+2025-11-07 06:51:48,846 - train_greyscale_FA_MoE.py - {'step': '67000', 'lr': '0.0002', 'total_loss': '0.0330744', 'main_loss': '0.0330744', 'time_per_step': '2.28213'}
+2025-11-07 06:55:39,329 - train_greyscale_FA_MoE.py - {'step': '67100', 'lr': '0.0002', 'total_loss': '0.0336007', 'main_loss': '0.0336007', 'time_per_step': '2.13622'}
+2025-11-07 06:59:29,768 - train_greyscale_FA_MoE.py - {'step': '67200', 'lr': '0.0002', 'total_loss': '0.0284252', 'main_loss': '0.0284252', 'time_per_step': '2.13871'}
+2025-11-07 07:03:20,383 - train_greyscale_FA_MoE.py - {'step': '67300', 'lr': '0.0002', 'total_loss': '0.0324671', 'main_loss': '0.0324671', 'time_per_step': '2.2418'}
+2025-11-07 07:07:10,938 - train_greyscale_FA_MoE.py - {'step': '67400', 'lr': '0.0002', 'total_loss': '0.0376398', 'main_loss': '0.0376398', 'time_per_step': '2.2306'}
+2025-11-07 07:11:01,069 - train_greyscale_FA_MoE.py - {'step': '67500', 'lr': '0.0002', 'total_loss': '0.0340598', 'main_loss': '0.0340598', 'time_per_step': '2.24531'}
+2025-11-07 07:14:51,336 - train_greyscale_FA_MoE.py - {'step': '67600', 'lr': '0.0002', 'total_loss': '0.0379497', 'main_loss': '0.0379497', 'time_per_step': '2.20408'}
+2025-11-07 07:18:41,498 - train_greyscale_FA_MoE.py - {'step': '67700', 'lr': '0.0002', 'total_loss': '0.0353928', 'main_loss': '0.0353928', 'time_per_step': '2.25465'}
+2025-11-07 07:22:31,569 - train_greyscale_FA_MoE.py - {'step': '67800', 'lr': '0.0002', 'total_loss': '0.0285513', 'main_loss': '0.0285513', 'time_per_step': '2.28288'}
+2025-11-07 07:26:22,414 - train_greyscale_FA_MoE.py - {'step': '67900', 'lr': '0.0002', 'total_loss': '0.0296377', 'main_loss': '0.0296377', 'time_per_step': '2.27112'}
+2025-11-07 07:30:12,315 - train_greyscale_FA_MoE.py - {'step': '68000', 'lr': '0.0002', 'total_loss': '0.0342533', 'main_loss': '0.0342533', 'time_per_step': '2.24941'}
+2025-11-07 07:34:04,518 - train_greyscale_FA_MoE.py - {'step': '68100', 'lr': '0.0002', 'total_loss': '0.0312254', 'main_loss': '0.0312254', 'time_per_step': '2.24639'}
+2025-11-07 07:37:55,136 - train_greyscale_FA_MoE.py - {'step': '68200', 'lr': '0.0002', 'total_loss': '0.032207', 'main_loss': '0.032207', 'time_per_step': '2.21162'}
+2025-11-07 07:41:45,407 - train_greyscale_FA_MoE.py - {'step': '68300', 'lr': '0.0002', 'total_loss': '0.0278176', 'main_loss': '0.0278176', 'time_per_step': '2.14331'}
+2025-11-07 07:45:35,279 - train_greyscale_FA_MoE.py - {'step': '68400', 'lr': '0.0002', 'total_loss': '0.0379263', 'main_loss': '0.0379263', 'time_per_step': '2.14099'}
+2025-11-07 07:49:25,738 - train_greyscale_FA_MoE.py - {'step': '68500', 'lr': '0.0002', 'total_loss': '0.0365511', 'main_loss': '0.0365511', 'time_per_step': '2.24623'}
+2025-11-07 07:53:15,961 - train_greyscale_FA_MoE.py - {'step': '68600', 'lr': '0.0002', 'total_loss': '0.0256533', 'main_loss': '0.0256533', 'time_per_step': '2.23973'}
+2025-11-07 07:57:06,588 - train_greyscale_FA_MoE.py - {'step': '68700', 'lr': '0.0002', 'total_loss': '0.0351617', 'main_loss': '0.0351617', 'time_per_step': '2.26329'}
+2025-11-07 08:00:57,345 - train_greyscale_FA_MoE.py - {'step': '68800', 'lr': '0.0002', 'total_loss': '0.0335443', 'main_loss': '0.0335443', 'time_per_step': '2.24131'}
+2025-11-07 08:04:47,592 - train_greyscale_FA_MoE.py - {'step': '68900', 'lr': '0.0002', 'total_loss': '0.0298311', 'main_loss': '0.0298311', 'time_per_step': '2.22838'}
+2025-11-07 08:08:37,067 - train_greyscale_FA_MoE.py - {'step': '69000', 'lr': '0.0002', 'total_loss': '0.0249275', 'main_loss': '0.0249275', 'time_per_step': '2.24154'}
+2025-11-07 08:12:26,454 - train_greyscale_FA_MoE.py - {'step': '69100', 'lr': '0.0002', 'total_loss': '0.0296424', 'main_loss': '0.0296424', 'time_per_step': '2.22295'}
+2025-11-07 08:16:15,327 - train_greyscale_FA_MoE.py - {'step': '69200', 'lr': '0.0002', 'total_loss': '0.0334861', 'main_loss': '0.0334861', 'time_per_step': '2.18939'}
+2025-11-07 08:20:04,221 - train_greyscale_FA_MoE.py - {'step': '69300', 'lr': '0.0002', 'total_loss': '0.0318662', 'main_loss': '0.0318662', 'time_per_step': '2.22513'}
+2025-11-07 08:23:54,724 - train_greyscale_FA_MoE.py - {'step': '69400', 'lr': '0.0002', 'total_loss': '0.0355471', 'main_loss': '0.0355471', 'time_per_step': '2.25433'}
+2025-11-07 08:27:44,357 - train_greyscale_FA_MoE.py - {'step': '69500', 'lr': '0.0002', 'total_loss': '0.0309344', 'main_loss': '0.0309344', 'time_per_step': '2.16261'}
+2025-11-07 08:31:34,399 - train_greyscale_FA_MoE.py - {'step': '69600', 'lr': '0.0002', 'total_loss': '0.0341952', 'main_loss': '0.0341952', 'time_per_step': '2.13865'}
+2025-11-07 08:35:26,158 - train_greyscale_FA_MoE.py - {'step': '69700', 'lr': '0.0002', 'total_loss': '0.028779', 'main_loss': '0.028779', 'time_per_step': '2.25429'}
+2025-11-07 08:39:17,788 - train_greyscale_FA_MoE.py - {'step': '69800', 'lr': '0.0002', 'total_loss': '0.0372702', 'main_loss': '0.0372702', 'time_per_step': '2.23592'}
+2025-11-07 08:43:09,261 - train_greyscale_FA_MoE.py - {'step': '69900', 'lr': '0.0002', 'total_loss': '0.0346845', 'main_loss': '0.0346845', 'time_per_step': '2.38623'}
+2025-11-07 08:47:00,197 - train_greyscale_FA_MoE.py - {'step': '70000', 'lr': '0.0002', 'total_loss': '0.0320472', 'main_loss': '0.0320472', 'time_per_step': '2.23853'}
+2025-11-07 08:50:50,844 - train_greyscale_FA_MoE.py - {'step': '70100', 'lr': '0.0002', 'total_loss': '0.0347751', 'main_loss': '0.0347751', 'time_per_step': '2.23871'}
+2025-11-07 08:54:40,847 - train_greyscale_FA_MoE.py - {'step': '70200', 'lr': '0.0002', 'total_loss': '0.0327025', 'main_loss': '0.0327025', 'time_per_step': '2.27785'}
+2025-11-07 08:58:30,988 - train_greyscale_FA_MoE.py - {'step': '70300', 'lr': '0.0002', 'total_loss': '0.0308088', 'main_loss': '0.0308088', 'time_per_step': '2.22914'}
+2025-11-07 09:02:22,367 - train_greyscale_FA_MoE.py - {'step': '70400', 'lr': '0.0002', 'total_loss': '0.0336083', 'main_loss': '0.0336083', 'time_per_step': '2.2269'}
+2025-11-07 09:06:12,789 - train_greyscale_FA_MoE.py - {'step': '70500', 'lr': '0.0002', 'total_loss': '0.0290375', 'main_loss': '0.0290375', 'time_per_step': '2.21645'}
+2025-11-07 09:10:02,203 - train_greyscale_FA_MoE.py - {'step': '70600', 'lr': '0.0002', 'total_loss': '0.0337109', 'main_loss': '0.0337109', 'time_per_step': '2.18649'}
+2025-11-07 09:13:53,542 - train_greyscale_FA_MoE.py - {'step': '70700', 'lr': '0.0002', 'total_loss': '0.0307212', 'main_loss': '0.0307212', 'time_per_step': '2.12344'}
+2025-11-07 09:17:43,039 - train_greyscale_FA_MoE.py - {'step': '70800', 'lr': '0.0002', 'total_loss': '0.0331849', 'main_loss': '0.0331849', 'time_per_step': '2.13482'}
+2025-11-07 09:21:34,421 - train_greyscale_FA_MoE.py - {'step': '70900', 'lr': '0.0002', 'total_loss': '0.0316285', 'main_loss': '0.0316285', 'time_per_step': '2.24366'}
+2025-11-07 09:25:24,551 - train_greyscale_FA_MoE.py - {'step': '71000', 'lr': '0.0002', 'total_loss': '0.0221092', 'main_loss': '0.0221092', 'time_per_step': '2.25836'}
+2025-11-07 09:29:14,214 - train_greyscale_FA_MoE.py - {'step': '71100', 'lr': '0.0002', 'total_loss': '0.0284502', 'main_loss': '0.0284502', 'time_per_step': '2.24034'}
+2025-11-07 09:33:04,774 - train_greyscale_FA_MoE.py - {'step': '71200', 'lr': '0.0002', 'total_loss': '0.0314127', 'main_loss': '0.0314127', 'time_per_step': '2.24602'}
+2025-11-07 09:36:55,575 - train_greyscale_FA_MoE.py - {'step': '71300', 'lr': '0.0002', 'total_loss': '0.0331532', 'main_loss': '0.0331532', 'time_per_step': '2.25492'}
+2025-11-07 09:40:46,444 - train_greyscale_FA_MoE.py - {'step': '71400', 'lr': '0.0002', 'total_loss': '0.025977', 'main_loss': '0.025977', 'time_per_step': '2.22987'}
+2025-11-07 09:44:37,386 - train_greyscale_FA_MoE.py - {'step': '71500', 'lr': '0.0002', 'total_loss': '0.0328729', 'main_loss': '0.0328729', 'time_per_step': '2.24569'}
+2025-11-07 09:48:28,446 - train_greyscale_FA_MoE.py - {'step': '71600', 'lr': '0.0002', 'total_loss': '0.0275973', 'main_loss': '0.0275973', 'time_per_step': '2.2836'}
+2025-11-07 09:52:21,168 - train_greyscale_FA_MoE.py - {'step': '71700', 'lr': '0.0002', 'total_loss': '0.0305705', 'main_loss': '0.0305705', 'time_per_step': '2.25559'}
+2025-11-07 09:56:12,660 - train_greyscale_FA_MoE.py - {'step': '71800', 'lr': '0.0002', 'total_loss': '0.0334032', 'main_loss': '0.0334032', 'time_per_step': '2.27296'}
+2025-11-07 10:00:02,213 - train_greyscale_FA_MoE.py - {'step': '71900', 'lr': '0.0002', 'total_loss': '0.0270086', 'main_loss': '0.0270086', 'time_per_step': '2.1295'}
+2025-11-07 10:03:52,735 - train_greyscale_FA_MoE.py - {'step': '72000', 'lr': '0.0002', 'total_loss': '0.0291579', 'main_loss': '0.0291579', 'time_per_step': '2.12617'}
+2025-11-07 10:07:44,268 - train_greyscale_FA_MoE.py - {'step': '72100', 'lr': '0.0002', 'total_loss': '0.0280479', 'main_loss': '0.0280479', 'time_per_step': '2.25577'}
+2025-11-07 10:11:34,958 - train_greyscale_FA_MoE.py - {'step': '72200', 'lr': '0.0002', 'total_loss': '0.028472', 'main_loss': '0.028472', 'time_per_step': '2.23655'}
+2025-11-07 10:15:27,192 - train_greyscale_FA_MoE.py - {'step': '72300', 'lr': '0.0002', 'total_loss': '0.0284332', 'main_loss': '0.0284332', 'time_per_step': '2.19091'}
+2025-11-07 10:19:18,320 - train_greyscale_FA_MoE.py - {'step': '72400', 'lr': '0.0002', 'total_loss': '0.037138', 'main_loss': '0.037138', 'time_per_step': '2.2957'}
+2025-11-07 10:23:09,772 - train_greyscale_FA_MoE.py - {'step': '72500', 'lr': '0.0002', 'total_loss': '0.0314072', 'main_loss': '0.0314072', 'time_per_step': '2.26559'}
+2025-11-07 10:27:00,615 - train_greyscale_FA_MoE.py - {'step': '72600', 'lr': '0.0002', 'total_loss': '0.0300889', 'main_loss': '0.0300889', 'time_per_step': '2.23513'}
+2025-11-07 10:30:50,414 - train_greyscale_FA_MoE.py - {'step': '72700', 'lr': '0.0002', 'total_loss': '0.0302535', 'main_loss': '0.0302535', 'time_per_step': '2.25485'}
+2025-11-07 10:34:41,151 - train_greyscale_FA_MoE.py - {'step': '72800', 'lr': '0.0002', 'total_loss': '0.0296638', 'main_loss': '0.0296638', 'time_per_step': '2.19697'}
+2025-11-07 10:38:31,657 - train_greyscale_FA_MoE.py - {'step': '72900', 'lr': '0.0002', 'total_loss': '0.0252545', 'main_loss': '0.0252545', 'time_per_step': '2.23517'}
+2025-11-07 10:42:23,879 - train_greyscale_FA_MoE.py - {'step': '73000', 'lr': '0.0002', 'total_loss': '0.0336206', 'main_loss': '0.0336206', 'time_per_step': '2.22504'}
+2025-11-07 10:46:13,448 - train_greyscale_FA_MoE.py - {'step': '73100', 'lr': '0.0002', 'total_loss': '0.0391789', 'main_loss': '0.0391789', 'time_per_step': '2.15033'}
+2025-11-07 10:50:06,313 - train_greyscale_FA_MoE.py - {'step': '73200', 'lr': '0.0002', 'total_loss': '0.0332112', 'main_loss': '0.0332112', 'time_per_step': '2.14751'}
+2025-11-07 10:53:57,928 - train_greyscale_FA_MoE.py - {'step': '73300', 'lr': '0.0002', 'total_loss': '0.036693', 'main_loss': '0.036693', 'time_per_step': '2.24037'}
+2025-11-07 10:57:49,693 - train_greyscale_FA_MoE.py - {'step': '73400', 'lr': '0.0002', 'total_loss': '0.0307294', 'main_loss': '0.0307294', 'time_per_step': '2.30216'}
+2025-11-07 11:01:39,650 - train_greyscale_FA_MoE.py - {'step': '73500', 'lr': '0.0002', 'total_loss': '0.0277096', 'main_loss': '0.0277096', 'time_per_step': '2.24244'}
+2025-11-07 11:05:30,217 - train_greyscale_FA_MoE.py - {'step': '73600', 'lr': '0.0002', 'total_loss': '0.032129', 'main_loss': '0.032129', 'time_per_step': '2.24065'}
+2025-11-07 11:09:20,652 - train_greyscale_FA_MoE.py - {'step': '73700', 'lr': '0.0002', 'total_loss': '0.0335699', 'main_loss': '0.0335699', 'time_per_step': '2.24877'}
+2025-11-07 11:13:11,714 - train_greyscale_FA_MoE.py - {'step': '73800', 'lr': '0.0002', 'total_loss': '0.0322725', 'main_loss': '0.0322725', 'time_per_step': '2.24913'}
+2025-11-07 11:17:04,164 - train_greyscale_FA_MoE.py - {'step': '73900', 'lr': '0.0002', 'total_loss': '0.0351942', 'main_loss': '0.0351942', 'time_per_step': '2.18715'}
+2025-11-07 11:20:55,743 - train_greyscale_FA_MoE.py - {'step': '74000', 'lr': '0.0002', 'total_loss': '0.0310791', 'main_loss': '0.0310791', 'time_per_step': '2.21853'}
+2025-11-07 11:24:46,539 - train_greyscale_FA_MoE.py - {'step': '74100', 'lr': '0.0002', 'total_loss': '0.035355', 'main_loss': '0.035355', 'time_per_step': '2.27424'}
+2025-11-07 11:28:37,162 - train_greyscale_FA_MoE.py - {'step': '74200', 'lr': '0.0002', 'total_loss': '0.0258282', 'main_loss': '0.0258282', 'time_per_step': '2.21206'}
+2025-11-07 11:32:28,347 - train_greyscale_FA_MoE.py - {'step': '74300', 'lr': '0.0002', 'total_loss': '0.0327877', 'main_loss': '0.0327877', 'time_per_step': '3.07595'}
+2025-11-07 11:36:18,173 - train_greyscale_FA_MoE.py - {'step': '74400', 'lr': '0.0002', 'total_loss': '0.0310462', 'main_loss': '0.0310462', 'time_per_step': '2.21896'}
+2025-11-07 11:40:11,035 - train_greyscale_FA_MoE.py - {'step': '74500', 'lr': '0.0002', 'total_loss': '0.0302925', 'main_loss': '0.0302925', 'time_per_step': '2.27006'}
+2025-11-07 11:44:02,343 - train_greyscale_FA_MoE.py - {'step': '74600', 'lr': '0.0002', 'total_loss': '0.0403891', 'main_loss': '0.0403891', 'time_per_step': '2.2382'}
+2025-11-07 11:47:53,414 - train_greyscale_FA_MoE.py - {'step': '74700', 'lr': '0.0002', 'total_loss': '0.0326413', 'main_loss': '0.0326413', 'time_per_step': '2.25429'}
+2025-11-07 11:51:44,066 - train_greyscale_FA_MoE.py - {'step': '74800', 'lr': '0.0002', 'total_loss': '0.034978', 'main_loss': '0.034978', 'time_per_step': '2.24355'}
+2025-11-07 11:55:34,899 - train_greyscale_FA_MoE.py - {'step': '74900', 'lr': '0.0002', 'total_loss': '0.0365165', 'main_loss': '0.0365165', 'time_per_step': '2.27752'}
+2025-11-07 11:59:26,040 - train_greyscale_FA_MoE.py - {'step': '75000', 'lr': '0.0002', 'total_loss': '0.0376216', 'main_loss': '0.0376216', 'time_per_step': '2.24806'}
+2025-11-07 11:59:26,050 - train_greyscale_FA_MoE.py - Saved expert distribution of layer in_block_0 to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/expert_distribution_in_block_0_step75000.npy
+2025-11-07 11:59:27,416 - train_greyscale_FA_MoE.py - Saved expert distribution of layer out_block_7 to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/expert_distribution_out_block_7_step75000.npy
+2025-11-07 11:59:28,814 - train_greyscale_FA_MoE.py - Save a grid of 16 samples into output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/75000.png by DPM-Solver
+2025-11-07 11:59:34,316 - train_greyscale_FA_MoE.py - Finished saving sample grid to output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/75000.png by DPM-Solver.
+2025-11-07 11:59:34,365 - train_greyscale_FA_MoE.py - Save and eval checkpoint 75000...
+2025-11-07 11:59:36,683 - train_greyscale_FA_MoE.py - eval_step: n_samples=50000, sample_steps=50, algorithm=dpm_solver, mini_batch_size=500, samples save into output/acdc_wholeheart_uncond_fa_ec_moe_greyscale_uvit_mid_4by4_l4r9_low8_minmax/samples/acdc_wholeheart_uncond_uvit_FA_EC_MoE_greyscale_mid_4by4_75000_dpm

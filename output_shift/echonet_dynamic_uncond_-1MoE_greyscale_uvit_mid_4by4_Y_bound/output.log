@@ -1,0 +1,898 @@
+2025-12-01 09:56:54,136 - train_greyscale_MoE.py - ckpt_root: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 512.0
+  Y_entropy: !!python/tuple
+  - 5.419
+  - 2.769
+  - 2.659
+  - 1.88
+  - 2.022
+  - 1.575
+  - 1.018
+  - 1.338
+  - 1.593
+  - 1.484
+  - 1.309
+  - 1.163
+  - 0.928
+  - 0.925
+  - 1.051
+  - 0.852
+  Y_max: !!python/tuple
+  - 148.0
+  - 107.812
+  - 89.625
+  - 47.0
+  - 56.938
+  - 34.0
+  - 14.758
+  - 29.281
+  - 38.125
+  - 35.156
+  - 27.938
+  - 22.0
+  - 12.641
+  - 12.125
+  - 18.391
+  - 11.641
+  Y_mean: !!python/tuple
+  - -390.081
+  - 0.103
+  - -0.947
+  - 0.171
+  - 0.192
+  - 0.203
+  - 0.001
+  - 0.061
+  - 0.233
+  - -0.075
+  - -0.051
+  - -0.199
+  - -0.046
+  - -0.076
+  - -0.042
+  - 0.029
+  Y_min: !!python/tuple
+  - -512.0
+  - -108.688
+  - -112.5
+  - -52.5
+  - -55.75
+  - -36.75
+  - -14.586
+  - -27.062
+  - -37.156
+  - -36.156
+  - -28.484
+  - -27.75
+  - -13.672
+  - -14.266
+  - -19.562
+  - -10.367
+  Y_std: !!python/tuple
+  - 163.706
+  - 28.348
+  - 26.485
+  - 11.872
+  - 13.871
+  - 8.085
+  - 2.919
+  - 6.039
+  - 8.605
+  - 7.49
+  - 5.683
+  - 4.875
+  - 2.372
+  - 2.172
+  - 3.337
+  - 1.668
+  block_sz: 4
+  cache: true
+  cache_name: cached_echonet_dynamic_4by4_4Y
+  dataset_type: dynamic
+  greyscale: true
+  low_freqs: 12
+  name: echonet
+  path: data/scratch/datasets/EchoNet-Dynamic
+  resolution: 112
+  reweight: true
+  reweight_dim: 1
+  temperature: 0.0
+  tokens: 196
+eval:
+  cleanup_samples: true
+  eval_start: 110000
+  is_batch_size: 32
+  lpips_batch_size: 32
+  mini_batch_size: 500
+  n_samples: 50000
+  sample_steps: 100
+eval_dir: output/evaluation/echonet_uncond_4by4_low16_new
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: echonet_dynamic_uncond_uvit_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.001
+    depth: -1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: normal
+  depth: 16
+  embed_dim: 768
+  low_freqs: 12
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 196
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 10000
+sample_dir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/samples
+seed: 1234
+train:
+  batch_size: 513
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound
+
+2025-12-01 09:56:57,366 - train_greyscale_MoE.py - dataset samples: 358259
+2025-12-01 09:57:24,048 - utils.py - nnet has 375744048 parameters
+2025-12-01 09:57:27,015 - train_greyscale_MoE.py - using [5.419 2.769 2.659 1.88  2.022 1.575 1.018 1.338 1.593 1.484 1.309 1.163
+ 0.928 0.925 1.051 0.852] for Y_loss reweighting
+2025-12-01 09:57:27,131 - train_greyscale_MoE.py - Using temperature 0.0 for loss reweighting
+2025-12-01 09:57:27,415 - train_greyscale_MoE.py - Start fitting, step=0, mixed_precision=no
+2025-12-01 10:02:11,615 - train_greyscale_MoE.py - ckpt_root: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 512.0
+  Y_entropy: !!python/tuple
+  - 5.419
+  - 2.769
+  - 2.659
+  - 1.88
+  - 2.022
+  - 1.575
+  - 1.018
+  - 1.338
+  - 1.593
+  - 1.484
+  - 1.309
+  - 1.163
+  - 0.928
+  - 0.925
+  - 1.051
+  - 0.852
+  Y_max: !!python/tuple
+  - 148.0
+  - 107.812
+  - 89.625
+  - 47.0
+  - 56.938
+  - 34.0
+  - 14.758
+  - 29.281
+  - 38.125
+  - 35.156
+  - 27.938
+  - 22.0
+  - 12.641
+  - 12.125
+  - 18.391
+  - 11.641
+  Y_mean: !!python/tuple
+  - -390.081
+  - 0.103
+  - -0.947
+  - 0.171
+  - 0.192
+  - 0.203
+  - 0.001
+  - 0.061
+  - 0.233
+  - -0.075
+  - -0.051
+  - -0.199
+  - -0.046
+  - -0.076
+  - -0.042
+  - 0.029
+  Y_min: !!python/tuple
+  - -512.0
+  - -108.688
+  - -112.5
+  - -52.5
+  - -55.75
+  - -36.75
+  - -14.586
+  - -27.062
+  - -37.156
+  - -36.156
+  - -28.484
+  - -27.75
+  - -13.672
+  - -14.266
+  - -19.562
+  - -10.367
+  Y_std: !!python/tuple
+  - 163.706
+  - 28.348
+  - 26.485
+  - 11.872
+  - 13.871
+  - 8.085
+  - 2.919
+  - 6.039
+  - 8.605
+  - 7.49
+  - 5.683
+  - 4.875
+  - 2.372
+  - 2.172
+  - 3.337
+  - 1.668
+  block_sz: 4
+  cache: true
+  cache_name: cached_echonet_dynamic_4by4_4Y
+  dataset_type: dynamic
+  greyscale: true
+  low_freqs: 12
+  name: echonet
+  path: data/scratch/datasets/EchoNet-Dynamic
+  resolution: 112
+  reweight: true
+  reweight_dim: 1
+  temperature: 0.0
+  tokens: 196
+eval:
+  cleanup_samples: true
+  eval_start: 110000
+  is_batch_size: 32
+  lpips_batch_size: 32
+  mini_batch_size: 500
+  n_samples: 50000
+  sample_steps: 100
+eval_dir: output/evaluation/echonet_uncond_4by4_low16_new
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: echonet_dynamic_uncond_uvit_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.001
+    depth: -1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: normal
+  depth: 16
+  embed_dim: 768
+  low_freqs: 12
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 196
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 10000
+sample_dir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/samples
+seed: 1234
+train:
+  batch_size: 513
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound
+
+2025-12-01 10:02:14,816 - train_greyscale_MoE.py - dataset samples: 358259
+2025-12-01 10:02:40,691 - utils.py - nnet has 361573680 parameters
+2025-12-01 10:02:43,296 - train_greyscale_MoE.py - using [5.419 2.769 2.659 1.88  2.022 1.575 1.018 1.338 1.593 1.484 1.309 1.163
+ 0.928 0.925 1.051 0.852] for Y_loss reweighting
+2025-12-01 10:02:43,318 - train_greyscale_MoE.py - Using temperature 0.0 for loss reweighting
+2025-12-01 10:02:43,360 - train_greyscale_MoE.py - Start fitting, step=0, mixed_precision=no
+2025-12-01 10:03:10,812 - uvit.py - MoE前向传播错误: CUDA out of memory. Tried to allocate 164.00 MiB. GPU 0 has a total capacity of 39.50 GiB of which 98.12 MiB is free. Including non-PyTorch memory, this process has 39.39 GiB memory in use. Of the allocated memory 37.70 GiB is allocated by PyTorch, and 592.88 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+2025-12-01 10:06:11,018 - train_greyscale_MoE.py - ckpt_root: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 512.0
+  Y_entropy: !!python/tuple
+  - 5.419
+  - 2.769
+  - 2.659
+  - 1.88
+  - 2.022
+  - 1.575
+  - 1.018
+  - 1.338
+  - 1.593
+  - 1.484
+  - 1.309
+  - 1.163
+  - 0.928
+  - 0.925
+  - 1.051
+  - 0.852
+  Y_max: !!python/tuple
+  - 148.0
+  - 107.812
+  - 89.625
+  - 47.0
+  - 56.938
+  - 34.0
+  - 14.758
+  - 29.281
+  - 38.125
+  - 35.156
+  - 27.938
+  - 22.0
+  - 12.641
+  - 12.125
+  - 18.391
+  - 11.641
+  Y_mean: !!python/tuple
+  - -390.081
+  - 0.103
+  - -0.947
+  - 0.171
+  - 0.192
+  - 0.203
+  - 0.001
+  - 0.061
+  - 0.233
+  - -0.075
+  - -0.051
+  - -0.199
+  - -0.046
+  - -0.076
+  - -0.042
+  - 0.029
+  Y_min: !!python/tuple
+  - -512.0
+  - -108.688
+  - -112.5
+  - -52.5
+  - -55.75
+  - -36.75
+  - -14.586
+  - -27.062
+  - -37.156
+  - -36.156
+  - -28.484
+  - -27.75
+  - -13.672
+  - -14.266
+  - -19.562
+  - -10.367
+  Y_std: !!python/tuple
+  - 163.706
+  - 28.348
+  - 26.485
+  - 11.872
+  - 13.871
+  - 8.085
+  - 2.919
+  - 6.039
+  - 8.605
+  - 7.49
+  - 5.683
+  - 4.875
+  - 2.372
+  - 2.172
+  - 3.337
+  - 1.668
+  block_sz: 4
+  cache: true
+  cache_name: cached_echonet_dynamic_4by4_4Y
+  dataset_type: dynamic
+  greyscale: true
+  low_freqs: 12
+  name: echonet
+  path: data/scratch/datasets/EchoNet-Dynamic
+  resolution: 112
+  reweight: true
+  reweight_dim: 1
+  temperature: 0.0
+  tokens: 196
+eval:
+  cleanup_samples: true
+  eval_start: 110000
+  is_batch_size: 32
+  lpips_batch_size: 32
+  mini_batch_size: 500
+  n_samples: 50000
+  sample_steps: 100
+eval_dir: output/evaluation/echonet_uncond_4by4_low16_new
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: echonet_dynamic_uncond_uvit_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.001
+    depth: -1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: normal
+  depth: 16
+  embed_dim: 768
+  low_freqs: 12
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 196
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 10000
+sample_dir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/samples
+seed: 1234
+train:
+  batch_size: 513
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound
+
+2025-12-01 10:06:12,994 - train_greyscale_MoE.py - dataset samples: 358259
+2025-12-01 10:06:37,898 - utils.py - nnet has 361573680 parameters
+2025-12-01 10:06:40,496 - train_greyscale_MoE.py - using [5.419 2.769 2.659 1.88  2.022 1.575 1.018 1.338 1.593 1.484 1.309 1.163
+ 0.928 0.925 1.051 0.852] for Y_loss reweighting
+2025-12-01 10:06:40,535 - train_greyscale_MoE.py - Using temperature 0.0 for loss reweighting
+2025-12-01 10:06:40,546 - train_greyscale_MoE.py - Start fitting, step=0, mixed_precision=no
+2025-12-01 10:07:08,768 - uvit.py - MoE前向传播错误: CUDA out of memory. Tried to allocate 246.00 MiB. GPU 0 has a total capacity of 39.50 GiB of which 56.12 MiB is free. Including non-PyTorch memory, this process has 39.43 GiB memory in use. Of the allocated memory 38.30 GiB is allocated by PyTorch, and 18.64 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+2025-12-01 10:09:54,303 - train_greyscale_MoE.py - ckpt_root: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 512.0
+  Y_entropy: !!python/tuple
+  - 5.419
+  - 2.769
+  - 2.659
+  - 1.88
+  - 2.022
+  - 1.575
+  - 1.018
+  - 1.338
+  - 1.593
+  - 1.484
+  - 1.309
+  - 1.163
+  - 0.928
+  - 0.925
+  - 1.051
+  - 0.852
+  Y_max: !!python/tuple
+  - 148.0
+  - 107.812
+  - 89.625
+  - 47.0
+  - 56.938
+  - 34.0
+  - 14.758
+  - 29.281
+  - 38.125
+  - 35.156
+  - 27.938
+  - 22.0
+  - 12.641
+  - 12.125
+  - 18.391
+  - 11.641
+  Y_mean: !!python/tuple
+  - -390.081
+  - 0.103
+  - -0.947
+  - 0.171
+  - 0.192
+  - 0.203
+  - 0.001
+  - 0.061
+  - 0.233
+  - -0.075
+  - -0.051
+  - -0.199
+  - -0.046
+  - -0.076
+  - -0.042
+  - 0.029
+  Y_min: !!python/tuple
+  - -512.0
+  - -108.688
+  - -112.5
+  - -52.5
+  - -55.75
+  - -36.75
+  - -14.586
+  - -27.062
+  - -37.156
+  - -36.156
+  - -28.484
+  - -27.75
+  - -13.672
+  - -14.266
+  - -19.562
+  - -10.367
+  Y_std: !!python/tuple
+  - 163.706
+  - 28.348
+  - 26.485
+  - 11.872
+  - 13.871
+  - 8.085
+  - 2.919
+  - 6.039
+  - 8.605
+  - 7.49
+  - 5.683
+  - 4.875
+  - 2.372
+  - 2.172
+  - 3.337
+  - 1.668
+  block_sz: 4
+  cache: true
+  cache_name: cached_echonet_dynamic_4by4_4Y
+  dataset_type: dynamic
+  greyscale: true
+  low_freqs: 12
+  name: echonet
+  path: data/scratch/datasets/EchoNet-Dynamic
+  resolution: 112
+  reweight: true
+  reweight_dim: 1
+  temperature: 0.0
+  tokens: 196
+eval:
+  cleanup_samples: true
+  eval_start: 110000
+  is_batch_size: 32
+  lpips_batch_size: 32
+  mini_batch_size: 500
+  n_samples: 50000
+  sample_steps: 100
+eval_dir: output/evaluation/echonet_uncond_4by4_low16_new
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: echonet_dynamic_uncond_uvit_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.001
+    depth: -1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: normal
+  depth: 16
+  embed_dim: 768
+  low_freqs: 12
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 196
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 10000
+sample_dir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/samples
+seed: 1234
+train:
+  batch_size: 512
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound
+
+2025-12-01 10:09:56,752 - train_greyscale_MoE.py - dataset samples: 358259
+2025-12-01 10:10:30,347 - utils.py - nnet has 361573680 parameters
+2025-12-01 10:10:33,854 - train_greyscale_MoE.py - using [5.419 2.769 2.659 1.88  2.022 1.575 1.018 1.338 1.593 1.484 1.309 1.163
+ 0.928 0.925 1.051 0.852] for Y_loss reweighting
+2025-12-01 10:10:33,874 - train_greyscale_MoE.py - Using temperature 0.0 for loss reweighting
+2025-12-01 10:10:33,891 - train_greyscale_MoE.py - Start fitting, step=0, mixed_precision=no
+2025-12-01 18:04:31,436 - train_greyscale_MoE.py - ckpt_root: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/ckpts
+dataset:
+  SNR_scale: 4.0
+  Y_bound: !!python/tuple
+  - 512.0
+  Y_entropy: !!python/tuple
+  - 5.419
+  - 2.769
+  - 2.659
+  - 1.88
+  - 2.022
+  - 1.575
+  - 1.018
+  - 1.338
+  - 1.593
+  - 1.484
+  - 1.309
+  - 1.163
+  - 0.928
+  - 0.925
+  - 1.051
+  - 0.852
+  Y_max: !!python/tuple
+  - 148.0
+  - 107.812
+  - 89.625
+  - 47.0
+  - 56.938
+  - 34.0
+  - 14.758
+  - 29.281
+  - 38.125
+  - 35.156
+  - 27.938
+  - 22.0
+  - 12.641
+  - 12.125
+  - 18.391
+  - 11.641
+  Y_mean: !!python/tuple
+  - -390.081
+  - 0.103
+  - -0.947
+  - 0.171
+  - 0.192
+  - 0.203
+  - 0.001
+  - 0.061
+  - 0.233
+  - -0.075
+  - -0.051
+  - -0.199
+  - -0.046
+  - -0.076
+  - -0.042
+  - 0.029
+  Y_min: !!python/tuple
+  - -512.0
+  - -108.688
+  - -112.5
+  - -52.5
+  - -55.75
+  - -36.75
+  - -14.586
+  - -27.062
+  - -37.156
+  - -36.156
+  - -28.484
+  - -27.75
+  - -13.672
+  - -14.266
+  - -19.562
+  - -10.367
+  Y_std: !!python/tuple
+  - 163.706
+  - 28.348
+  - 26.485
+  - 11.872
+  - 13.871
+  - 8.085
+  - 2.919
+  - 6.039
+  - 8.605
+  - 7.49
+  - 5.683
+  - 4.875
+  - 2.372
+  - 2.172
+  - 3.337
+  - 1.668
+  block_sz: 4
+  cache: true
+  cache_name: cached_echonet_dynamic_4by4_4Y
+  dataset_type: dynamic
+  greyscale: true
+  low_freqs: 12
+  name: echonet
+  path: data/scratch/datasets/EchoNet-Dynamic
+  resolution: 112
+  reweight: true
+  reweight_dim: 1
+  temperature: 0.0
+  tokens: 196
+eval:
+  cleanup_samples: true
+  eval_start: 110000
+  is_batch_size: 32
+  lpips_batch_size: 32
+  mini_batch_size: 500
+  n_samples: 50000
+  sample_steps: 100
+eval_dir: output/evaluation/echonet_uncond_4by4_low16_new
+lr_scheduler:
+  name: customized
+  warmup_steps: 5000
+mixed_precision: 'no'
+name: echonet_dynamic_uncond_uvit_greyscale_mid_4by4
+nnet:
+  MoE:
+    aux_loss_alpha: 0.001
+    depth: -1
+    noise_eps: 0.01
+    num_experts: 4
+    router: topk
+    top_k: 2
+    type: normal
+  depth: 16
+  embed_dim: 768
+  low_freqs: 12
+  mlp_ratio: 4
+  mlp_time_embed: true
+  name: uvit_greyscale_moe
+  num_classes: -1
+  num_heads: 12
+  qkv_bias: false
+  tokens: 196
+  use_moe: true
+optimizer:
+  betas: !!python/tuple
+  - 0.99
+  - 0.99
+  lr: 0.0002
+  name: adamw
+  weight_decay: 0.03
+pred: noise_pred
+private:
+  accountant: prv
+  dp_method: dpsgd
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+  secure_mode: false
+  target_delta: 1.0e-05
+  target_epsilon: 10
+  use_dp: false
+sample:
+  algorithm: euler_maruyama_ode
+  mini_batch_size: 500
+  n_samples: 50000
+  path: data/scratch/samples
+  sample_steps: 100
+  save_npz: ''
+  save_start: 10000
+sample_dir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound/samples
+seed: 1234
+train:
+  batch_size: 512
+  eval_interval: 25000
+  log_interval: 100
+  mode: uncond
+  n_steps: 500000
+  save_interval: 25000
+workdir: output_shift/echonet_dynamic_uncond_-1MoE_greyscale_uvit_mid_4by4_Y_bound
+
+2025-12-01 18:04:33,941 - train_greyscale_MoE.py - dataset samples: 358259
+2025-12-01 18:04:52,203 - utils.py - nnet has 361573680 parameters
+2025-12-01 18:04:53,837 - train_greyscale_MoE.py - using [5.419 2.769 2.659 1.88  2.022 1.575 1.018 1.338 1.593 1.484 1.309 1.163
+ 0.928 0.925 1.051 0.852] for Y_loss reweighting
+2025-12-01 18:04:53,988 - train_greyscale_MoE.py - Using temperature 0.0 for loss reweighting
+2025-12-01 18:04:54,232 - train_greyscale_MoE.py - Start fitting, step=0, mixed_precision=no
+2025-12-01 18:05:23,882 - uvit.py - MoE前向传播错误: CUDA out of memory. Tried to allocate 108.00 MiB. GPU 0 has a total capacity of 79.25 GiB of which 113.50 MiB is free. Including non-PyTorch memory, this process has 79.13 GiB memory in use. Of the allocated memory 78.30 GiB is allocated by PyTorch, and 13.94 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
