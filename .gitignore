@@ -22,6 +22,8 @@ output/**
 # !output/**/*.tsv
 # !output/**/*.xlsx
 !output/**/*.log
+!output/**/*.yaml
+!output/**/*.txt
 !output/evaluation/**
 
 output_allbest/**
@@ -36,6 +38,8 @@ output_allbest/**
 # !output_allbest/**/*.tsv
 # !output_allbest/**/*.xlsx
 !output_allbest/**/*.log
+!output_allbest/**/*.yaml
+!output_allbest/**/*.txt
 !output_allbest/evaluation/**
 
 output_moree/**
@@ -50,6 +54,8 @@ output_moree/**
 # !output_moree/**/*.tsv
 # !output_moree/**/*.xlsx
 !output_moree/**/*.log
+!output_moree/**/*.yaml
+!output_moree/**/*.txt
 !output_moree/evaluation/**
 
 output_shift/**
@@ -64,6 +70,8 @@ output_shift/**
 # !output_shift/**/*.tsv
 # !output_shift/**/*.xlsx
 !output_shift/**/*.log
+!output_shift/**/*.yaml
+!output_shift/**/*.txt
 !output_shift/evaluation/**
 
 output_shift_fa/**
@@ -78,6 +86,8 @@ output_shift_fa/**
 # !output_shift_fa/**/*.tsv
 # !output_shift_fa/**/*.xlsx
 !output_shift_fa/**/*.log
+!output_shift_fa/**/*.yaml
+!output_shift_fa/**/*.txt
 !output_shift_fa/evaluation/**
 
 output_ldm/**
@@ -92,6 +102,8 @@ output_ldm/**
 # !output_ldm/**/*.tsv
 # !output_ldm/**/*.xlsx
 !output_ldm/**/*.log
+!output_ldm/**/*.yaml
+!output_ldm/**/*.txt
 !output_ldm/evaluation/**
 
 *.pyc
